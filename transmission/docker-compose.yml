@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission
+    container_name: transmission
+    restart: unless-stopped
+    networks:
+      - proxy
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    volumes:
+      - ${HOME}/Data/transmission:/config
+      - ${HOME}/Media:/downloads
+      - ${HOME}/Downloads:/watch
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Vancouver
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - TRANSMISSION_WEB_HOME=/flood-for-transmission/
+      # - WHITELIST=iplist
+      # - PEERPORT=peerport
+      # - HOST_WHITELIST=dnsnane list
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.transmission.entrypoints=http"
+      - "traefik.http.routers.transmission.rule=Host(${BT_DOMAIN})"
+      - "traefik.http.routers.transmission.middlewares=transmission-https-redirect"
+      - "traefik.http.middlewares.transmission-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.transmission-secure.entrypoints=https"
+      - "traefik.http.routers.transmission-secure.rule=Host(${BT_DOMAIN})"
+      - "traefik.http.routers.transmission-secure.tls=true"
+      - "traefik.http.routers.transmission-secure.tls.certresolver=http"
+      - "traefik.http.routers.transmission-secure.service=transmission"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+
+networks:
+  proxy:
+    external: true

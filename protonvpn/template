@@ -1,0 +1,17 @@
+[Unit]
+Description=ProtonVPN CLI Auto-Start
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+Environment=SUDO_USER={user}
+Environment=PVPN_DEBUG=1
+Environment=PVPN_WAIT=300
+ExecStart=/usr/local/bin/protonvpn connect -f
+ExecReload=/usr/local/bin/protonvpn connect -f
+ExecStop=/usr/local/bin/protonvpn disconnect
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
