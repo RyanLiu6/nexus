@@ -10,7 +10,11 @@ TRANSMISSION_PASSWORD=<some_password>
 BT_DOMAIN=<`some_domain`>
 ```
 
-2. Run it!
+2. Create `${HOME}/Data/transmission` and cp `settings.json` over.
+
+3. Run it!
 ```
 docker-compose up -d
 ```
+
+4. Make sure to configure some sort of username / password!

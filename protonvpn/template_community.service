@@ -1,6 +1,5 @@
 [Unit]
-Description=ProtonVPN CLI Auto-Start
-After=network-online.target
+Description=ProtonVPN CLI Auto-Start (Community)
 Wants=network-online.target
 
 [Service]
@@ -9,7 +8,7 @@ Environment=SUDO_USER={user}
 Environment=PVPN_DEBUG=1
 Environment=PVPN_WAIT=300
 ExecStart=/usr/local/bin/protonvpn connect -f
-ExecReload=/usr/local/bin/protonvpn connect -f
+ExecReload=/usr/local/bin/protonvpn reconnect -f
 ExecStop=/usr/local/bin/protonvpn disconnect
 Restart=always
 

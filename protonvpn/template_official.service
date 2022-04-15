@@ -1,0 +1,14 @@
+[Unit]
+Description=ProtonVPN Official CLI Auto-Start
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/protonvpn-cli connect -f
+ExecReload=/usr/bin/protonvpn-cli disconnect && /usr/bin/protonvpn-cli connect -f
+ExecStop=/usr/bin/protonvpn-cli disconnect
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

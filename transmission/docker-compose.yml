@@ -14,7 +14,7 @@ services:
     volumes:
       - ${HOME}/Data/transmission:/config
       - ${HOME}/Media:/downloads
-      - ${HOME}/Downloads:/watch
+      - ${HOME}/Media/queue:/watch
     environment:
       - PUID=1000
       - PGID=1000

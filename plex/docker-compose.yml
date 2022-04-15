@@ -7,9 +7,8 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ${HOME}/Media/config:/config
-      - ${HOME}/Media/Anime:/anime
-      - ${HOME}/Media/Same:/same
+      - ${HOME}/Media/config/plex:/config
+      - ${HOME}/Media/anime:/anime
     environment:
       - PUID=1000
       - PGID=1000
