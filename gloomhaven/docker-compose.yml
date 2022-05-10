@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  gloomhaven_helper:
+    image: grepnull/gloomhaven-helper-headless:latest
+    container_name: gloomhaven_helper
+    restart: always
+    networks:
+      - proxy
+    ports:
+      - 58887:58887/udp
+      - 58888:58888
+    volumes:
+      - ${HOME}/Data/ghh:/root/.ghh
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.gloomhaven.entrypoints=http"
+      - "traefik.http.routers.gloomhaven.rule=Host(${GH_DOMAIN})"
+      - "traefik.http.routers.gloomhaven.middlewares=gloomhaven-https-redirect"
+      - "traefik.http.middlewares.gloomhaven-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.gloomhaven-secure.entrypoints=https"
+      - "traefik.http.routers.gloomhaven-secure.rule=Host(${GH_DOMAIN})"
+      - "traefik.http.routers.gloomhaven-secure.tls=true"
+      - "traefik.http.routers.gloomhaven-secure.tls.certresolver=http"
+      - "traefik.http.routers.gloomhaven-secure.service=gloomhaven"
+      - "traefik.http.services.gloomhaven.loadbalancer.server.port=58888"
+
+networks:
+  proxy:
+    external: true

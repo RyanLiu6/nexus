@@ -15,7 +15,6 @@ My setup uses ProtonVPN to secure internet connection. Feel free to use anything
 Please find a more detailed setup, along with documentation on commands here: https://github.com/Rafficer/linux-cli-community/blob/master/USAGE.md
 
 4. Create auto-connect service.
-
 ```
 python generate_config.py <your_username>
 sudo systemctl daemon-reload
@@ -23,3 +22,8 @@ sudo systemctl enable protonvpn-autoconnect
 ```
 
 NOTE: Please run the script with sudo privileges.
+
+5. Run it!
+```
+docker-compose up -d
+```

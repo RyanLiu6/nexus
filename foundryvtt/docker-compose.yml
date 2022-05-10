@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  foundryvtt:
+    image: felddy/foundryvtt:release
+    container_name: foundryvtt
+    restart: "unless-stopped"
+    networks:
+      - proxy
+    volumes:
+      - ${HOME}/Data/foundry/data:/data
+    environment:
+      - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
+      - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY}
+      - FOUNDRY_AWS_CONFIG=/data/Config/s3.json
+      - FOUNDRY_PROXY_PORT=30000
+      - FOUNDRY_PROXY_SSL=true
+      - TIMEZONE=CA
+      - CONTAINER_PATCH_URLS=https://gist.githubusercontent.com/yddlef/df54ee1bbca93095a71d75cd15e216eb/raw/plutonium.sh
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.foundryvtt.entrypoints=http"
+      - "traefik.http.routers.foundryvtt.rule=Host(${PLAY_DOMAIN})"
+      - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
+      - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
+      - "traefik.http.routers.foundryvtt-secure.rule=Host(${PLAY_DOMAIN})"
+      - "traefik.http.routers.foundryvtt-secure.tls=true"
+      - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
+      - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"
+      - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
+
+networks:
+  proxy:
+    external: true

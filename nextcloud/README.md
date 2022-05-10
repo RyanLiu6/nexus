@@ -1,15 +1,12 @@
 # nextcloud
 
 # Setup
-1. Clone the repo
-2. Create `.env` with:
-
+1. Create an `.env` file with:
 ```
 CLOUD_DOMAIN=<nextcloud domain>
 ```
 
-3. Create `db.env` with:
-
+2. Create a `db.env` file with:
 ```
 MYSQL_PASSWORD=<PASSWORD>
 MYSQL_DATABASE=nextcloud
@@ -17,8 +14,7 @@ MYSQL_USER=nextcloud
 MYSQL_ROOT_PASSWORD=<PASSWORD>
 ```
 
-4. Run it!
-
+3. Run it!
 ```
 docker-compose up -d
 ```
@@ -27,7 +23,6 @@ docker-compose up -d
 1. Nextcloud data is mounted at `$HOME/Data/nextcloud`
 
 2. To back up MySQL
-
 ```
 # Backup
 docker exec CONTAINER /usr/bin/mysqldump -u root --password=<root password> nextcloud > backup.sql
