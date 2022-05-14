@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Generated file
+docker-compose.yml
+
+# Ignore unzipped folder
+GloomhavenHelper/

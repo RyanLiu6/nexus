@@ -64,7 +64,7 @@ def aggregate_env_file(services: List) -> str:
     aggregate_filename = os.path.join(root_dir, ".env")
     with open(aggregate_filename, "w") as write_file:
         for key, value in aggregate_config.items():
-            write_file.write(f"{key}=={value}")
+            write_file.write(f"{key}={value}")
 
     return aggregate_filename
 
@@ -80,7 +80,7 @@ def validate_config(files: List, env: str=None) -> str:
     Returns:
         str: String version of aggregated compose file config.
     """
-    params = ["docker-compose"]
+    params = ["docker", "compose"]
 
     if env:
         params.append("--env-file")
