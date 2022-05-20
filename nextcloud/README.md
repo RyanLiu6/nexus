@@ -4,20 +4,18 @@
 1. Create an `.env` file with:
 ```
 CLOUD_DOMAIN=<nextcloud domain>
-```
-
-2. Create a `db.env` file with:
-```
 MYSQL_PASSWORD=<PASSWORD>
 MYSQL_DATABASE=nextcloud
 MYSQL_USER=nextcloud
 MYSQL_ROOT_PASSWORD=<PASSWORD>
 ```
 
-3. Run it!
+2. Run it!
 ```
 docker-compose up -d
 ```
+
+NOTE: This assumes that `focus` is checked out at `$HOME/dev/focus`!
 
 # Backups
 1. Nextcloud data is mounted at `$HOME/Data/nextcloud`

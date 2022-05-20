@@ -47,7 +47,7 @@ def aggregate_env_file(services: List) -> str:
     for service in services:
         absolute_path = os.path.join(root_dir, service)
         for item in os.scandir(absolute_path):
-            if item.is_file and item.name == ".env":
+            if item.is_file and item.name.endswith(".env"):
                 env_files.append(item.path)
 
     # Only proceed if there's any files
