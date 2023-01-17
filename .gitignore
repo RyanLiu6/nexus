@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Generated file
-docker-compose.yml
+/docker-compose.yml
 
 # Ignore unzipped folder
 GloomhavenHelper/

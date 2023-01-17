@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  wg-easy:
+    image: weejewel/wg-easy
+    container_name: wg-easy
+    restart: unless-stopped
+    networks:
+      - proxy
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    volumes:
+      - ${HOME}/Data/wireguard:/etc/wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    environment:
+      - WG_HOST=${WG_HOST}
+      - PASSWORD=${WG_PASSWORD}
+      - WG_PRE_UP=echo "${WG_PRE_UP}" > /etc/wireguard/pre-up.txt
+      # - WG_POST_UP=echo "${WG_POST_UP}" > /etc/wireguard/post-up.txt
+      # - WG_PRE_DOWN=echo "${WG_PRE_DOWN}" > /etc/wireguard/pre-down.txt
+      - WG_POST_DOWN=echo "${WG_POST_DOWN}" > /etc/wireguard/post-down.txt
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.wireguard.entrypoints=http"
+      - "traefik.http.routers.wireguard.rule=Host(${WG_DOMAIN})"
+      - "traefik.http.routers.wireguard.middlewares=wireguard-https-redirect"
+      - "traefik.http.middlewares.wireguard-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wireguard-secure.entrypoints=https"
+      - "traefik.http.routers.wireguard-secure.rule=Host(${WG_DOMAIN})"
+      - "traefik.http.routers.wireguard-secure.tls=true"
+      - "traefik.http.routers.wireguard-secure.tls.certresolver=http"
+      - "traefik.http.routers.wireguard-secure.service=wg-easy"
+      - "traefik.http.services.wireguard.loadbalancer.server.port=51821"
+
+networks:
+  proxy:
+    external: true
