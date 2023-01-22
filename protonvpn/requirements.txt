@@ -1,2 +1,0 @@
-click==8.1.2
-protonvpn-cli==2.2.11

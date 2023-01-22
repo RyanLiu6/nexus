@@ -5,6 +5,8 @@ services:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
+    depends_on:
+      - socket-proxy
     security_opt:
       - no-new-privileges:true
     networks:
@@ -14,22 +16,55 @@ services:
       - 443:443
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${HOME}/Data/traefik/traefik.yml:/traefik.yml:ro
-      - ${HOME}/Data/traefik/acme.json:/acme.json
+      - ./traefik.yml:/traefik.yml:ro
+      - ./rules:/rules:ro
+      - ./letsencrypt:/letsencrypt
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=http"
+
+      # global redirect to https
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+
+      # middleware redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
+      # redirect root to www
+      - "traefik.http.routers.root.rule=host(`${DOMAIN}.${TLD}`)"
+      - "traefik.http.routers.root.entrypoints=https"
+      - "traefik.http.routers.root.middlewares=redirect-root-to-www"
+      - "traefik.http.routers.root.tls=true"
+
+      # middleware redirect root to www
+      - "traefik.http.middlewares.redirect-root-to-www.redirectregex.regex=^https://${DOMAIN}\\.${TLD}/(.*)"
+      - "traefik.http.middlewares.redirect-root-to-www.redirectregex.replacement=https://www.${DOMAIN}.${TLD}/$${1}"
+
+      # Traefik UI
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.traefik.rule=Host(${MONITOR_DOMAIN})"
+      - "traefik.http.routers.traefik.entrypoints=https"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=mydnschallenge"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${ADMIN_PASSWORD}"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(${MONITOR_DOMAIN})"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
-      - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=http"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: traefik-socket-proxy
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+    networks:
+      - proxy
+    labels:
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   proxy:
