@@ -1,0 +1,5 @@
+#!/bin/bash
+mkdir ~/Library/LaunchAgents
+cp ~/dev/focus/setup/Updates/xyz.ryanliu6.update.plist ~/Library/LaunchAgents/
+cd ~/Library/LaunchAgents/
+launchctl load xyz.ryanliu6.update.plist
