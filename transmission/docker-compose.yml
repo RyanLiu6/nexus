@@ -2,7 +2,7 @@ version: "3"
 
 services:
   transmission:
-    image: lscr.io/linuxserver/transmission
+    image: lscr.io/linuxserver/transmission:latest
     container_name: transmission
     restart: unless-stopped
     networks:
@@ -21,23 +21,17 @@ services:
       - TZ=America/Vancouver
       - USER=${TRANSMISSION_USERNAME}
       - PASS=${TRANSMISSION_PASSWORD}
-      - TRANSMISSION_WEB_HOME=/flood-for-transmission/
-      # - WHITELIST=iplist
-      # - PEERPORT=peerport
-      # - HOST_WHITELIST=dnsnane list
+      - DOCKER_MODS=linuxserver/mods:transmission-floodui
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.transmission.entrypoints=http"
       - "traefik.http.routers.transmission.rule=Host(${BT_DOMAIN})"
-      - "traefik.http.routers.transmission.middlewares=transmission-https-redirect"
-      - "traefik.http.middlewares.transmission-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.transmission-secure.entrypoints=https"
-      - "traefik.http.routers.transmission-secure.rule=Host(${BT_DOMAIN})"
-      - "traefik.http.routers.transmission-secure.tls=true"
-      - "traefik.http.routers.transmission-secure.tls.certresolver=http"
-      - "traefik.http.routers.transmission-secure.service=transmission"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      - "traefik.http.routers.transmission.entrypoints=https"
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.tls.certresolver=certchallenge"
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   proxy:

@@ -130,6 +130,3 @@ dmypy.json
 
 # Generated file
 /docker-compose.yml
-
-# Ignore unzipped folder
-GloomhavenHelper/

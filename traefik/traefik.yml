@@ -9,17 +9,17 @@ entryPoints:
 
 providers:
   docker:
-    endpoint: "tcp://socket-proxy:2375"
+    endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
   file:
     directory: /rules
     watch: true
 
 certificatesResolvers:
-  mydnschallenge:
+  certchallenge:
     acme:
       email: mail@example.com
       storage: ./letsencrypt/acme.json
-      # dnsChallenge:
-      #   provider: route53
-      #   delayBeforeCheck: 10
+      dnsChallenge:
+        provider: cloudflare
+        delayBeforeCheck: 10

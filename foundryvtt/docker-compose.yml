@@ -21,16 +21,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.foundryvtt.entrypoints=http"
       - "traefik.http.routers.foundryvtt.rule=Host(${PLAY_DOMAIN})"
-      - "traefik.http.routers.foundryvtt.middlewares=foundryvtt-https-redirect"
-      - "traefik.http.middlewares.foundryvtt-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
-      - "traefik.http.routers.foundryvtt-secure.rule=Host(${PLAY_DOMAIN})"
-      - "traefik.http.routers.foundryvtt-secure.tls=true"
-      - "traefik.http.routers.foundryvtt-secure.tls.certresolver=http"
-      - "traefik.http.routers.foundryvtt-secure.service=foundryvtt"
       - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
+      - "traefik.http.routers.foundryvtt.entrypoints=https"
+      - "traefik.http.routers.foundryvtt.tls=true"
+      - "traefik.http.routers.foundryvtt.tls.certresolver=certchallenge"
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   proxy:

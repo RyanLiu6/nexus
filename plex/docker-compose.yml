@@ -2,14 +2,10 @@ version: "3"
 
 services:
   plex:
-    image: lscr.io/linuxserver/plex
+    image: lscr.io/linuxserver/plex:latest
     container_name: plex
     restart: unless-stopped
     network_mode: host
-    # networks:
-    #   - proxy
-    # ports:
-    #   - 32400:32400
     volumes:
       - ${HOME}/Media/config/plex:/config
       - ${HOME}/Media/anime:/anime
@@ -18,7 +14,6 @@ services:
       - PGID=1000
       - VERSION=docker
       # - PLEX_CLAIM= #optional
-
-# networks:
-#   proxy:
-#     external: true
+    labels:
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"

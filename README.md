@@ -1,41 +1,53 @@
 # Focus
 
-<p align="center">
-<img src="_images/moonlight_vigil.png" alt="focus" title="focus" />
-</p>
+Collection of self-hosted services for my personal multi-media home server.
 
-
-Self-hosted tools and services I have setup for myself at home.
-
-For some of the following services, some config and README files come directly from [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) amazing repo! I've only made minor changes that fits my own personal use-case more.
+Full credits to [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) repo for introducing watchtower and overall better documentation.
 
 ## Services
 ### Core
-* [traefik](traefik/) - reverse proxy and SSL manager
-* [borg-backup](borg-backup/) - backup scripts (local and AWS)
+* [traefik](traefik/) - reverse proxy and cert manager
 * [watchtower](watchtower/) - automatic docker images update
-* [pihole](pihole/) - combination of WireGuard, PiHole, and Unbound
 
 ### Content
 * [plex](plex/) - media system
-* [jellyfin](jellyfin/) - media system, alternative to plex
-* [nextcloud](nextcloud/) - file-hosting software system
-* [transmission](transmission/) - fast, easy, and free BitTorrent client
+* [jellyfin](jellyfin/) - media system
+* [nextcloud](nextcloud/) - file storage
+* [transmission](transmission/) - torrent client
 
 ### Games
 * [foundryvtt](foundryvtt/) - [FoundryVTT](https://foundryvtt.com/), a Virtual Table Top for games
-* [gloomhaven](gloomhaven/) - My own copy of Gloomhaven Helper, an assistant to play Gloomhaven
 
 ### Misc
 * [homebridge](homebridge/) - (WIP) SmartHome integration with Apple's HomeKit
 
 ## Usage
-Each folder has description and usage for individual services, should you wish only do so.
+Each folder has description and usage for individual services, should you wish only do so. Otherwise, an aggregated, "centralized" docker-compose.yml file can be generated via the provided `generate_compose.py` file. Please look at the [Docker](#Docker) section for further details.
 
-In order to run things smoothly, a script has been provided `generate_compose.py`. Please look at the [Python Script](#python-script) section for further details.
+If the aggregated approach is taken, we will need to create the proxy network that other containers use first. This can be done with
+```bash
+docker network create proxy
+```
+
+## Docker
+Some basic knowledge of Docker and Docker Compose would be good, but not required, as it is fairly easy to pick up and learn. For Docker, please refer to [this](https://docs.docker.com/get-started/overview/) document, and [this](https://docs.docker.com/compose/gettingstarted/) for Docker Compose.
+
+> [!NOTE]
+> This guide and individual READMEs assume that your user has been added to the docker group so that all `docker` commands can be ran without the need to use `sudo`. The guide to so can be found [here](https://docs.docker.com/engine/install/linux-postinstall/).
+
+### Compose
+The provided `generate_compose.py` script uses my custom Python Library, [Vigor](https://www.github.com/ryanliu6/vigor) to interface with the CLI to generate an aggregated compose file with the correct values from related `.env` files. This is done so that each individual service is self-contained within their own subdirectories and can be run independently of each other. But, the intended usage is to pick and choose which services to run for your servers and only generate a compose file for what is needed.
+
+To be specific, Traefik will always be included in the generated compose file as the absolute core, since its needed to serve traffic. The other core services of Borg and Watchtower are optional and can be included manually.
+
+There's a flag to include everything, `--all`, which will generate a compose file that includes all possible services. Further extension of this flag to generate specific subsets of services is something that can be considered, but with how many services are in consideration now, it is not of much help for the average user.
+
+### Examples
+To generate and run for just Plex, Transmission and Nextcloud:
+```bash
+./generate_compose plex transmission nextcloud
+docker compose run -d
+```
 
 ### Note
-One thing to note is that instead of Official Docker Images, I tend to use images packaged by the folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images. I personally prefer linuxserver as their configuration is standarized between all their images, and that is super helpful when added new services here.
-
-## Python Script
-This is a custom Python script I wrote to help manage compose and env files. This is specifically helpful as it aggregates compose and `.env`files to generate one main compose and `.env` file each to work with.
+My personal preference is to use images from folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images.

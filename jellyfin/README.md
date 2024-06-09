@@ -1,33 +1,11 @@
-# Jellyfin
+# Jellyfin <img src="https://github.com/jellyfin/jellyfin-ux/blob/master/branding/SVG/icon-solid-black.svg?raw=true" width="24">
+[Jellyfin](https://jellyfin.org/) is a Home Media system.
 
-<p align="center">
-<img src="../_images/jellyfin.png" alt="jellyfin" title="jellyfin" />
-</p>
+For my own purposes, I've split up media types to use both Plex and Jellyfin to better share media with my family members. Feel free to use one or the other if you don't need to split them!
 
-Jellyfin is a free media server that lets you organize and control your media.
+Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxserver/jellyfin).
 
-For my purposes, I'll be running an instance of both Plex and Jellyfin to separate types of entertainment, as well as who has access to what services. This is done to separate my personal interests ie Anime, with the interests of my parents, where my server lives.
-
-* [Github](https://github.com/jellyfin/jellyfin)
-* [Documentation](https://jellyfin.org/docs/)
-* [Docker Image](https://hub.docker.com/r/linuxserver/jellyfin/)
-
-# File Structure
-```bash
-.
-|-- .env
-|-- docker-compose.yml
-```
-
-- `.env` - a file containing all the environment variables used in the docker-compose.yml
-- `docker-compose.yml` - a docker-compose file, use to configure your application’s services
-- `cache/` - a directory used to store jellyfin caching data (optionnal)
-- `config/` - a directory used to store jellyfin config data
-- `media/` - a directory used to store media that will be scanned by jellyfin
-
-Please make sure that all the files and directories are present.
-
-# Setup
+## Setup
 1. Create an `.env` file with:
 ```ini
 JELLYFIN_DOMAIN=`<jellyfin domain>`
@@ -44,19 +22,14 @@ JELLYFIN_DOMAIN=`<jellyfin domain>`
 docker compose up -d
 ```
 
-# Update
-The image is automatically updated with [watchtower](../watchtower) thanks to the following label :
+## Updates
+This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
 
-```yaml
-  # Watchtower Update
-  - "com.centurylinklabs.watchtower.enable=true"
+## Backups
+There's not much to backup for Jellyfin, since the data that will be backed up will be the actual media to be shared.
+
+If you so wish, config can be backed up and preserved; its stored locally at `${HOME}/Media/config/jellyfin`, and can be backed up via cronjob with the following:
+
 ```
-
-# Backup
-Docker volumes are globally backed up using [borg-backup](../borg-backup).
-
-You may want to exclude the cache and media folder from the backups, add the following to [`borg-backup/excludes.txt`](../borg-backup/excludes.txt):
-```
-/full/path/to/jellyfin/cache
-/full/path/to/jellyfin/media
+0 0 * * 1 sudo tar -cf $HOME/Data/jellyfin/backups/`date+%F`.tar /home/<user>/Media/config/jellyfin
 ```
