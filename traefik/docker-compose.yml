@@ -15,9 +15,9 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
-      - ./rules:/rules:ro
-      - ./letsencrypt:/letsencrypt
+      - ${HOME}/dev/focus/traefik/traefik.yml:/traefik.yml:ro
+      - ${HOME}/dev/focus/traefik/rules:/rules:ro
+      - ${HOME}/dev/focus/traefik/letsencrypt:/letsencrypt
     environment:
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
     labels:

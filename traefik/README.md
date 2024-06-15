@@ -1,4 +1,4 @@
-# FoundryVTT <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Traefik.logo.png" width="24">
+# Traefik <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Traefik.logo.png" width="24">
 [Traefik](https://doc.traefik.io/traefik/) is an open-source reverse proxy and load balancer.
 
 Docker Image is from traefik, found [here](https://hub.docker.com/r/traefik/traefik).
@@ -14,9 +14,9 @@ Docker Image is from traefik, found [here](https://hub.docker.com/r/traefik/trae
 
 3. Create an `.env` file with:
 ```ini
-DOMAIN=example
+DOMAIN=traefik.domain
 TLD=com
-ADMIN_PASSWORD=<password from step 4 with duplicate $ removed>
+ADMIN_PASSWORD=password from generate_password.sh
 ```
 
 4. Add DNS Provider specific configuration to `.env` and `docker-compose.yml`. In my case, I'm using CloudFlare, and so my file will have the following:
@@ -35,6 +35,9 @@ Other DNS Providers will have differing configuration. You can find providers [h
 ```bash
 docker-compose up -d
 ```
+
+> [!NOTE]
+> This assumes that `focus` is checked out at `$HOME/dev/focus`!
 
 ## Updates
 This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).

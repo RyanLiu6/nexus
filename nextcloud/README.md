@@ -17,8 +17,6 @@ MYSQL_ROOT_PASSWORD=<PASSWORD>
 ```bash
 docker-compose up -d
 ```
-> [!NOTE]
-> This assumes that `focus` is checked out at `$HOME/dev/focus`!
 
 ## Backups
 Data for NextCloud is stored locally at `$HOME/Data/nextcloud`, and can be backed up with the following:

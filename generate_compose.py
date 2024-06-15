@@ -30,7 +30,7 @@ def generate_config(services, verbose, all):
         services = ALL_SERVICES
     else:
         # Is this more performant than iterating through core_services and doing `in` check with append?
-        services = list(set(services + CORE_SERVICES))
+        services = list(set(list(services) + CORE_SERVICES))
 
     logging.info(f"Services selected: {services}")
     files = []
@@ -41,7 +41,7 @@ def generate_config(services, verbose, all):
 
     aggregated_compose = os.path.join(ROOT_PATH, "docker-compose.yml")
     with open(aggregated_compose, "w") as compose_file:
-        compose = Compose("Focus")
+        compose = Compose("focus")
         compose_config = compose.generate_compose_file(files=files, env=aggregated_env)
         compose_file.write(compose_config)
         logging.info(f"Aggregated docker-compose.yml file created at {aggregated_compose}")
