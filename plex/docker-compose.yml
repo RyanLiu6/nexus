@@ -13,6 +13,7 @@ services:
       - PUID=1000
       - PGID=1000
       - VERSION=docker
+      - DOCKER_MODS=linuxserver/mods:plex-absolute-hama
       # - PLEX_CLAIM= #optional
     labels:
       # Watchtower Update
