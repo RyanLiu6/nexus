@@ -11,10 +11,11 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
 JELLYFIN_DOMAIN=`<jellyfin domain>`
 ```
 
-2. Modify compose file to specify your media location. The default volume mounting is:
+2. Configure the media directories to mount so that the container has access to it. By default, Jellyfin will mount `$HOME/Media/movies` to `/data/movies` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+
 ```yaml
-- ${HOME}/Media/config/jellyfin:/config
-- ${HOME}/Media/movies:/data/movies
+    - ${HOME}/Media/config/jellyfin:/config
+    - ${HOME}/Media/movies:/data/movies
 ```
 
 3. Run it!

@@ -11,7 +11,13 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
 docker-compose up -d
 ```
 
-2. Configure this server with your plex credentials to connect it.
+2. Configure the media directories to mount so that the container has access to it. By default, Plex will mount `$HOME/Media/anime` to `/anime` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+
+```yaml
+    - ${HOME}/Media/anime:/anime
+```
+
+3. Go to `<your-ip>:32400/web`, or if its on a remote server, `<remote-ip>:32400/web` to configure your libraries and claim the Plex server to your Plex account.
 
 ## Updates
 This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).

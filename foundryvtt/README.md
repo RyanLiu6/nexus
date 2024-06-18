@@ -14,7 +14,13 @@ FOUNDRY_PASSWORD=<foundryvtt.com password>
 FOUNDRY_ADMIN_KEY=<foundry admin key>
 ```
 
-2. Run it!
+2. Configure the directory for FoundryVTT to store data. By default, FoundryVTT will mount `$HOME/Data/foundry/data` to `/data` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+
+```yaml
+    - ${HOME}/Data/foundry/data:/data
+```
+
+3. Run it!
 ```bash
 docker-compose up -d
 ```
@@ -45,3 +51,7 @@ Data for Jellyfin is stored locally at `${HOME}/Data/foundry/data`, and can be b
 ```
 0 0 * * 4 sudo tar -cf $HOME/Data/foundry/backups/`date +\%F`.tar /home/<user>/Data/foundry/data
 ```
+
+> [!NOTE]
+> The above directions all assume the default mount location for FoundryVTT's data. If you wish to use your own location, please
+> ensure to change the mount location within `docker-compose.yml` as well.

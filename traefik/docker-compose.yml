@@ -22,6 +22,7 @@ services:
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
 
       # global redirect to https
       - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
@@ -41,11 +42,6 @@ services:
       # middleware redirect root to www
       - "traefik.http.middlewares.redirect-root-to-www.redirectregex.regex=^https://${DOMAIN}\\.${TLD}/(.*)"
       - "traefik.http.middlewares.redirect-root-to-www.redirectregex.replacement=https://www.${DOMAIN}.${TLD}/$${1}"
-
-      # Traefik UI
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.root.tls.certresolver=mydnschallenge"
-      - "traefik.http.middlewares.root-auth.basicauth.users=${ADMIN_PASSWORD}"
 
       # Watchtower Update
       - "com.centurylinklabs.watchtower.enable=true"
