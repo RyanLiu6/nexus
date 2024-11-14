@@ -10,8 +10,8 @@ services:
     ports:
       - 8096:8096
     volumes:
-      - ${HOME}/Media/config/jellyfin:/config
-      - ${HOME}/Media/movies:/data/movies
+      - ${DATA_DIRECTORY}/Config/jellyfin:/config
+      - ${DATA_DIRECTORY}/Media/movies:/data/movies
     environment:
       - PUID=1000
       - PGID=1000

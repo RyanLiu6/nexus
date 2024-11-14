@@ -6,18 +6,23 @@ For my own purposes, I've split up media types to use both Plex and Jellyfin to 
 Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxserver/plex).
 
 ## Setup
-1. Run it!
+1. Create an `.env` file with
+```ini
+DATA_DIRECTORY=<your_directory>
+```
+
+2. Run it!
 ```bash
 docker-compose up -d
 ```
 
-2. Configure the media directories to mount so that the container has access to it. By default, Plex will mount `$HOME/Media/anime` to `/anime` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+3. Configure the media directories to mount so that the container has access to it. By default, Plex will mount `$DATA_DIRECTORY/Media/anime` to `/anime` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
 
 ```yaml
-    - ${HOME}/Media/anime:/anime
+    - ${DATA_DIRECTORY}/Media/anime:/anime
 ```
 
-3. Go to `<your-ip>:32400/web`, or if its on a remote server, `<remote-ip>:32400/web` to configure your libraries and claim the Plex server to your Plex account.
+4. Go to `<your-ip>:32400/web`, or if its on a remote server, `<remote-ip>:32400/web` to configure your libraries and claim the Plex server to your Plex account.
 
 ## Updates
 This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).

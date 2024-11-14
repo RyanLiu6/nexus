@@ -12,12 +12,13 @@ PLAY_DOMAIN=`<foundry domain>`
 FOUNDRY_USERNAME=<foundryvtt.com username>
 FOUNDRY_PASSWORD=<foundryvtt.com password>
 FOUNDRY_ADMIN_KEY=<foundry admin key>
+DATA_DIRECTORY=<your_directory>
 ```
 
-2. Configure the directory for FoundryVTT to store data. By default, FoundryVTT will mount `$HOME/Data/foundry/data` to `/data` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+1. Configure the directory for FoundryVTT to store data. By default, FoundryVTT will mount `$DATA_DIRECTORY/Foundry/data` to `/data` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
 
 ```yaml
-    - ${HOME}/Data/foundry/data:/data
+    - ${DATA_DIRECTORY}/Foundry/data:/data
 ```
 
 3. Run it!
@@ -37,19 +38,19 @@ docker-compose up -d
 }
 ```
 
-3. Place this file at `${HOME}/Data/foundry/data/Config`. This is related to the volume mount specified in `docker-compose.yml`.
+3. Place this file at `$DATA_DIRECTORY/Foundry/data/Config`. This is related to the volume mount specified in `docker-compose.yml`.
 
 ### Native Audio and Video Support
-Edit `${HOME}/Data/foundry/data/Config/options.json` and change `proxySSL: false` to `proxySSL: true`
+Edit `${DATA_DIRECTORY/Foundry/data/Config/options.json` and change `proxySSL: false` to `proxySSL: true`
 
 ## Updates
 This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
 
 ## Backups
-Data for Jellyfin is stored locally at `${HOME}/Data/foundry/data`, and can be backed up via cronjob with the following:
+Data for Foundry is stored locally at `$DATA_DIRECTORY/Foundry/data`, and can be backed up via cronjob with the following:
 
 ```
-0 0 * * 4 sudo tar -cf $HOME/Data/foundry/backups/`date +\%F`.tar /home/<user>/Data/foundry/data
+0 0 * * 4 sudo tar -cf $DATA_DIRECTORY/backups/Foundry/`date +\%F`.tar $DATA_DIRECTORY/Foundry/data
 ```
 
 > [!NOTE]

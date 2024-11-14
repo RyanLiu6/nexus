@@ -12,9 +12,9 @@ services:
       - 51413:51413
       - 51413:51413/udp
     volumes:
-      - ${HOME}/Data/transmission:/config
-      - ${HOME}/Media:/downloads
-      - ${HOME}/Media/queue:/watch
+      - ${DATA_DIRECTORY}/Config/transmission:/config
+      - ${DATA_DIRECTORY}/Media:/downloads
+      - ${DATA_DIRECTORY}/Media/queue:/watch
     environment:
       - PUID=1000
       - PGID=1000

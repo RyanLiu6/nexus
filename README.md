@@ -49,5 +49,7 @@ To generate and run for just Plex, Transmission and Nextcloud:
 docker compose run -d
 ```
 
-### Note
+### Notes
 My personal preference is to use images from folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images.
+
+For my own setup, media lives on a separate drive, so I've set the `$DATA_DIRECTORY` environment variable using `/etc/environment`, as this makes the environment variable accessible to both interactive shells and cronjobs. Please take note of this when setting up your own environments!
