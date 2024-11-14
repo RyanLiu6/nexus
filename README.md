@@ -52,4 +52,4 @@ docker compose run -d
 ### Notes
 My personal preference is to use images from folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images.
 
-For my own setup, media lives on a separate drive, so I've set the `$DATA_DIRECTORY` environment variable using `/etc/environment`, as this makes the environment variable accessible to both interactive shells and cronjobs. Please take note of this when setting up your own environments!
+For my own setup, media lives on a separate drive, so I've set the `$DATA_DIRECTORY` environment variable in both `/etc/environment` and `.zshrc`, as this makes the environment variable accessible to both interactive shells and cronjobs. Please take note of this when setting up your own environments!
