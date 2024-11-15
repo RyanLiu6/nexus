@@ -18,8 +18,11 @@ providers:
 certificatesResolvers:
   certchallenge:
     acme:
-      email: mail@example.com
+      email: mail@domain
       storage: ./letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare
         delayBeforeCheck: 10
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"

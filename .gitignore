@@ -132,4 +132,4 @@ dmypy.json
 /docker-compose.yml
 
 # LetsEncrypt
-/letsencrypt
+/traefik/letsencrypt
