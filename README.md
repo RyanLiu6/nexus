@@ -18,6 +18,9 @@ Full credits to [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) re
 ### Games
 * [foundryvtt](foundryvtt/) - [FoundryVTT](https://foundryvtt.com/), a Virtual Table Top for games
 
+### Finance
+* [actual](actual/) - local-first personal budgeting tool
+
 ### Misc
 * [homebridge](homebridge/) - (WIP) SmartHome integration with Apple's HomeKit
 
