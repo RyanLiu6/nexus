@@ -1,25 +1,26 @@
 version: "3.8"
 
 services:
-  actual:
+  actual-server:
     image: actualbudget/actual-server:latest
-    container_name: actual
+    container_name: actual-server
     environment:
-      - ACTUAL_HOSTNAME=0.0.0.0
-      - ACTUAL_PORT=${ACTUAL_PORT}
       - ACTUAL_SYNC_KEY=${ACTUAL_SYNC_KEY}
     volumes:
       - ${ACTUAL_DATA_DIR:-/data/actual}:/data
     ports:
-      - "${ACTUAL_PORT}:5006"
+      - "5006:5006"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.actual.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.actual.entrypoints=websecure"
-      - "traefik.http.routers.actual.tls=true"
-      - "traefik.http.routers.actual.tls.certresolver=letsencrypt"
-      - "traefik.http.services.actual.loadbalancer.server.port=${ACTUAL_PORT}"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.actual-server.rule=Host(`${ACTUAL_DOMAIN}`)"
+      - "traefik.http.services.actual-server.loadbalancer.server.port=5006"
+      - "traefik.http.routers.actual-server.entrypoints=https"
+      - "traefik.http.routers.actual-server.tls=true"
+      - "traefik.http.routers.actual-server.tls.certresolver=certchallenge"
+      # Watchtower Update
+      - "com.centurylinklabs.watchtower.enable=true"
     networks:
       - proxy
 

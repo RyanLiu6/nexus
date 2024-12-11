@@ -16,7 +16,8 @@ Docker Image is from traefik, found [here](https://hub.docker.com/r/traefik/trae
 ```ini
 DOMAIN=traefik.domain
 TLD=com
-ADMIN_PASSWORD=password from generate_password.sh
+TRAEFIK_USER=admin
+TRAEFIK_PASSWORD_HASH=<password from generate_password.sh>
 ```
 
 4. Add DNS Provider specific configuration to `.env` and `docker-compose.yml`. In my case, I'm using CloudFlare, and so my file will have the following:

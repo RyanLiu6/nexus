@@ -8,7 +8,7 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
 ## Setup
 1. Create an `.env` file with:
 ```ini
-JELLYFIN_DOMAIN=`<jellyfin domain>`
+JELLYFIN_DOMAIN=<jellyfin domain>
 DATA_DIRECTORY=<your_directory>
 ```
 

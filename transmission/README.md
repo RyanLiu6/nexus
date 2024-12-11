@@ -8,7 +8,7 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
 ```ini
 TRANSMISSION_USERNAME=<your_username>
 TRANSMISSION_PASSWORD=<your_password>
-BT_DOMAIN=`<your_domain>`
+TRANSMISSION_DOMAIN=<your_domain>
 DATA_DIRECTORY=<your_directory>
 ```
 

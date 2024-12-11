@@ -8,7 +8,7 @@ Docker Image is from felddy, found [here](https://hub.docker.com/r/felddy/foundr
 ## Setup
 1. Create an `.env` file with:
 ```ini
-PLAY_DOMAIN=`<foundry domain>`
+PLAY_DOMAIN=<foundry domain>
 FOUNDRY_USERNAME=<foundryvtt.com username>
 FOUNDRY_PASSWORD=<foundryvtt.com password>
 FOUNDRY_ADMIN_KEY=<foundry admin key>

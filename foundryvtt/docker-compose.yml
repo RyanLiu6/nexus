@@ -21,7 +21,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.foundryvtt.rule=Host(${PLAY_DOMAIN})"
+      - "traefik.http.routers.foundryvtt.rule=Host(`${PLAY_DOMAIN}`)"
       - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
       - "traefik.http.routers.foundryvtt.entrypoints=https"
       - "traefik.http.routers.foundryvtt.tls=true"

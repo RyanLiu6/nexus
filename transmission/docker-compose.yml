@@ -25,7 +25,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.transmission.rule=Host(${BT_DOMAIN})"
+      - "traefik.http.routers.transmission.rule=Host(`${TRANSMISSION_DOMAIN}`)"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"
       - "traefik.http.routers.transmission.entrypoints=https"
       - "traefik.http.routers.transmission.tls=true"
