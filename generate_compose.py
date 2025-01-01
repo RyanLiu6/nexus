@@ -10,7 +10,7 @@ from vigor.utils import get_immediate_subdirectories # type: ignore
 
 # Some global stuff I don't know how to not abstract
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-ALL_SERVICES = get_immediate_subdirectories(full_path=ROOT_PATH, ignore=[".git"])
+ALL_SERVICES = get_immediate_subdirectories(full_path=ROOT_PATH, ignore=[".git", ".venv", ".pytest_cache", ".mypy_cache"])
 CORE_SERVICES = ["traefik"]
 
 

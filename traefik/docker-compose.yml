@@ -35,9 +35,9 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
       # redirect root to www
-      - "traefik.http.routers.root.rule=host(`${DOMAIN}.${TLD}`)"
+      - "traefik.http.routers.root.rule=Host(`${DOMAIN}.${TLD}`) && PathPrefix(`/{path:(?!api|dashboard).*}`)"
       - "traefik.http.routers.root.entrypoints=https"
-      - "traefik.http.routers.root.middlewares=redirect-root-to-www"
+      - "traefik.http.routers.root.middlewares=redirect-root-to-www@docker"
       - "traefik.http.routers.root.tls=true"
 
       # middleware redirect root to www
@@ -45,12 +45,16 @@ services:
       - "traefik.http.middlewares.redirect-root-to-www.redirectregex.replacement=https://www.${DOMAIN}.${TLD}/$${1}"
 
       # Dashboard
-      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN}.${TLD}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN}.${TLD}`)"
+      - "traefik.http.routers.dashboard.priority=2"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=https"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=certchallenge"
-      - "traefik.http.routers.dashboard.middlewares=auth@docker"
+      - "traefik.http.routers.dashboard.middlewares=auth@docker,addprefix-dashboard@docker"
+
+      # Add dashboard prefix middleware
+      - "traefik.http.middlewares.addprefix-dashboard.addprefix.prefix=/dashboard"
 
       # Basic auth middleware
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD_HASH}"

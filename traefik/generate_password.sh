@@ -14,7 +14,7 @@ if ! which htpasswd >/dev/null; then
 fi
 
 # Generate strings
-echo "------- Your string for .env --------"
+echo "------- Your raw password string --------"
 string=$(htpasswd -nbB "$USER" "$PW")
 echo "$string"
 echo "------- Your string for docker-compose.yml --------"

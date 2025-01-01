@@ -7,8 +7,6 @@ entryPoints:
     address: ":80"
   https:
     address: ":443"
-  traefik:
-    address: ":8080"
 
 providers:
   docker:
@@ -21,7 +19,7 @@ providers:
 certificatesResolvers:
   certchallenge:
     acme:
-      email: dioz.rl@gmail.com
+      email: "example@example.com"
       storage: ./letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare
