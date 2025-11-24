@@ -10,17 +10,16 @@ Docker Image is from traefik, found [here](https://hub.docker.com/r/traefik/trae
 > This step is entirely optional. To skip this step, edit docker-compose.yml and remove the line
 > at the bottom that specifies the password
 
-2. Update `traefik.yml` with your correct contact information (Email)
-
-3. Create an `.env` file with:
+2. Create an `.env` file with:
 ```ini
 DOMAIN=traefik.domain
 TLD=com
+ACME_EMAIL=your.email@example.com
 TRAEFIK_USER=admin
 TRAEFIK_PASSWORD_HASH=<password from generate_password.sh>
 ```
 
-4. Add DNS Provider specific configuration to `.env` and `docker-compose.yml`. In my case, I'm using CloudFlare, and so my file will have the following:
+3. Add DNS Provider specific configuration to `.env` and `docker-compose.yml`. In my case, I'm using CloudFlare, and so my file will have the following:
 ```ini
 CLOUDFLARE_DNS_API_TOKEN=<some token>
 ```
@@ -32,7 +31,7 @@ CLOUDFLARE_DNS_API_TOKEN=<some token>
 
 Other DNS Providers will have differing configuration. You can find providers [here](https://doc.traefik.io/traefik/https/acme/#providers) and additional configuration [here](https://go-acme.github.io/lego/dns/).
 
-5. Configure the following directories, as this guide assumes that Focus is cloned to `$HOME/dev/focus`, as that is my own personal preference. This behaviour can be configured with the following in `docker-compose.yml`.
+4. Configure the following directories, as this guide assumes that Focus is cloned to `$HOME/dev/focus`, as that is my own personal preference. This behaviour can be configured with the following in `docker-compose.yml`.
 
 ```yaml
   - ${HOME}/dev/focus/traefik/traefik.yml:/traefik.yml:ro
@@ -40,7 +39,7 @@ Other DNS Providers will have differing configuration. You can find providers [h
   - ${HOME}/dev/focus/traefik/letsencrypt:/letsencrypt
 ```
 
-6. Run it!
+5. Run it!
 ```bash
 docker-compose up -d
 ```
@@ -49,7 +48,7 @@ docker-compose up -d
 > This assumes that `focus` is checked out at `$HOME/dev/focus`!
 
 ## Updates
-This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
+This container will have its image automatically updated via [watchtower](../watchtower/).
 
 ## Backups
 N/A

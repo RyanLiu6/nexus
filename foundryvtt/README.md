@@ -41,10 +41,10 @@ docker-compose up -d
 3. Place this file at `$DATA_DIRECTORY/Foundry/data/Config`. This is related to the volume mount specified in `docker-compose.yml`.
 
 ### Native Audio and Video Support
-Edit `${DATA_DIRECTORY/Foundry/data/Config/options.json` and change `proxySSL: false` to `proxySSL: true`
+Edit `${DATA_DIRECTORY}/Foundry/data/Config/options.json` and change `proxySSL: false` to `proxySSL: true`
 
 ## Updates
-This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
+This container will have its image automatically updated via [watchtower](../watchtower/).
 
 ## Backups
 Data for Foundry is stored locally at `$DATA_DIRECTORY/Foundry/data`, and can be backed up via cronjob with the following:

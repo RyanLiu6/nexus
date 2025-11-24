@@ -4,7 +4,7 @@
 Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxserver/transmission).
 
 ## Setup
-1. Create an `.env` file with
+1. Create an `.env` file with:
 ```ini
 TRANSMISSION_USERNAME=<your_username>
 TRANSMISSION_PASSWORD=<your_password>
@@ -48,7 +48,7 @@ docker-compose up -d
 ```
 
 ## Updates
-This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
+This container will have its image automatically updated via [watchtower](../watchtower/).
 
 ## Backup
 Data for Transmission is stored locally at `${DATA_DIRECTORY}/Config/transmission`, and can be backed up via cronjob with the following:
