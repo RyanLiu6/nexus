@@ -20,6 +20,7 @@ services:
       - ${HOME}/dev/focus/traefik/rules:/rules:ro
       - ${HOME}/dev/focus/traefik/letsencrypt:/letsencrypt
     environment:
+      - ACME_EMAIL=${ACME_EMAIL}
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
     labels:
       - "traefik.enable=true"

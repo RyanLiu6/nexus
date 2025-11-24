@@ -16,7 +16,7 @@ services:
       - FOUNDRY_AWS_CONFIG=/data/Config/s3.json
       - FOUNDRY_PROXY_PORT=30000
       - FOUNDRY_PROXY_SSL=true
-      - TIMEZONE=CA
+      - TIMEZONE=America/Vancouver
       - CONTAINER_PATCH_URLS=https://gist.githubusercontent.com/yddlef/df54ee1bbca93095a71d75cd15e216eb/raw/plutonium.sh
     labels:
       - "traefik.enable=true"

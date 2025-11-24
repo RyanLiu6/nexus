@@ -19,7 +19,7 @@ providers:
 certificatesResolvers:
   certchallenge:
     acme:
-      email: "example@example.com"
+      email: ${ACME_EMAIL}
       storage: ./letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare

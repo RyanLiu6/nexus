@@ -12,11 +12,11 @@ JELLYFIN_DOMAIN=<jellyfin domain>
 DATA_DIRECTORY=<your_directory>
 ```
 
-2. Configure the media directories to mount so that the container has access to it. By default, Jellyfin will mount `$DATA_DIRECTORY/Media/movies` to `/data/movies` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+2. Configure the media directories to mount so that the container has access to it. This behaviour can be configured with the following in `docker-compose.yml`.
 
 ```yaml
-    - ${DATA_DIRECTORY}/Media/config/jellyfin:/config
-    - ${DATA_DIRECTORY}/Media/movies:/data/movies
+    - ${DATA_DIRECTORY}/Config/jellyfin:/config
+    - ${DATA_DIRECTORY}/Media/.same:/data/movies
 ```
 
 3. Run it!
@@ -25,13 +25,13 @@ docker compose up -d
 ```
 
 ## Updates
-This container will have its image automatically updated via [watchtower](https://ryanliu6/focus/watchtower).
+This container will have its image automatically updated via [watchtower](../watchtower/).
 
 ## Backups
 There's not much to backup for Jellyfin, since the data that will be backed up will be the actual media to be shared.
 
-If you so wish, config can be backed up and preserved; its stored locally at `${DATA_DIRECTORY}/Media/config/jellyfin`, and can be backed up via cronjob with the following:
+If you so wish, config can be backed up and preserved; it's stored locally at `${DATA_DIRECTORY}/Config/jellyfin`, and can be backed up via cronjob with the following:
 
-```
-0 0 * * 1 sudo tar -cf $DATA_DIRECTORY/Backups/jellyfin/`date+%F`.tar $DATA_DIRECTORY/Config/jellyfin
+```bash
+0 0 * * 1 sudo tar -cf $DATA_DIRECTORY/Backups/jellyfin/`date +\%F`.tar $DATA_DIRECTORY/Config/jellyfin
 ```
