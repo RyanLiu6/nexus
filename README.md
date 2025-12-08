@@ -20,6 +20,7 @@ Full credits to [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) re
 
 ### Finance
 * [actual](actual/) - local-first personal budgeting tool
+* [split-pro](split-pro/) - open-source expense sharing application
 
 ### Misc
 * [homebridge](homebridge/) - (WIP) SmartHome integration with Apple's HomeKit

@@ -13,6 +13,11 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 ALL_SERVICES = get_immediate_subdirectories(full_path=ROOT_PATH, ignore=[".git", ".venv", ".pytest_cache", ".mypy_cache"])
 CORE_SERVICES = ["traefik"]
 
+# Service presets for common configurations
+SERVICE_PRESETS = {
+    "default": ["actual", "foundryvtt", "jellyfin", "transmission", "split-pro"],
+}
+
 
 def parse_env_file(file_path: Path) -> Dict[str, str]:
     """Parse a single .env file and return its key-value pairs.
@@ -102,7 +107,7 @@ def aggregate_env_file(services: List[str]) -> Optional[Path]:
 
 
 @click.command()
-@click.argument("services", type=click.Choice(ALL_SERVICES), nargs=-1)
+@click.argument("services", type=click.Choice(ALL_SERVICES), nargs=-1, required=False)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Verbose mode.")
 @click.option(
     "-a",
@@ -111,7 +116,14 @@ def aggregate_env_file(services: List[str]) -> Optional[Path]:
     default=False,
     help="Generate Compose file for all possible services.",
 )
-def generate_config(services: List[str], verbose: bool, all: bool) -> None:
+@click.option(
+    "-p",
+    "--preset",
+    type=click.Choice(list(SERVICE_PRESETS.keys())),
+    default=None,
+    help="Use a service preset instead of specifying services individually.",
+)
+def generate_config(services: List[str], verbose: bool, all: bool, preset: Optional[str]) -> None:
     """
     Generates aggregated docker-compose.yml for services.
     """
@@ -120,6 +132,8 @@ def generate_config(services: List[str], verbose: bool, all: bool) -> None:
 
     if all:
         services = ALL_SERVICES
+    elif preset:
+        services = list(set(SERVICE_PRESETS[preset] + CORE_SERVICES))
     else:
         # Is this more performant than iterating through core_services and doing `in` check with append?
         services = list(set(list(services) + CORE_SERVICES))
