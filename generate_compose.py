@@ -15,7 +15,7 @@ CORE_SERVICES = ["traefik"]
 
 # Service presets for common configurations
 SERVICE_PRESETS = {
-    "default": ["actual", "foundryvtt", "jellyfin", "transmission", "split-pro"],
+    "default": ["sure", "foundryvtt", "jellyfin", "transmission"],
 }
 
 

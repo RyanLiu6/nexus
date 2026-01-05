@@ -1,0 +1,108 @@
+version: "3"
+
+services:
+  sure-web:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-web
+    restart: unless-stopped
+    networks:
+      - proxy
+      - sure
+    ports:
+      - ${SURE_PORT}:3000
+    volumes:
+      - ${SURE_DATA_DIR}/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.sure-web.rule=Host(`${SURE_DOMAIN}`)"
+      - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
+      - "traefik.http.routers.sure-web.entrypoints=https"
+      - "traefik.http.routers.sure-web.tls=true"
+      - "traefik.http.routers.sure-web.tls.certresolver=certchallenge"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  sure-worker:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-worker
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  sure-db:
+    image: postgres:16
+    container_name: sure-db
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sure-redis:
+    image: redis:latest
+    container_name: sure-redis
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  proxy:
+    external: true
+  sure:
+    name: focus_sure
+    driver: bridge
