@@ -27,6 +27,7 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23.0",
     "ruff>=0.5.0",
     "mypy>=1.0.0",
     "types-PyYAML>=6.0.0",
@@ -118,10 +119,6 @@ exclude = [
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra -q"
-testpaths = [
-    "src/nexus/tests",
-    "src/nexus/deploy/tests",
-    "src/nexus/generate/tests",
-    "src/nexus/operations/tests",
-]
+testpaths = ["src"]
 pythonpath = ["src"]
+asyncio_mode = "auto"

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 ROOT_PATH = Path(__file__).parent.parent.parent
 SERVICES_PATH = ROOT_PATH / "services"
@@ -39,7 +38,7 @@ def resolve_preset(name: str) -> list[str]:
     return list(set(services))
 
 
-def get_base_domain() -> Optional[str]:
+def get_base_domain() -> str | None:
     """Retrieve the base domain from the NEXUS_DOMAIN environment variable.
 
     Returns:

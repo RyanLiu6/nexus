@@ -1,8 +1,7 @@
 import logging
 import os
-import subprocess
+import shutil
 import sys
-from typing import Optional
 
 import click
 import yaml
@@ -19,9 +18,7 @@ def _check_dependencies() -> None:
     missing = []
 
     for tool in required:
-        try:
-            subprocess.run([tool, "--version"], capture_output=True, check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        if not shutil.which(tool):
             missing.append(tool)
 
     if missing:
@@ -43,7 +40,7 @@ def _check_dependencies() -> None:
 
 
 def _generate_configs(
-    services: list[str], domain: Optional[str], dry_run: bool = False
+    services: list[str], domain: str | None, dry_run: bool = False
 ) -> None:
     logging.info("Generating configuration files...")
 
@@ -97,8 +94,8 @@ def main(
     services: tuple[str, ...],
     verbose: bool,
     all: bool,
-    preset: Optional[str],
-    domain: Optional[str],
+    preset: str | None,
+    domain: str | None,
     skip_dns: bool,
     skip_ansible: bool,
     dry_run: bool,

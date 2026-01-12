@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
 
 import click
 
@@ -35,9 +34,9 @@ ALL_SERVICES = [
 @click.option("--alert-webhook", type=str, help="Send alerts to webhook URL.")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output.")
 def main(
-    domain: Optional[str],
+    domain: str | None,
     critical_only: bool,
-    alert_webhook: Optional[str],
+    alert_webhook: str | None,
     verbose: bool,
 ) -> None:
     """Check health of all Nexus services."""

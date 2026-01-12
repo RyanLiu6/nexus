@@ -45,9 +45,7 @@ class TestRunCommand:
         assert call_kwargs["cwd"] == tmp_path
 
     @patch("nexus.utils.subprocess.run")
-    def test_run_command_check_false_allows_failure(
-        self, mock_run: MagicMock
-    ) -> None:
+    def test_run_command_check_false_allows_failure(self, mock_run: MagicMock) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["false"], returncode=1, stdout="", stderr=""
         )

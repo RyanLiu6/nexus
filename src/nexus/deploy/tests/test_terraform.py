@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from nexus.deploy.terraform import _get_public_ip, run_terraform
 
 
@@ -80,3 +82,35 @@ class TestRunTerraform:
         run_terraform(["plex"], "example.com", dry_run=True)
 
         mock_run_command.assert_not_called()
+
+    @patch("nexus.deploy.terraform.TERRAFORM_PATH")
+    def test_run_terraform_no_config(self, mock_tf_path: MagicMock) -> None:
+        # Simulate main.tf not existing
+        mock_tf_path.__truediv__.return_value.exists.return_value = False
+
+        run_terraform(["plex"], "example.com")
+
+        # verifying logging or just that it returns without error
+        # In this case just ensuring it runs without exception is enough given the code return early
+
+    @patch("nexus.deploy.terraform.run_command")
+    @patch("nexus.deploy.terraform._get_public_ip")
+    @patch("nexus.deploy.terraform.TERRAFORM_PATH")
+    def test_run_terraform_error(
+        self,
+        mock_tf_path: MagicMock,
+        mock_get_ip: MagicMock,
+        mock_run_command: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        import subprocess
+
+        mock_tf_path.__truediv__.return_value = tmp_path / "main.tf"
+        (tmp_path / "main.tf").touch()
+        mock_get_ip.return_value = "1.2.3.4"
+
+        # Simulate terraform command failure
+        mock_run_command.side_effect = subprocess.CalledProcessError(1, "terraform")
+
+        with pytest.raises(subprocess.CalledProcessError):
+            run_terraform(["plex"], "example.com")

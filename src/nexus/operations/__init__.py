@@ -17,7 +17,7 @@ __all__ = [
     "cleanup_old_images",
     "cleanup_old_volumes",
     "daily_tasks",
-    "weekly_tasks",
     "monthly_tasks",
     "verify_backups",
+    "weekly_tasks",
 ]

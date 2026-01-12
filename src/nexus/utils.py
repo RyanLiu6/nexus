@@ -1,17 +1,17 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import IO, Any, Optional, Union
+from typing import IO, Any
 
 from nexus.config import ROOT_PATH
 
 
 def run_command(
     command: list[str],
-    cwd: Optional[Path] = None,
+    cwd: Path | None = None,
     capture: bool = False,
     check: bool = True,
-    stdin: Optional[Union[IO[Any], int]] = None,
+    stdin: IO[Any] | int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Execute a shell command with standardized error handling and logging.
 
@@ -31,15 +31,12 @@ def run_command(
     Raises:
         subprocess.CalledProcessError: If the command fails and check is True.
     """
-    if cwd is None:
-        cwd = ROOT_PATH
-
-    logging.debug(f"Running: {' '.join(command)} in {cwd}")
+    logging.debug(f"Running: {' '.join(command)} in {cwd or ROOT_PATH}")
 
     try:
         result = subprocess.run(
             command,
-            cwd=cwd,
+            cwd=cwd or ROOT_PATH,
             capture_output=capture,
             text=True,
             check=check,

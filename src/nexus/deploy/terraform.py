@@ -10,7 +10,7 @@ from nexus.utils import run_command
 def _get_public_ip() -> str:
     try:
         with urllib.request.urlopen("https://api.ipify.org") as response:
-            return response.read().decode("utf-8")
+            return str(response.read().decode("utf-8"))
     except Exception as e:
         logging.warning(f"Could not detect public IP: {e}")
         return "127.0.0.1"
@@ -60,9 +60,7 @@ def run_terraform(services: list[str], domain: str, dry_run: bool = False) -> No
     logging.info("Applying Cloudflare DNS updates...")
     try:
         run_command(["terraform", "init"], cwd=TERRAFORM_PATH, capture=True)
-        run_command(
-            ["terraform", "apply", "-auto-approve"], cwd=TERRAFORM_PATH
-        )
+        run_command(["terraform", "apply", "-auto-approve"], cwd=TERRAFORM_PATH)
         logging.info("DNS records updated successfully!")
     except subprocess.CalledProcessError:
         logging.error("Terraform failed. Check configuration.")

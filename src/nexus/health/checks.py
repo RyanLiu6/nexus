@@ -1,7 +1,8 @@
 import asyncio
 import logging
+import shutil
 import subprocess
-from typing import Optional
+import time
 
 import aiohttp
 
@@ -24,9 +25,9 @@ class ServiceHealth:
         self.name = name
         self.url = url
         self.healthy: bool = False
-        self.status_code: Optional[int] = None
-        self.response_time: Optional[float] = None
-        self.error: Optional[str] = None
+        self.status_code: int | None = None
+        self.response_time: float | None = None
+        self.error: str | None = None
 
 
 async def check_service_health(
@@ -42,18 +43,16 @@ async def check_service_health(
         session: The aiohttp ClientSession to use for making requests.
     """
     try:
-        start_time = asyncio.get_event_loop().time()
+        start_time = time.perf_counter()
         async with session.get(
             service.url, timeout=aiohttp.ClientTimeout(total=10)
         ) as response:
-            service.response_time = (
-                asyncio.get_event_loop().time() - start_time
-            ) * 1000
+            service.response_time = (time.perf_counter() - start_time) * 1000
             service.status_code = response.status
             service.healthy = response.status < 500
             if response.status >= 400:
                 service.error = f"HTTP {response.status}"
-    except asyncio.TimeoutError:
+    except TimeoutError:
         service.error = "Timeout"
         service.healthy = False
     except Exception as e:
@@ -86,11 +85,15 @@ def check_docker_containers() -> dict[str, bool]:
         A dictionary mapping container names to their health status,
         where True indicates the container is healthy.
     """
-    result = subprocess.run(
-        ["docker", "ps", "--format", "{{.Names}}\t{{.Status}}"],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Status}}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return {}
 
     container_status = {}
     for line in result.stdout.splitlines():
@@ -102,31 +105,37 @@ def check_docker_containers() -> dict[str, bool]:
     return container_status
 
 
+def _format_size(size: int) -> str:
+    """Format a byte size into a human-readable string."""
+    for unit in ["B", "K", "M", "G", "T", "P"]:
+        if size < 1024:
+            return f"{size:.1f}{unit}"
+        size /= 1024
+    return f"{size:.1f}E"
+
+
 def check_disk_space() -> dict[str, str]:
     """Query the root filesystem for disk space usage.
 
-    Executes `df -h /` and parses the output to extract disk usage metrics.
+    Uses shutil.disk_usage to get disk usage metrics.
 
     Returns:
-        A dictionary with keys 'total', 'used', 'available', and 'usage_percent',
-        or an empty dict if parsing fails.
+        A dictionary with keys 'total', 'used', 'available', and 'usage_percent'.
     """
-    result = subprocess.run(
-        ["df", "-h", "/"],
-        capture_output=True,
-        text=True,
-    )
-
-    lines = result.stdout.splitlines()
-    if len(lines) > 1:
-        parts = lines[1].split()
+    try:
+        total, used, free = shutil.disk_usage("/")
+        
+        # Calculate percentage
+        percent = (used / total) * 100 if total > 0 else 0
+        
         return {
-            "total": parts[1],
-            "used": parts[2],
-            "available": parts[3],
-            "usage_percent": parts[4],
+            "total": _format_size(total),
+            "used": _format_size(used),
+            "available": _format_size(free),
+            "usage_percent": f"{percent:.0f}%",
         }
-    return {}
+    except Exception:
+        return {}
 
 
 def check_ssl_certificates(domain: str) -> dict[str, bool]:

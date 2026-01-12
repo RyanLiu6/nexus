@@ -144,7 +144,9 @@ def cleanup_old_volumes() -> None:
     """
     logger.info("Cleaning up unused Docker volumes...")
 
-    result = _run_command(["docker", "volume", "prune", "-f"], "Clean up Docker volumes")
+    result = _run_command(
+        ["docker", "volume", "prune", "-f"], "Clean up Docker volumes"
+    )
 
     freed_space = result.stdout.strip()
     logger.info(f"✓ Cleaned volumes: {freed_space}")
