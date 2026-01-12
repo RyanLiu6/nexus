@@ -97,10 +97,20 @@ Docker Desktop runs in a VM with NAT, so Traefik may see `192.168.65.1` instead 
 
 Tailscale SSH provides zero-config SSH access with built-in authentication and ACLs.
 
-**Enable on server:**
+**Linux:**
 ```bash
 sudo tailscale up --ssh
 ```
+
+**macOS:**
+Tailscale SSH on macOS works differently - you must enable it via the admin console:
+
+1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/machines)
+2. Click on your macOS machine
+3. Enable "Tailscale SSH" in the machine settings
+4. Configure SSH ACLs in [Access Controls](https://login.tailscale.com/admin/acls)
+
+> **Note:** The `--ssh` flag does not work on macOS. You must use the admin console.
 
 This enables SSH access for all devices on your tailnet without SSH keys.
 
@@ -119,29 +129,48 @@ ssh username@100.x.y.z
 - iOS/Android: Use Termius app or Tailscale's built-in terminal
 - Connect using Tailscale hostname or IP
 
-### Tailscale ACLs (Optional)
+### Tailscale ACLs (Required for macOS)
 
-Control SSH access with ACLs in the Tailscale admin console:
+Control SSH access with ACLs in the [Tailscale admin console](https://login.tailscale.com/admin/acls).
 
+**Basic SSH access:**
 ```json
 {
-  "acls": [
-    {
-      "action": "accept",
-      "src": ["group:admins"],
-      "dst": ["tag:server:22"]
-    }
-  ],
   "ssh": [
     {
       "action": "accept",
-      "src": ["group:admins"],
-      "dst": ["tag:server"],
-      "users": ["root", "username"]
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot"]
     }
   ]
 }
 ```
+
+**Stricter access with check mode (recommended for root):**
+```json
+{
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot"]
+    },
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["tag:prod"],
+      "users": ["root"],
+      "checkPeriod": "12h"
+    }
+  ]
+}
+```
+
+**Check mode** requires re-authentication before SSH access, providing an extra layer of security for sensitive operations.
+
+See [Tailscale SSH Documentation](https://tailscale.com/kb/1193/tailscale-ssh) for more details.
 
 ### Traditional SSH Keys (Fallback)
 
@@ -271,8 +300,9 @@ docker restart authelia
 
 | Problem | Solution |
 |---------|----------|
-| **SSH not accessible** | Ensure Tailscale is running (`tailscale status`). Enable SSH: `sudo tailscale up --ssh` |
-| **Tailscale SSH not working** | Check ACLs in Tailscale admin console. Verify user has SSH permissions. |
+| **SSH not accessible** | Ensure Tailscale is running (`tailscale status`). Linux: `sudo tailscale up --ssh`. macOS: Enable in admin console. |
+| **Tailscale SSH not working** | Check ACLs in Tailscale admin console. Verify user has SSH permissions. For macOS, ensure SSH is enabled per-machine in admin console. |
+| **"Permission denied (publickey)"** | On macOS, Tailscale SSH must be enabled in admin console, not via CLI. Check SSH ACLs allow your user. |
 | **Access denied to service** | Check user's groups in `users_database.yml`. Verify access rule exists in `configuration.yml`. |
 | **Tailscale bypass not working** | Check client IP (`curl https://ifconfig.me`). Should be 100.64.x.x on Tailscale. Docker Desktop on macOS may show NAT IP. |
 | **Wrong user can access service** | Check rule order in `configuration.yml` - first match wins. Tailscale bypass rule should be first. |
@@ -341,7 +371,8 @@ Nexus runs with **zero exposed ports** on your router:
 
 If migrating to this architecture:
 
-- [ ] Enable Tailscale SSH: `sudo tailscale up --ssh`
+- [ ] Enable Tailscale SSH: Linux: `sudo tailscale up --ssh` / macOS: Enable in admin console
+- [ ] Configure SSH ACLs in Tailscale admin console
 - [ ] Test SSH access via Tailscale from all devices
 - [ ] Configure Cloudflare Tunnel for HTTP/HTTPS
 - [ ] Remove transmission USER/PASS environment variables

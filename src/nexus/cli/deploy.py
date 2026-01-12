@@ -85,6 +85,11 @@ def _generate_configs(
     help="Skip Ansible deployment (only generate configs).",
 )
 @click.option(
+    "--use-tunnel/--no-tunnel",
+    default=True,
+    help="Use Cloudflare Tunnel (default) or legacy A records.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -98,6 +103,7 @@ def main(
     domain: str | None,
     skip_dns: bool,
     skip_ansible: bool,
+    use_tunnel: bool,
     dry_run: bool,
 ) -> None:
     """Deploy Nexus services with Terraform (DNS) and Ansible (containers)."""
@@ -125,12 +131,13 @@ def main(
                 "Domain not specified. Use --domain or set NEXUS_DOMAIN env var."
             )
 
+    dns_mode = "Tunnel" if use_tunnel else "A Records"
     print("\n" + "=" * 60)
     print("  Nexus Deployment")
     print("=" * 60)
     print(f"Services: {', '.join(services_list)}")
     print(f"Domain: {domain or 'Not set'}")
-    print(f"DNS Management: {'Enabled' if not skip_dns else 'Disabled'}")
+    print(f"DNS Management: {'Enabled' if not skip_dns else 'Disabled'} ({dns_mode})")
     print(f"Ansible Deployment: {'Enabled' if not skip_ansible else 'Disabled'}")
     print(f"Dry Run: {'Yes' if dry_run else 'No'}")
     print("=" * 60 + "\n")
@@ -139,7 +146,12 @@ def main(
         if not domain:
             logging.warning("Domain not set, skipping DNS management")
         else:
-            run_terraform(services_list, domain, dry_run)
+            try:
+                run_terraform(services_list, domain, dry_run, use_tunnel)
+            except ValueError as e:
+                logging.error(f"Terraform configuration error: {e}")
+                logging.info("Skipping DNS management. Configure vault.yml and retry.")
+                logging.info("Or use --skip-dns to continue without DNS updates.")
 
     _generate_configs(services_list, domain, dry_run)
 

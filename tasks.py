@@ -87,13 +87,16 @@ def format(c):
 
 
 @task
-def deploy(c, preset="home", skip_dns=False, skip_ansible=False, dry_run=False):
+def deploy(
+    c, preset="home", skip_dns=False, skip_ansible=False, no_tunnel=False, dry_run=False
+):
     """
     Deploy Nexus services.
 
     --preset       Service preset to deploy (core, home)
     --skip-dns     Skip Terraform DNS management
     --skip-ansible Skip Ansible deployment
+    --no-tunnel    Use legacy A records instead of Cloudflare Tunnel
     --dry-run      Preview changes without applying
     """
     args = [f"-p {preset}"]
@@ -101,6 +104,8 @@ def deploy(c, preset="home", skip_dns=False, skip_ansible=False, dry_run=False):
         args.append("--skip-dns")
     if skip_ansible:
         args.append("--skip-ansible")
+    if no_tunnel:
+        args.append("--no-tunnel")
     if dry_run:
         args.append("--dry-run")
 

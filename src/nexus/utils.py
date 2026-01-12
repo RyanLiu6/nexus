@@ -3,7 +3,9 @@ import subprocess
 from pathlib import Path
 from typing import IO, Any
 
-from nexus.config import ROOT_PATH
+import yaml
+
+from nexus.config import ROOT_PATH, VAULT_PATH
 
 
 def run_command(
@@ -50,3 +52,47 @@ def run_command(
         if e.stderr:
             logging.error(f"Error: {e.stderr}")
         raise
+
+
+def read_vault(vault_path: Path | None = None) -> dict[str, Any]:
+    """Read and decrypt the Ansible vault file.
+
+    Uses ansible-vault to decrypt the vault.yml file and parse its contents.
+    Requires ansible-vault to be installed and the vault password to be
+    available (via --ask-vault-pass prompt or ANSIBLE_VAULT_PASSWORD_FILE).
+
+    Args:
+        vault_path: Path to the vault file. Defaults to VAULT_PATH.
+
+    Returns:
+        Dictionary containing the decrypted vault contents.
+
+    Raises:
+        FileNotFoundError: If the vault file does not exist.
+        subprocess.CalledProcessError: If ansible-vault decryption fails.
+        yaml.YAMLError: If the vault contents are not valid YAML.
+    """
+    path = vault_path or VAULT_PATH
+
+    if not path.exists():
+        raise FileNotFoundError(f"Vault file not found: {path}")
+
+    # Check if vault is encrypted
+    with open(path, "r") as f:
+        first_line = f.readline()
+
+    if first_line.startswith("$ANSIBLE_VAULT"):
+        # Encrypted - use ansible-vault to decrypt
+        logging.debug(f"Decrypting vault: {path}")
+        result = run_command(
+            ["ansible-vault", "view", str(path)],
+            capture=True,
+        )
+        vault_content = result.stdout
+    else:
+        # Unencrypted (development mode)
+        logging.debug(f"Reading unencrypted vault: {path}")
+        with open(path, "r") as f:
+            vault_content = f.read()
+
+    return yaml.safe_load(vault_content)

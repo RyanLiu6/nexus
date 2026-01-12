@@ -5,6 +5,7 @@ ROOT_PATH = Path(__file__).parent.parent.parent
 SERVICES_PATH = ROOT_PATH / "services"
 TERRAFORM_PATH = ROOT_PATH / "terraform"
 ANSIBLE_PATH = ROOT_PATH / "ansible"
+VAULT_PATH = ANSIBLE_PATH / "vars" / "vault.yml"
 BACKUP_DIR = Path(
     os.environ.get("NEXUS_BACKUP_DIRECTORY", "~/nexus-backups")
 ).expanduser()

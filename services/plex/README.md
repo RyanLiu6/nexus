@@ -1,29 +1,103 @@
 # Plex <img src="https://www.plex.tv/wp-content/themes/plex/assets/img/plex-logo.svg" width="32">
-[Plex](https://www.plex.tv/) is a Home Media system.
 
-For my own purposes, I've split up media types to use both Plex and Jellyfin to better share media with my family members. Feel free to use one or the other if you don't need to split them!
+[Plex](https://www.plex.tv/) is a media server for streaming your content anywhere.
 
 Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxserver/plex).
 
 ## Setup
-1. Create an `.env` file with
-```ini
-DATA_DIRECTORY=<your_directory>
-```
 
-2. Run it!
-```bash
-docker-compose up -d
-```
+1. **Create an `.env` file:**
+   ```ini
+   DATA_DIRECTORY=/path/to/your/data
+   ```
 
-3. Configure the media directories to mount so that the container has access to it. By default, Plex will mount `$DATA_DIRECTORY/Media/anime` to `/anime` to the container. This behaviour can be configured with the following in `docker-compose.yml`.
+2. **Run:**
+   ```bash
+   docker compose up -d
+   ```
 
-```yaml
-    - ${DATA_DIRECTORY}/Media/anime:/anime
-```
+3. **Configure media directories** in `docker-compose.yml`:
+   ```yaml
+   volumes:
+     - ${DATA_DIRECTORY}/Media/anime:/anime
+     - ${DATA_DIRECTORY}/Media/movies:/movies
+   ```
 
-4. Go to `<your-ip>:32400/web`, or if its on a remote server, `<remote-ip>:32400/web` to configure your libraries and claim the Plex server to your Plex account.
-
+4. **Claim your server** at `http://your-ip:32400/web` - sign in with Plex account.
 
 ## Backup
-There's not much to backup for Plex, since the data that will be backed up will be the actual media to be shared.
+
+Config is stored at `$DATA_DIRECTORY/Config/plex`. Media files are your source of truth.
+
+---
+
+## Troubleshooting
+
+### Plex Not Accessible
+
+**Symptoms:** Can't access Plex web UI
+
+**Solutions:**
+1. Check Traefik labels in `docker-compose.yml`
+2. Verify port 32400 is not blocked
+3. Check container: `docker ps | grep plex`
+4. View logs: `docker logs plex`
+
+### Can't Find Media
+
+**Symptoms:** Empty libraries, "No media found"
+
+**Solutions:**
+1. Verify volume mounts in docker-compose.yml
+2. Check permissions: `ls -la $DATA_DIRECTORY/Media`
+3. Ensure Plex user has access to media directories
+4. Scan library manually in Plex settings
+
+### High CPU Usage
+
+**Symptoms:** Plex consuming excessive CPU
+
+**Solutions:**
+1. Disable software transcoding or use hardware acceleration
+2. Set video quality limits for remote streams
+3. Pre-transcode content with Tautulli/Optimized Versions
+4. Check for background scanning tasks
+
+---
+
+## Hardware Acceleration
+
+**Intel QuickSync (Linux):**
+```yaml
+devices:
+  - /dev/dri:/dev/dri
+```
+
+**NVIDIA (Linux):**
+Requires Plex Pass and NVIDIA runtime.
+
+---
+
+## Useful Commands
+
+```bash
+# View logs
+docker logs plex -f
+
+# Restart
+docker restart plex
+
+# Access shell
+docker exec -it plex bash
+
+# Check container status
+docker inspect plex
+```
+
+---
+
+## Maintenance
+
+- Regularly update Plex: `docker compose pull plex && docker compose up -d plex`
+- Optimize database periodically (Plex settings > Troubleshooting)
+- Clean up unused metadata

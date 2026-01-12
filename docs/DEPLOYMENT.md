@@ -3,46 +3,49 @@
 This guide covers the complete deployment process for Nexus. For other documentation, see:
 
 - **[Architecture](ARCHITECTURE.md)** - System design, tech stack, and how components work together
-- **[Runbooks](runbooks/)** - Service-specific configuration and troubleshooting
+- **[Access Control](ACCESS_CONTROL.md)** - Authelia, Tailscale, SSH, and user groups
 - **[README](../README.md)** - Project overview and quick reference
 
 **New to Nexus?** Follow this guide from top to bottom for initial setup.
 
-**Already deployed?** Jump to [Post-Deployment Configuration](#post-deployment-configuration) for optional features.
+**Already deployed?** Jump to [Advanced Features](#advanced-features) for optional enhancements.
+
+---
 
 ## Table of Contents
 
-**Initial Setup:**
+**Basic Setup:**
 1. [Prerequisites](#prerequisites)
 2. [Quick Start](#quick-start)
 3. [Secrets Management](#secrets-management)
-4. [Deploy Services](#deploy-services)
-5. [Network Access Setup](#network-access-setup)
+4. [Network Access (Cloudflare Tunnel)](#network-access-cloudflare-tunnel)
+5. [Deploy Services](#deploy-services)
 
-**Post-Deployment:**
-6. [Post-Deployment Configuration](#post-deployment-configuration)
-   - [Monitoring & Discord Alerts](#post-deployment-monitoring)
-   - [Sure AI Features (Ollama/Cloud)](#post-deployment-sure-ai-features)
-   - [Service-Specific Setup](#post-deployment-service-specific-setup)
+**Advanced Features:**
+6. [Discord Alerting](#advanced-discord-alerting)
+7. [Sure AI Integration](#advanced-sure-ai-integration)
+8. [Tailscale SSH](#advanced-tailscale-ssh)
+9. [Legacy: Port Forwarding](#legacy-port-forwarding)
 
 **Operations:**
-7. [Invoke Tasks](#invoke-tasks)
-8. [Maintenance](#maintenance)
-9. [Troubleshooting](#troubleshooting)
-
-**Advanced:**
-10. [Cloudflare Tunnel Details](#cloudflare-tunnel-details)
+10. [Invoke Tasks](#invoke-tasks)
+11. [Maintenance](#maintenance)
+12. [Troubleshooting](#troubleshooting)
 
 ---
+
+# Basic Setup
 
 ## Prerequisites
 
 | Category | Requirement |
 |----------|-------------|
 | Hardware | 4+ cores, 16GB+ RAM, 500GB+ SSD |
-| Network | Static local IP, ports 80/443 forwarded |
 | Software | Docker 24.0+, Python 3.12+, uv |
 | DNS | Domain with Cloudflare |
+| Accounts | Cloudflare account (free tier is fine) |
+
+**No port forwarding required** - Nexus uses Cloudflare Tunnels by default.
 
 ## Quick Start
 
@@ -51,6 +54,7 @@ This guide covers the complete deployment process for Nexus. For other documenta
 **macOS:**
 ```bash
 brew install --cask docker
+brew install cloudflare/cloudflare/cloudflared
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
@@ -58,6 +62,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER && newgrp docker
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
@@ -113,18 +119,21 @@ See `ansible/vars/vault.yml.sample` for the complete list with inline documentat
 | Secret | Description | How to Generate |
 |--------|-------------|-----------------|
 | `nexus_domain` | Your domain (e.g., example.com) | - |
-| `cloudflare_api_token` | Cloudflare API token (Zone:DNS:Edit, Zone:Zone:Read) | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
+| `cloudflare_api_token` | Cloudflare API token | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
 | `cloudflare_zone_id` | Cloudflare Zone ID | Domain Overview page on Cloudflare |
+| `cloudflare_account_id` | Cloudflare Account ID | Account Settings or dashboard URL |
+| `tunnel_secret` | Tunnel encryption secret | `openssl rand -hex 32` |
 | `authelia_jwt_secret` | JWT signing key | `openssl rand -hex 32` |
 | `authelia_session_secret` | Session encryption | `openssl rand -hex 32` |
 | `authelia_storage_encryption_key` | Storage encryption | `openssl rand -hex 32` |
 | `mysql_root_password` | Nextcloud database password | `openssl rand -base64 32` |
 | `sure_postgres_password` | Sure database password | `openssl rand -base64 32` |
-| `grafana_admin_password` | Grafana admin (initial setup + API access only) | `openssl rand -base64 24` |
+| `grafana_admin_password` | Grafana admin (API access only) | `openssl rand -base64 24` |
 
-**Optional:**
-- `discord_webhook_url` - For Discord alerts (see [Monitoring Setup](#post-deployment-monitoring))
-- Sure AI configuration - For automatic transaction categorization (see [Sure AI Setup](#post-deployment-sure-ai-features))
+**API Token Permissions:**
+- Zone:DNS:Edit
+- Zone:Zone:Read
+- Account:Cloudflare Tunnel:Edit
 
 ### Vault Commands
 
@@ -137,30 +146,91 @@ ansible-vault edit ansible/vars/vault.yml
 
 # Change vault password
 ansible-vault rekey ansible/vars/vault.yml
-
-# Decrypt to file (temporary, delete after!)
-ansible-vault decrypt ansible/vars/vault.yml --output /tmp/vault-decrypted.yml
 ```
 
-### Vault Password File (Optional)
+---
 
-The vault password file stores your **ansible-vault encryption password** (not your service passwords). This is the password that encrypts/decrypts `vault.yml`.
+## Network Access (Cloudflare Tunnel)
 
-**Without it:** You'll be prompted for the vault password every time (`--ask-vault-pass`)
-**With it:** Automation can access the vault without prompting
+Nexus uses **Cloudflare Tunnels** by default - no port forwarding required. The tunnel is created and managed entirely by Terraform.
+
+### Benefits
+
+- ✅ **No port forwarding** - Works behind CGNAT, dynamic IPs
+- ✅ **No public IP exposure** - Your home IP stays private
+- ✅ **DDoS protection** - Cloudflare handles attacks
+- ✅ **Zero config** - Terraform creates everything
+
+### Setup
+
+**1. Configure Cloudflare credentials in vault.yml:**
+
+All Cloudflare credentials are stored in your encrypted vault:
 
 ```bash
-# Store your ansible-vault password
-echo "your-vault-password" > ~/.vault_pass
-chmod 600 ~/.vault_pass
-
-# Use in automated deployments
-ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
+# Edit vault (will prompt for vault password)
+ansible-vault edit ansible/vars/vault.yml
 ```
 
-**Security tradeoff:** Convenience (no password prompts) vs. storing decryption key on disk.
+Ensure these values are configured:
 
-**Never commit vault password to git.**
+```yaml
+cloudflare_api_token: "your-api-token"
+cloudflare_zone_id: "your-zone-id"
+cloudflare_account_id: "your-account-id"
+tunnel_secret: "generate-with-openssl-rand-hex-32"
+```
+
+**Where to find these:**
+- **API Token**: [Cloudflare Dashboard > Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+  - Permissions needed: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
+- **Zone ID**: Domain Overview page in Cloudflare
+- **Account ID**: URL bar when logged in (`dash.cloudflare.com/<account-id>/...`) or Account Settings
+- **Tunnel Secret**: Generate with `openssl rand -hex 32`
+
+**2. Initialize Terraform and create the tunnel:**
+
+```bash
+# Initialize Terraform
+invoke tf-init
+
+# Create tunnel and DNS records (reads credentials from vault.yml)
+invoke tf-apply
+```
+
+You'll be prompted for your vault password. Terraform will:
+- Create a Cloudflare Tunnel named `nexus-yourdomain.com`
+- Create CNAME records pointing `@` and `*` to the tunnel
+- Output the tunnel token
+
+**3. Get the tunnel token:**
+
+```bash
+cd terraform && terraform output -raw tunnel_token
+```
+
+**4. Run cloudflared:**
+
+```bash
+# Test run (foreground)
+cloudflared tunnel run --token <your-tunnel-token>
+
+# Or run as a service (recommended for Linux)
+sudo cloudflared service install <your-tunnel-token>
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared
+```
+
+**macOS (run as launchd service):**
+```bash
+cloudflared service install <your-tunnel-token>
+```
+
+### Verification
+
+After starting cloudflared:
+- Check Cloudflare dashboard > Zero Trust > Tunnels - should show "Healthy"
+- Visit `https://yourdomain.com` - should show Traefik (after deployment)
 
 ---
 
@@ -169,12 +239,8 @@ ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
 After completing the bootstrap and configuring your vault.yml:
 
 ```bash
-# Run setup (creates proxy network and vault.yml from sample)
+# Run setup (creates proxy network)
 invoke setup
-
-# Edit and encrypt your vault.yml with secrets
-nano ansible/vars/vault.yml
-ansible-vault encrypt ansible/vars/vault.yml
 
 # Deploy services using preset
 invoke deploy --preset home
@@ -183,11 +249,9 @@ invoke deploy --preset home
 invoke deploy --services traefik,auth,dashboard
 ```
 
-**Note:** If you already have a configured vault.yml, just run `invoke deploy --preset home`.
-
 ### How Deployment Works
 
-1. **Terraform** updates Cloudflare DNS records for each service
+1. **Terraform** manages Cloudflare Tunnel and DNS records
 2. **Ansible** generates the root `docker-compose.yml` by:
    - Reading the service preset
    - Combining individual `services/<name>/docker-compose.yml` files
@@ -204,73 +268,85 @@ Nexus uses **Authelia** as the single sign-on (SSO) authentication layer. All se
 
 1. **User accesses a service** (e.g., `grafana.yourdomain.com`)
 2. **Traefik forwards to Authelia** for authentication
-3. **Authelia checks permissions** against access control rules in `services/auth/configuration.yml`
-   - ✅ **If authorized**: Authelia passes the request with user identity headers (`Remote-User`, `Remote-Email`, etc.)
-   - ❌ **If denied**: User sees "Access Denied" and is redirected to `auth.yourdomain.com` (Authelia portal)
-4. **Service receives request** with authenticated user info and grants access automatically (no additional login)
-
-**Access Control:**
-
-Configure per-service access rules in `services/auth/configuration.yml`. Users attempting to access services they don't have permission for will be denied at the Authelia layer before reaching the application.
-
-For the dashboard to show only accessible services, configure your dashboard application to read Authelia's access control rules or user groups.
+3. **Authelia checks permissions** against access control rules
+   - ✅ **If authorized**: Authelia passes the request with user identity headers
+   - ❌ **If denied**: User sees "Access Denied" and is redirected to Authelia portal
+4. **Service receives request** with authenticated user info and grants access automatically
 
 **Service-specific notes:**
 
-- **Grafana**: Configured with auth proxy mode to trust Authelia headers. Admin credentials are only for initial setup and API access.
+- **Grafana**: Configured with auth proxy mode to trust Authelia headers. Admin credentials are only for API access.
 - **Transmission**: Built-in auth is disabled. Access controlled entirely by Authelia.
-- **Nextcloud**: Has its own user management (users create accounts within Nextcloud), but access is still gated by Authelia.
+- **Nextcloud**: Has its own user management (separate from Authelia SSO), but access is gated by Authelia.
 - **FoundryVTT**: Has its own user/world management system (separate from Authelia SSO).
-
-**Database credentials** (postgres, mysql) are separate infrastructure-level secrets and not user-facing.
 
 ---
 
-## Post-Deployment Configuration
+# Advanced Features
 
-After deploying services, you'll want to configure optional features and service-specific settings.
+These features are optional and can be configured after basic deployment.
 
-### Post-Deployment: Monitoring
+## Advanced: Discord Alerting
 
-**Set up Discord alerts for your monitoring stack.**
+**Get notified about service outages, high resource usage, and other critical events.**
 
-Discord notifications keep you informed about service outages, high resource usage, and other critical events.
+Discord notifications keep you informed when things go wrong.
 
-**Quick Setup:**
+### Quick Setup
 
-1. Create a Discord webhook in your server
-2. Add `discord_webhook_url` to `vault.yml`
-3. Start the alert bot: `invoke alert-bot`
+1. **Create a Discord webhook** in your server:
+   - Server Settings → Integrations → Webhooks → New Webhook
+   - Copy the webhook URL
 
-**Full Instructions:** See [Monitoring Runbook - Discord Setup](runbooks/monitoring.md#discord-alerting-setup)
+2. **Add to vault.yml:**
+   ```bash
+   ansible-vault edit ansible/vars/vault.yml
+   ```
 
-**What you'll get:**
+   ```yaml
+   discord_webhook_url: "https://discord.com/api/webhooks/..."
+   alert_provider: "discord"
+   ```
+
+3. **Set environment variable and run bot:**
+   ```bash
+   export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+   invoke alert-bot
+   ```
+
+### What You'll Get
+
 - 🚨 Alerts when services go down
 - ✅ Notifications when issues resolve
 - ⚠️ Warnings for high CPU, memory, or disk usage
-- 📊 Configurable alert rules and routing
+- 📊 Configurable alert rules
 
-### Post-Deployment: Sure AI Features
+### Full Documentation
+
+For advanced configuration (custom routing, systemd service, troubleshooting):
+
+See the [Monitoring service README](../services/monitoring/README.md) for complete Discord alerting setup.
+
+---
+
+## Advanced: Sure AI Integration
 
 **Enable automatic transaction categorization with local or cloud AI.**
 
-Sure supports multiple AI options - you can keep your financial data completely private with local Ollama, or use cloud providers for convenience.
+Sure supports multiple AI options for categorizing your financial transactions automatically.
 
-**Option 1: Local AI with Ollama (Recommended for Privacy)**
+### Option 1: Local AI with Ollama (Recommended for Privacy)
 
-Keep your financial data on your machine:
+Keep your financial data completely private:
 
 ```bash
-# Install Ollama
-brew install ollama  # macOS
+# Install Ollama (macOS)
+brew install ollama
 
-# Create custom financial model
-cd services/sure
+# Pull base model and create custom financial model
 ollama pull qwen2.5:7b
+cd services/sure
 ollama create ena -f Modelfile
-
-# Configure in vault.yml
-ansible-vault edit ansible/vars/vault.yml
 ```
 
 Add to vault.yml:
@@ -280,9 +356,9 @@ sure_openai_uri_base: "http://host.docker.internal:11434/v1"
 sure_openai_model: "ena"
 ```
 
-**Full Instructions:** See [Sure Ollama Setup Guide](../services/sure/docs/ollama-setup.md)
+**Full Instructions:** [Sure Ollama Setup Guide](../services/sure/docs/ollama-setup.md)
 
-**Option 2: Cloud AI (OpenAI, Claude, Gemini, etc.)**
+### Option 2: Cloud AI Providers
 
 For convenience at the cost of sharing transaction data with AI providers:
 
@@ -297,90 +373,141 @@ sure_openai_uri_base: "https://openrouter.ai/api/v1"
 sure_openai_model: "deepseek/deepseek-chat"
 ```
 
-**Full Instructions:** See [Sure AI Integration Guide](../services/sure/docs/ai-integration.md)
+**Full Instructions:** [Sure AI Integration Guide](../services/sure/docs/ai-integration.md)
 
-**Cost Comparison:**
-- Local (Ollama): $0/month (uses your hardware)
-- Deepseek: $2-5/month
-- Claude API: $10-25/month
-- OpenAI: $5-20/month
+### Cost Comparison
+
+| Provider | Monthly Cost | Privacy |
+|----------|--------------|---------|
+| Ollama (local) | $0 | ✅ Complete |
+| Deepseek | $2-5 | ❌ Cloud |
+| Claude API | $10-25 | ❌ Cloud |
+| OpenAI | $5-20 | ❌ Cloud |
 
 After configuring, redeploy:
 ```bash
 invoke deploy --preset home
 ```
 
-### Post-Deployment: Service-Specific Setup
-
-Each service may have additional configuration options. See the individual runbooks:
-
-| Service | Quick Start | Full Documentation |
-|---------|-------------|-------------------|
-| **Traefik** | Auto-configured | [runbooks/traefik.md](runbooks/traefik.md) |
-| **Authelia** | Configure users in `configuration.yml` | [runbooks/authelia.md](runbooks/authelia.md) |
-| **Monitoring** | Set up Discord alerts | [runbooks/monitoring.md](runbooks/monitoring.md) |
-| **Sure** | Enable AI features | [runbooks/sure.md](runbooks/sure.md), [services/sure/docs/](../services/sure/docs/) |
-| **Nextcloud** | Web setup wizard on first access | [runbooks/nextcloud.md](runbooks/nextcloud.md) |
-| **Plex** | Claim server, add libraries | [runbooks/plex.md](runbooks/plex.md) |
-| **Jellyfin** | Web setup wizard, add libraries | [runbooks/jellyfin.md](runbooks/jellyfin.md) |
-| **FoundryVTT** | License key, world setup | [runbooks/foundryvtt.md](runbooks/foundryvtt.md) |
-| **Transmission** | Configure download directories | [runbooks/transmission.md](runbooks/transmission.md) |
-| **Backups** | Verify backup schedule | [runbooks/backups.md](runbooks/backups.md) |
-
-**Browse all runbooks:** [docs/runbooks/](runbooks/)
-
 ---
 
-## Network Access Setup
+## Advanced: Tailscale SSH
 
-You have two options for exposing your services to the internet:
+**Access your server via SSH through Tailscale without port forwarding.**
 
-### Option 1: Cloudflare Tunnel (Recommended)
+Tailscale SSH provides secure, zero-config SSH access with built-in authentication.
 
-**Benefits:**
-- No port forwarding needed
-- No exposing your home IP address
-- Works with CGNAT/dynamic IPs
-- Ideal for Tailscale + Authelia setups
+### Why Tailscale SSH?
 
-**Setup:**
+- ✅ No SSH port exposed to the internet
+- ✅ WireGuard encryption
+- ✅ Built-in MFA via identity provider
+- ✅ No SSH key management required
 
+### Setup on Server
+
+**macOS:**
+
+Tailscale SSH requires enabling it in the Tailscale admin console for macOS:
+
+1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/machines)
+2. Click on your machine
+3. Enable "SSH" in machine settings
+4. Configure SSH ACLs in Access Controls
+
+**Linux:**
 ```bash
-# Install cloudflared
-brew install cloudflare/cloudflare/cloudflared  # macOS
-# Or download from GitHub releases for Linux
-
-# Authenticate and create tunnel
-cloudflared tunnel login
-cloudflared tunnel create nexus
-
-# Configure tunnel (create config.yml)
-# Then run the tunnel
-cloudflared tunnel run nexus
+sudo tailscale up --ssh
 ```
 
-See "Cloudflare Tunnel (Alternative to Port Forwarding)" section below for details.
+### Connect from Client
 
-### Option 2: Traditional Port Forwarding
+```bash
+# Using Tailscale hostname
+ssh username@server-name.tailnet-name.ts.net
 
-If you prefer traditional port forwarding:
+# Or using Tailscale IP
+ssh username@100.x.y.z
+```
 
-1. Forward ports 80 and 443 to your server's local IP in your router settings
-2. Ensure your public IP is set in `vault.yml` (Terraform will use this)
-3. Run `invoke deploy` - Terraform automatically creates all DNS records:
-   - A record: `@` → your public IP
-   - Wildcard: `*` → your public IP
-   - Subdomain records for each service
+### macOS-Specific Notes
 
-**No manual Cloudflare configuration needed** - Terraform handles all DNS records.
+**Important:** On macOS, Tailscale SSH works differently than Linux:
 
-### Verification
+1. **Admin Console Required**: Enable SSH per-machine in the Tailscale admin console
+2. **ACLs Required**: Configure SSH access rules in [Access Controls](https://login.tailscale.com/admin/acls)
 
-After deployment, verify Traefik is accessible:
-- With Cloudflare Tunnel: `https://traefik.yourdomain.com/dashboard`
-- With port forwarding: Same URL, but traffic routes through your router
+Example ACL configuration:
+```json
+{
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot"]
+    }
+  ]
+}
+```
+
+3. **Check Mode (Recommended)**: For sensitive access, use check mode which requires re-authentication:
+```json
+{
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["tag:prod"],
+      "users": ["root"]
+    }
+  ]
+}
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| "Permission denied (publickey)" | Enable SSH in Tailscale admin console for macOS. Check SSH ACLs. |
+| Can't connect | Verify Tailscale is running: `tailscale status` |
+| Wrong user | Ensure the user you're SSHing as matches ACL rules |
+
+**Full Documentation:** [Tailscale SSH Documentation](https://tailscale.com/kb/1193/tailscale-ssh)
+
+For complete access control configuration, see [ACCESS_CONTROL.md](ACCESS_CONTROL.md).
 
 ---
+
+## Legacy: Port Forwarding
+
+If you cannot use Cloudflare Tunnels (e.g., specific port requirements), you can use traditional port forwarding.
+
+**Note:** This is not recommended as it exposes your home IP and requires router configuration.
+
+### Setup
+
+1. **Update Terraform variables** in `terraform/terraform.tfvars`:
+   ```hcl
+   use_tunnel = false
+   public_ip  = "your.public.ip"
+   subdomains = ["traefik", "grafana", "jellyfin"]
+   ```
+
+2. **Forward ports** in your router:
+   - 80 → server:80
+   - 443 → server:443
+
+3. **Apply Terraform:**
+   ```bash
+   invoke tf-apply
+   ```
+
+This creates A records instead of CNAME records pointing to your public IP.
+
+---
+
+# Operations
 
 ## Invoke Tasks
 
@@ -407,11 +534,10 @@ invoke ops --weekly              # Backup verification, cleanup
 invoke backup-list               # List available backups
 
 # Infrastructure
-invoke ansible-run               # Run Ansible playbook
-invoke ansible-check             # Syntax check
 invoke tf-init                   # Initialize Terraform
 invoke tf-plan                   # Show Terraform plan
 invoke tf-apply                  # Apply Terraform changes
+invoke alert-bot                 # Start Discord alert bot
 ```
 
 ---
@@ -464,32 +590,16 @@ docker compose exec sure-db pg_dump -U sure_user sure_production > sure-backup.s
 
 | Problem | Solution |
 |---------|----------|
-| Services won't start | `invoke logs --service <name>`, check service-specific runbook |
+| Services won't start | `invoke logs --service <name>`, check service README |
 | SSL issues | Delete `services/traefik/letsencrypt/*`, restart traefik |
 | Authelia login loop | Check domain in config, verify Redis is running |
-| Permission errors (macOS) | `sudo chown -R $USER:staff /Volumes/Data` |
+| Permission errors (macOS) | `sudo chown -R $USER:staff ~/Data` |
 | Permission errors (Linux) | `sudo chown -R $USER:$USER /data` |
 | Vault password wrong | Check password manager, or recreate vault |
 | Terraform state lost | Re-import resources or start fresh |
-| Discord alerts not working | See [Monitoring Runbook - Troubleshooting](runbooks/monitoring.md#troubleshooting-discord-alerts) |
-| Sure AI not working | Check API keys, see [Sure Runbook](runbooks/sure.md) |
-
-### Service-Specific Troubleshooting
-
-For detailed troubleshooting of individual services, see the runbooks:
-
-- **[Traefik](runbooks/traefik.md)** - Proxy and SSL certificate issues
-- **[Authelia](runbooks/authelia.md)** - Authentication and SSO issues
-- **[Monitoring](runbooks/monitoring.md)** - Prometheus, Grafana, alerts
-- **[Sure](runbooks/sure.md)** - Database, AI, transaction issues
-- **[Nextcloud](runbooks/nextcloud.md)** - File sync, database issues
-- **[Plex](runbooks/plex.md)** - Media library, transcoding issues
-- **[Jellyfin](runbooks/jellyfin.md)** - Streaming and library issues
-- **[FoundryVTT](runbooks/foundryvtt.md)** - Game world and module issues
-- **[Transmission](runbooks/transmission.md)** - Download and permissions issues
-- **[Backups](runbooks/backups.md)** - Backup failures and restoration
-
-**View all runbooks:** [docs/runbooks/](runbooks/)
+| Tunnel not connecting | Check cloudflared logs, verify token |
+| Discord alerts not working | See [Monitoring README](../services/monitoring/README.md) |
+| Sure AI not working | Check API keys, see [Sure README](../services/sure/README.md) |
 
 ### Getting Logs
 
@@ -501,6 +611,10 @@ invoke logs --service auth --follow
 # Via docker
 docker compose logs traefik --tail 100
 docker compose logs -f auth
+
+# Cloudflared logs
+journalctl -u cloudflared -f  # Linux
+log show --predicate 'subsystem == "com.cloudflare.cloudflared"' --last 1h  # macOS
 ```
 
 ### Health Check
@@ -509,82 +623,22 @@ docker compose logs -f auth
 invoke health --domain yourdomain.com --verbose
 ```
 
----
+### Service-Specific Help
 
-## Cloudflare Tunnel Details
+Each service has its own README with detailed setup and troubleshooting:
 
-Cloudflare Tunnel creates a secure outbound connection from your server to Cloudflare's network, eliminating the need for port forwarding.
+| Service | Documentation |
+|---------|---------------|
+| Traefik | [services/traefik/README.md](../services/traefik/README.md) |
+| Authelia | [services/auth/README.md](../services/auth/README.md) |
+| Monitoring | [services/monitoring/README.md](../services/monitoring/README.md) |
+| Sure | [services/sure/README.md](../services/sure/README.md) |
+| Jellyfin | [services/jellyfin/README.md](../services/jellyfin/README.md) |
+| Plex | [services/plex/README.md](../services/plex/README.md) |
+| FoundryVTT | [services/foundryvtt/README.md](../services/foundryvtt/README.md) |
+| Nextcloud | [services/nextcloud/README.md](../services/nextcloud/README.md) |
+| Transmission | [services/transmission/README.md](../services/transmission/README.md) |
+| Backups | [services/backups/README.md](../services/backups/README.md) |
+| Dashboard | [services/dashboard/README.md](../services/dashboard/README.md) |
 
-### Installation
-
-**macOS:**
-```bash
-brew install cloudflare/cloudflare/cloudflared
-```
-
-**Ubuntu/Debian:**
-```bash
-# Download latest release
-wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared-linux-amd64.deb
-```
-
-### Setup
-
-```bash
-# 1. Authenticate with Cloudflare
-cloudflared tunnel login
-
-# 2. Create a tunnel
-cloudflared tunnel create nexus
-
-# 3. Create tunnel configuration
-mkdir -p ~/.cloudflared
-nano ~/.cloudflared/config.yml
-```
-
-**Example config.yml:**
-```yaml
-tunnel: nexus
-credentials-file: /home/user/.cloudflared/TUNNEL-UUID.json
-
-ingress:
-  - hostname: "*.yourdomain.com"
-    service: http://localhost:80
-  - hostname: yourdomain.com
-    service: http://localhost:80
-  - service: http_status:404
-```
-
-### Running the Tunnel
-
-```bash
-# Test the tunnel
-cloudflared tunnel run nexus
-
-# Run as a service (recommended)
-sudo cloudflared service install
-sudo systemctl start cloudflared
-sudo systemctl enable cloudflared
-```
-
-### DNS Setup
-
-After creating the tunnel, point your DNS to it:
-
-```bash
-# Route all traffic through the tunnel
-cloudflared tunnel route dns nexus yourdomain.com
-cloudflared tunnel route dns nexus "*.yourdomain.com"
-```
-
-Or manually create CNAME records in Cloudflare:
-- `@` → `TUNNEL-UUID.cfargotunnel.com`
-- `*` → `TUNNEL-UUID.cfargotunnel.com`
-
-### Benefits
-
-- **No open ports:** All traffic routed through Cloudflare
-- **Dynamic IP friendly:** Works behind CGNAT, no static IP needed
-- **DDoS protection:** Cloudflare handles malicious traffic
-- **Easy management:** Control access through Cloudflare dashboard
+**Running into issues?** Check individual service READMEs (listed above) for troubleshooting, or [docs/runbooks/](runbooks/) for cross-service issues as they're documented.
