@@ -1,0 +1,78 @@
+# Prometheus alert rules for Nexus
+
+groups:
+  - name: nexus_alerts
+    interval: 30s
+    rules:
+      # Service Down Alerts
+      - alert: ServiceDown
+        expr: up{job=~"traefik|authelia|plex|jellyfin|sure|foundryvtt"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.instance }} has been down for more than 5 minutes"
+
+      - alert: MultipleServicesDown
+        expr: count(up{job=~"traefik|authelia|plex|jellyfin|sure|foundryvtt"} == 0) > 2
+        for: 2m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Multiple services are down"
+          description: "{{ $value }} services are down"
+
+      # High Resource Usage Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode!="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for 10 minutes"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 80% for 10 minutes"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 10%"
+
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 10m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "Disk space is low on {{ $labels.instance }}"
+          description: "Disk space is below 20%"
+
+      # Backup Alerts
+      - alert: BackupFailed
+        expr: up{job="borgmatic"} == 0
+        for: 15m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Backup job failed"
+          description: "Borgmatic container has been down for more than 15 minutes"

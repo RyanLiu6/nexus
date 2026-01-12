@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - proxy
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/services/dashboard/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=${TZ}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.homepage.rule=Host(`hub.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.homepage.entrypoints=https"
+      - "traefik.http.routers.homepage.tls=true"
+      - "traefik.http.routers.homepage.tls.certresolver=certchallenge"
+      - "traefik.http.routers.homepage.middlewares=authelia@docker,security-headers@docker"
+
+networks:
+  proxy:
+    external: true

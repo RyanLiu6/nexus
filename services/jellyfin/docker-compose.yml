@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    networks:
+      - proxy
+    ports:
+      - 8096:8096
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/Config/jellyfin:/config
+      - ${NEXUS_ROOT_DIRECTORY}/Media/movies:/data/movies
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=https://jellyfin.${NEXUS_DOMAIN}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${NEXUS_DOMAIN}`)"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      - "traefik.http.routers.jellyfin.entrypoints=https"
+      - "traefik.http.routers.jellyfin.tls=true"
+      - "traefik.http.routers.jellyfin.tls.certresolver=certchallenge"
+      - "traefik.http.routers.jellyfin.middlewares=authelia@docker,security-headers@docker"
+
+networks:
+  proxy:
+    external: true

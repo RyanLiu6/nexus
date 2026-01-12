@@ -1,0 +1,7 @@
+http:
+  middlewares:
+    authelia-bypass:
+      ipWhiteList:
+        sourceRange:
+          - "100.64.0.0/10"  # Tailscale VPN range
+          - "0.0.0.0/0"      # Docker network (optional, for local access)

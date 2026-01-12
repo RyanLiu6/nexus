@@ -1,0 +1,45 @@
+---
+# Alerting setup (Discord webhook bot)
+
+- name: Create alerting directories
+  ansible.builtin.file:
+    path: "{{ nexus_root_directory }}/scripts/alerting"
+    state: directory
+    mode: "0755"
+
+- name: Copy alert bot script
+  ansible.builtin.copy:
+    src: alert_bot.py
+    dest: "{{ nexus_root_directory }}/scripts/alert_bot.py"
+    mode: "0755"
+
+- name: Create alert bot configuration file
+  ansible.builtin.template:
+    src: alert_bot_config.yml.j2
+    dest: "{{ nexus_root_directory }}/scripts/alert_bot_config.yml"
+    mode: "0644"
+
+- name: Deploy Alertmanager container
+  community.docker.docker_container:
+    name: alertmanager
+    image: prom/alertmanager:latest
+    restart_policy: unless-stopped
+    volumes:
+      - alertmanager_data:/alertmanager
+      - "{{ nexus_root_directory }}/scripts/alerting/alertmanager.yml:/etc/alertmanager/alertmanager.yml"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    networks:
+      - name: proxy
+    env:
+      NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
+
+- name: Ensure alert bot is running
+  ansible.builtin.systemd:
+    name: nexus-alert-bot
+    state: started
+    enabled: yes
+  when: ansible_service_mgr == "systemd"

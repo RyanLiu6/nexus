@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - proxy
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/services/auth/configuration.yml:/config/configuration.yml
+      - ${NEXUS_ROOT_DIRECTORY}/services/auth/users_database.yml:/config/users_database.yml
+    environment:
+      - TZ=${TZ}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.authelia.rule=Host(`auth.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.authelia.entrypoints=https"
+      - "traefik.http.routers.authelia.tls=true"
+      - "traefik.http.routers.authelia.tls.certresolver=certchallenge"
+      # Authelia Middleware Definition for other services
+      - "traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://auth.${NEXUS_DOMAIN}/"
+      - "traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email"
+
+networks:
+  proxy:
+    external: true

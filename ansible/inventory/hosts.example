@@ -1,0 +1,9 @@
+# Example inventory file
+# Copy this to hosts and modify as needed
+
+[localhost]
+127.0.0.1 ansible_connection=local
+
+[remote_servers]
+# Add remote servers here if deploying to remote machines
+# nexus-server ansible_host=your-server-ip ansible_user=ubuntu

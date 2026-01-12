@@ -1,0 +1,116 @@
+---
+# Nexus services deployment tasks
+
+- name: Display services to deploy
+  ansible.builtin.debug:
+    msg: "Deploying services: {{ nexus_services }}"
+
+- name: Check if services list is "all"
+  set_fact:
+    deploy_all_services: "{{ nexus_services == 'all' }}"
+
+- name: Get all available services
+  ansible.builtin.find:
+    paths: "{{ nexus_root_directory }}/services"
+    file_type: directory
+  register: service_directories
+
+- name: Set service list
+  set_fact:
+    final_services: "{{ service_directories.files | map(attribute='path') | map('basename') | list if deploy_all_services else nexus_services.split(',') }}"
+
+- name: Decrypt secrets from ansible-vault
+  ansible.builtin.command:
+    cmd: "ansible-vault decrypt {{ nexus_root_directory }}/ansible/vars/vault.yml --output /tmp/nexus-secrets.yml"
+    when: vault_password is defined
+  register: vault_decrypt
+
+- name: Load secrets into environment
+  ansible.builtin.include_vars:
+    file: /tmp/nexus-secrets.yml
+  when: vault_decrypt is succeeded
+
+- name: Start selected services using docker compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ nexus_root_directory }}"
+    project_name: nexus
+    state: present
+    pull: true
+  environment:
+    # Nexus Configuration
+    NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
+    NEXUS_BACKUP_DIRECTORY: "{{ nexus_backup_directory }}"
+    DATA_DIRECTORY: "{{ data_directory | default('/data') }}"
+    NEXUS_DOMAIN: "{{ nexus_domain | default('') }}"
+    TZ: "{{ tz | default('America/Vancouver') }}"
+    # Cloudflare
+    CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
+    CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"
+    ACME_EMAIL: "{{ acme_email | default('') }}"
+    # Authelia
+    AUTHELIA_JWT_SECRET: "{{ authelia_jwt_secret | default('') }}"
+    AUTHELIA_SESSION_SECRET: "{{ authelia_session_secret | default('') }}"
+    AUTHELIA_STORAGE_ENCRYPTION_KEY: "{{ authelia_storage_encryption_key | default('') }}"
+    # Traefik
+    TRAEFIK_USER: "{{ traefik_user | default('admin') }}"
+    TRAEFIK_PASSWORD_HASH: "{{ traefik_password_hash | default('') }}"
+    # Databases
+    POSTGRES_PASSWORD: "{{ postgres_password | default('') }}"
+    MYSQL_ROOT_PASSWORD: "{{ mysql_root_password | default('') }}"
+    # FoundryVTT
+    FOUNDRY_USERNAME: "{{ foundry_username | default('admin') }}"
+    FOUNDRY_PASSWORD: "{{ foundry_password | default('') }}"
+    FOUNDRY_ADMIN_KEY: "{{ foundry_admin_key | default('') }}"
+    # Transmission
+    TRANSMISSION_USERNAME: "{{ transmission_username | default('') }}"
+    TRANSMISSION_PASSWORD: "{{ transmission_password | default('') }}"
+    # Sure
+    SURE_POSTGRES_USER: "{{ sure_postgres_user | default('sure_user') }}"
+    SURE_POSTGRES_PASSWORD: "{{ sure_postgres_password | default('') }}"
+    SURE_POSTGRES_DB: "{{ sure_postgres_db | default('') }}"
+    SURE_SECRET_KEY_BASE: "{{ sure_secret_key_base | default('') }}"
+    SURE_OPENAI_ACCESS_TOKEN: "{{ sure_openai_access_token | default('') }}"
+    SURE_PORT: "{{ sure_port | default('5006') }}"
+    # Nextcloud
+    MYSQL_USER: "{{ mysql_user | default('nextcloud') }}"
+    MYSQL_DATABASE: "{{ mysql_database | default('nextcloud') }}"
+    NEXTCLOUD_DB_PASSWORD: "{{ nextcloud_db_password | default('') }}"
+    # Monitoring
+    GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
+    GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"
+    # Alerting
+    DISCORD_BOT_TOKEN: "{{ discord_bot_token | default('') }}"
+    DISCORD_CHANNEL_ID: "{{ discord_channel_id | default('') }}"
+    DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
+    ALERT_PROVIDER: "{{ alert_provider | default('discord') }}"
+    # Backups
+    BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
+  register: compose_result
+
+- name: Clean up decrypted secrets
+  ansible.builtin.file:
+    path: /tmp/nexus-secrets.yml
+    state: absent
+  when: vault_decrypt is succeeded
+
+- name: Display deployment result
+  ansible.builtin.debug:
+    msg: "{{ compose_result }}"
+
+- name: Wait for services to be healthy
+  ansible.builtin.pause:
+    seconds: 10
+  when: compose_result.changed
+
+- name: Check container status
+  community.docker.docker_container_info:
+    name: "{{ item }}"
+  loop: "{{ final_services }}"
+  register: container_status
+  failed_when: false
+
+- name: Display container status
+  ansible.builtin.debug:
+    msg: "{{ item.name }}: {{ item.container.State.Status }}"
+  loop: "{{ container_status.results }}"
+  when: item.exists

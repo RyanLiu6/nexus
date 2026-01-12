@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - proxy
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/Config/transmission:/config
+      - ${NEXUS_ROOT_DIRECTORY}/Media:/downloads
+      - ${NEXUS_ROOT_DIRECTORY}/Media/queue:/watch
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - DOCKER_MODS=linuxserver/mods:transmission-floodui
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${NEXUS_DOMAIN}`)"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      - "traefik.http.routers.transmission.entrypoints=https"
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.tls.certresolver=certchallenge"
+      - "traefik.http.routers.transmission.middlewares=authelia@docker,security-headers@docker"
+
+networks:
+  proxy:
+    external: true

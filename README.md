@@ -1,58 +1,249 @@
-# Focus
+# Nexus
 
 Collection of self-hosted services for my personal multi-media home server.
 
-Full credits to [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) repo for introducing watchtower and overall better documentation.
+## Documentation
+
+- [Architecture Overview](docs/ARCHITECTURE.md) - System architecture and components
+- [Deployment Guide](docs/DEPLOYMENT.md) - Complete deployment instructions
+- [Access Control](docs/ACCESS_CONTROL.md) - User groups and permissions
+- [Secrets Management](docs/SECRETS.md) - Ansible-vault setup guide
+- [Alerting Setup](docs/ALERTING.md) - Discord bot and Grafana alerts
+- [Security & Access Control](docs/SECURITY.md) - Authentication and authorization
+- [Tailscale Integration](docs/TAILSCALE.md) - VPN-based secure access
+- [SSH Access Guide](docs/SSH_ACCESS.md) - Traditional and Tailscale SSH setup
+- [Runbooks](docs/runbooks/) - Service-specific troubleshooting
+
+## Quick Start
+
+```bash
+# 1. Install dependencies
+uv pip install -e .
+
+# 2. Generate secrets and encrypt them
+./scripts/generate-secrets.sh
+
+# 3. Encrypt vault file
+ansible-vault encrypt ansible/vars/vault.yml
+
+# 4. Deploy services (Terraform + Ansible)
+./scripts/deploy.py -p home
+
+# 5. Or deploy everything manually
+./scripts/deploy.py -p home --skip-dns --skip-ansible
+docker compose up -d
+```
+
+For detailed deployment instructions, see:
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Secrets Management](docs/SECRETS.md)
+- [Access Control](docs/ACCESS_CONTROL.md)
 
 ## Services
+
 ### Core
-* [traefik](traefik/) - reverse proxy and cert manager
-* [watchtower](watchtower/) - automatic docker images update
+- [traefik](services/traefik/) - Reverse proxy and SSL management
+- [auth](services/auth/) - Authelia SSO and 2FA
+- [dashboard](services/dashboard/) - Homepage dashboard
 
 ### Content
-* [plex](plex/) - media system
-* [jellyfin](jellyfin/) - media system
-* [nextcloud](nextcloud/) - file storage
-* [transmission](transmission/) - torrent client
+- [plex](services/plex/) - Media streaming
+- [jellyfin](services/jellyfin/) - Media server
+- [nextcloud](services/nextcloud/) - File storage
+- [transmission](services/transmission/) - Torrent client
 
 ### Games
-* [foundryvtt](foundryvtt/) - [FoundryVTT](https://foundryvtt.com/), a Virtual Table Top for games
+- [foundryvtt](services/foundryvtt/) - [FoundryVTT](https://foundryvtt.com/), Virtual Tabletop
 
 ### Finance
-* [sure](sure/) - self-hosted finance and budgeting tool
+- [sure](services/sure/) - Self-hosted finance and budgeting tool
 
-### Misc
-* [homebridge](homebridge/) - (WIP) SmartHome integration with Apple's HomeKit
+### Utilities
+- [backups](services/backups/) - Automated backups with Borgmatic
 
-## Usage
-Each folder has description and usage for individual services, should you wish only do so. Otherwise, an aggregated, "centralized" docker-compose.yml file can be generated via the provided `generate_compose.py` file. Please look at the [Docker](#Docker) section for further details.
+## Scripts
 
-If the aggregated approach is taken, we will need to create the proxy network that other containers use first. This can be done with
+All scripts use Python and are managed with `uv`.
+
+### Setup
+
 ```bash
-docker network create proxy
+# Install all dependencies
+./scripts/bootstrap.sh
+
+# Generate secure passwords and create vault
+./scripts/generate-secrets.sh
+
+# Encrypt vault
+ansible-vault encrypt ansible/vars/vault.yml
 ```
 
-## Docker
-Some basic knowledge of Docker and Docker Compose would be good, but not required, as it is fairly easy to pick up and learn. For Docker, please refer to [this](https://docs.docker.com/get-started/overview/) document, and [this](https://docs.docker.com/compose/gettingstarted/) for Docker Compose.
+### Monitoring
 
-> [!NOTE]
-> This guide and individual READMEs assume that your user has been added to the docker group so that all `docker` commands can be ran without the need to use `sudo`. The guide to so can be found [here](https://docs.docker.com/engine/install/linux-postinstall/).
-
-### Compose
-The provided `generate_compose.py` script uses my custom Python Library, [Vigor](https://www.github.com/ryanliu6/vigor) to interface with the CLI to generate an aggregated compose file with the correct values from related `.env` files. This is done so that each individual service is self-contained within their own subdirectories and can be run independently of each other. But, the intended usage is to pick and choose which services to run for your servers and only generate a compose file for what is needed.
-
-To be specific, Traefik will always be included in the generated compose file as the absolute core, since its needed to serve traffic. The other core services of Borg and Watchtower are optional and can be included manually.
-
-There's a flag to include everything, `--all`, which will generate a compose file that includes all possible services. Further extension of this flag to generate specific subsets of services is something that can be considered, but with how many services are in consideration now, it is not of much help for the average user.
-
-### Examples
-To generate and run for just Plex, Transmission and Nextcloud:
 ```bash
-./generate_compose plex transmission nextcloud
-docker compose run -d
+# Run health check
+./scripts/health_check.py --domain ryanliu6.xyz
+
+# Run maintenance tasks
+./scripts/operations.py --all
 ```
 
-### Notes
-My personal preference is to use images from folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images.
+### Deployment
+```bash
+./scripts/deploy.py [options] [services]
 
-For my own setup, media lives on a separate drive, so I've set the `$DATA_DIRECTORY` environment variable in both `/etc/environment` and `.zshrc`, as this makes the environment variable accessible to both interactive shells and cronjobs. Please take note of this when setting up your own environments!
+Options:
+  -p, --preset PRESET    Use service preset (default, home)
+  -a, --all              Deploy all services
+  -d, --domain DOMAIN      Set base domain
+  --skip-dns              Skip Terraform DNS management
+  --skip-ansible           Skip Ansible deployment
+  -v, --verbose           Verbose output
+
+Examples:
+  ./scripts/deploy.py -p home                    # Deploy home preset
+  ./scripts/deploy.py plex jellyfin              # Deploy specific services
+  ./scripts/deploy.py --all --skip-dns          # Deploy all, skip DNS
+```
+
+### Configuration Generation
+```bash
+./scripts/generate_dashboard.py [options] [services]
+
+Options:
+  -p, --preset PRESET    Use service preset
+  -a, --all              Generate for all services
+  -d, --domain DOMAIN      Set base domain
+  -v, --verbose           Verbose output
+
+Examples:
+  ./scripts/generate_dashboard.py -p home                   # Generate home preset
+  ./scripts/generate_dashboard.py plex jellyfin               # Generate specific services
+```
+
+### Health Checks
+```bash
+./scripts/health_check.py [options]
+
+Options:
+  -d, --domain DOMAIN      Base domain for SSL checks
+  --critical-only          Only check critical services
+  --alert-webhook URL     Send alerts to webhook
+  -v, --verbose           Verbose output
+
+Examples:
+  ./scripts/health_check.py --domain ryanliu6.xyz
+  ./scripts/health_check.py --critical-only
+```
+
+### Backup & Restore
+```bash
+# Restore from backup
+./scripts/restore.py [options]
+
+Options:
+  --list                  List available backups
+  --backup BACKUP        Backup file to restore
+  --service SERVICE       Specific service to restore
+  --db DB_FILE            Restore database from SQL file
+  --verify                Verify backup integrity
+
+Examples:
+  ./scripts/restore.py --list
+  ./scripts/restore.py --backup nexus-backup-20250111.tar.gz
+  ./scripts/restore.py --verify --backup nexus-backup.tar.gz
+```
+
+### Alert Bot
+```bash
+./scripts/alert_bot.py [options]
+
+Options:
+  --config PATH           Path to config file
+  --port PORT             Webhook server port (default: 8080)
+
+Examples:
+  ./scripts/alert_bot.py --config alert_bot_config.yml
+  ./scripts/alert_bot.py --port 8080
+```
+
+## Environment Variables
+
+Set these in `.env` or as environment variables:
+
+```bash
+# Nexus Configuration
+NEXUS_ROOT_DIRECTORY=/path/to/nexus          # Default: $HOME/dev/focus
+NEXUS_BACKUP_DIRECTORY=/path/to/backups     # Default: $HOME/nexus-backups
+NEXUS_DOMAIN=yourdomain.xyz                   # Base domain
+
+# Cloudflare (for Terraform DNS)
+CLOUDFLARE_API_TOKEN=your_token
+CLOUDFLARE_ZONE_ID=your_zone_id
+
+# Alerting (Discord)
+DISCORD_BOT_TOKEN=your_bot_token
+DISCORD_CHANNEL_ID=your_channel_id
+DISCORD_WEBHOOK_URL=your_webhook_url
+
+# Monitoring
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=your_password
+```
+
+## Development
+
+### Setup
+
+```bash
+# Install dependencies with uv
+uv pip install -e ".[dev]"
+
+# Run linter
+uv run ruff check src/ scripts/
+
+# Format code
+uv run ruff format src/ scripts/
+
+# Run tests
+uv run pytest
+```
+
+## Architecture
+
+Nexus uses a hybrid approach:
+
+- **Terraform**: Cloud infrastructure (DNS, future R2)
+- **Ansible**: Configuration management (Docker, system setup)
+- **Python Scripts**: Orchestration and utilities
+
+See [Architecture Overview](docs/ARCHITECTURE.md) for details.
+
+## Access Control
+
+### User Groups
+
+- **admin**: Full access to all services (you)
+- **gaming**: FoundryVTT access only (friends)
+- **wife**: Plex + Sure access only
+
+### Access Methods
+
+1. **Public Internet**: Authelia SSO required
+2. **Tailscale VPN**: Full bypass, access to everything
+3. **SSH**: Key-based or Tailscale SSH
+
+See [Security Documentation](docs/SECURITY.md) for details.
+
+## Troubleshooting
+
+Service-specific troubleshooting guides in [docs/runbooks/](docs/runbooks/):
+
+- [Plex](docs/runbooks/plex.md)
+- [Jellyfin](docs/runbooks/jellyfin.md)
+- [Authelia](docs/runbooks/authelia.md)
+- [Transmission](docs/runbooks/transmission.md)
+
+## License
+
+MIT

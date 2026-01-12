@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    networks:
+      - proxy
+    ports:
+      - 32400:32400
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/Config/plex:/config
+      - ${NEXUS_ROOT_DIRECTORY}/Media/media:/media
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - VERSION=docker
+      - DOCKER_MODS=linuxserver/mods:plex-absolute-hama
+      - TZ=${TZ}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
+      - "traefik.http.services.plex.loadbalancer.server.port=32400"
+      - "traefik.http.routers.plex.entrypoints=https"
+      - "traefik.http.routers.plex.tls=true"
+      - "traefik.http.routers.plex.tls.certresolver=certchallenge"
+      - "traefik.http.routers.plex.middlewares=authelia@docker,security-headers@docker"
+
+networks:
+  proxy:
+    external: true

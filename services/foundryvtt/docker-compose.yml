@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  foundryvtt:
+    image: felddy/foundryvtt:release
+    container_name: foundryvtt
+    restart: "unless-stopped"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - proxy
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/Foundry/data:/data
+    environment:
+      - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
+      - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY}
+      - FOUNDRY_AWS_CONFIG=/data/Config/s3.json
+      - FOUNDRY_PROXY_PORT=30000
+      - FOUNDRY_PROXY_SSL=true
+      - TIMEZONE=${TZ}
+      - CONTAINER_PATCH_URLS=https://gist.githubusercontent.com/yddlef/df54ee1bbca93095a71d75cd15e216eb/raw/plutonium.sh
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.${NEXUS_DOMAIN}`)"
+      - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
+      - "traefik.http.routers.foundryvtt.entrypoints=https"
+      - "traefik.http.routers.foundryvtt.tls=true"
+      - "traefik.http.routers.foundryvtt.tls.certresolver=certchallenge"
+      - "traefik.http.routers.foundryvtt.middlewares=authelia@docker,security-headers@docker"
+
+networks:
+  proxy:
+    external: true

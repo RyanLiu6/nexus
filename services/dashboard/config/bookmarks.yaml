@@ -1,0 +1,12 @@
+# Bookmarks Configuration
+# https://gethomepage.dev/latest/configs/bookmarks/
+
+- Developer:
+    - Github:
+        icon: github.png
+        href: https://github.com/
+
+- Social:
+    - Reddit:
+        icon: reddit.png
+        href: https://reddit.com/

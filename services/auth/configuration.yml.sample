@@ -1,0 +1,73 @@
+# Authelia Configuration
+
+# This setup assumes Authelia is protecting your applications.
+# See https://www.authelia.com/configuration/prologue/introduction/
+
+server:
+  host: 0.0.0.0
+  port: 9091
+  buffers:
+    read: 4096
+    write: 4096
+
+log:
+  level: info
+
+totp:
+  issuer: Nexus
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+
+access_control:
+  default_policy: deny
+  networks:
+    - name: tailscale
+      networks:
+        - 100.64.0.0/10
+  rules:
+    # 1. Bypass Auth if on Tailscale VPN
+    # Note: This bypasses the Authelia portal. Apps may still require their own login.
+    - domain: "*.example.com"
+      networks: "tailscale"
+      policy: bypass
+
+    # 2. Public Routes
+    - domain: "public.example.com"
+      policy: bypass
+    
+    # 3. Admin Routes (Always require 2FA, even on VPN)
+    - domain: "traefik.example.com"
+      subject: "group:admins"
+      policy: two_factor
+
+    # 4. Default for everything else (Public Internet)
+    - domain: "*.example.com"
+      policy: two_factor
+
+session:
+  name: authelia_session
+  domain: example.com  # REPLACE THIS
+  same_site: lax
+  secret: unsecure_session_secret  # REPLACE THIS
+  expiration: 1h
+  inactivity: 5m
+  remember_me_duration: 1M
+  redis:
+    host: authelia-redis
+    port: 6379
+
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  encryption_key: unsecure_encryption_key  # REPLACE THIS
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt

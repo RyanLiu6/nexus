@@ -1,0 +1,11 @@
+# Users Database
+# Passwords must be hashed. Use `docker run authelia/authelia:latest authelia crypto hash generate argon2 --password 'yourpassword'`
+
+users:
+  admin:
+    displayname: "Admin User"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$DnF5K8n5K8n5K8n5K8n5Kw$TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO"
+    email: admin@example.com
+    groups:
+      - admins
+      - users

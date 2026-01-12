@@ -1,0 +1,90 @@
+---
+# Nexus Encrypted Secrets
+# Copy to vault.yml and encrypt with: ansible-vault encrypt vault.yml
+# Edit with: ansible-vault edit vault.yml
+
+# =============================================================================
+# Nexus Configuration
+# =============================================================================
+nexus_root_directory: "/path/to/focus"
+nexus_backup_directory: "/path/to/backups"
+data_directory: "/Volumes/Data"
+nexus_domain: "example.com"
+tz: "America/Vancouver"
+
+# =============================================================================
+# Cloudflare
+# =============================================================================
+cloudflare_api_token: "CHANGE_ME"
+cloudflare_zone_id: "CHANGE_ME"
+acme_email: "your-email@example.com"
+
+# =============================================================================
+# Authelia
+# =============================================================================
+# Generate secrets with: openssl rand -hex 32
+authelia_jwt_secret: "CHANGE_ME"
+authelia_session_secret: "CHANGE_ME"
+authelia_storage_encryption_key: "CHANGE_ME"
+
+# =============================================================================
+# Traefik
+# =============================================================================
+traefik_user: "admin"
+# Generate with: htpasswd -nb admin yourpassword | sed -e 's/\$/\$\$/g'
+traefik_password_hash: "CHANGE_ME"
+
+# =============================================================================
+# Databases
+# =============================================================================
+postgres_password: "CHANGE_ME"
+mysql_root_password: "CHANGE_ME"
+
+# =============================================================================
+# FoundryVTT
+# =============================================================================
+foundry_username: "admin"
+foundry_password: "CHANGE_ME"
+foundry_admin_key: "CHANGE_ME"
+
+# =============================================================================
+# Transmission
+# =============================================================================
+transmission_username: "admin"
+transmission_password: "CHANGE_ME"
+
+# =============================================================================
+# Sure
+# =============================================================================
+sure_postgres_user: "sure_user"
+sure_postgres_password: "CHANGE_ME"
+sure_postgres_db: "sure_production"
+sure_secret_key_base: "CHANGE_ME"
+sure_openai_access_token: ""
+sure_port: "5006"
+
+# =============================================================================
+# Nextcloud
+# =============================================================================
+mysql_user: "nextcloud"
+mysql_database: "nextcloud"
+nextcloud_db_password: "CHANGE_ME"
+
+# =============================================================================
+# Monitoring
+# =============================================================================
+grafana_admin_user: "admin"
+grafana_admin_password: "CHANGE_ME"
+
+# =============================================================================
+# Alerting (Discord)
+# =============================================================================
+discord_bot_token: ""
+discord_webhook_url: ""
+discord_channel_id: ""
+alert_provider: "discord"
+
+# =============================================================================
+# Backups (Borgmatic)
+# =============================================================================
+borg_passphrase: "CHANGE_ME"
