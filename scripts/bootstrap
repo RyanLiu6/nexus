@@ -67,7 +67,7 @@ echo "Installing pre-commit hooks..."
 pre-commit install
 
 echo ""
-echo "✅ Bootstrap complete! Next steps:"
-echo "  inv setup        # Create vault and network"
-echo "  inv deploy       # Deploy services"
+echo "✅ Bootstrap complete!"
+echo ""
+echo "Next: Follow docs/DEPLOYMENT.md for the full setup guide."
 echo ""

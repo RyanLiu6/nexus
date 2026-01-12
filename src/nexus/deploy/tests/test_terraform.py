@@ -4,7 +4,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nexus.deploy.terraform import _get_public_ip, _get_terraform_vars_from_vault, run_terraform
+from nexus.deploy.terraform import (
+    _get_public_ip,
+    _get_terraform_vars_from_vault,
+    run_terraform,
+)
 
 
 class TestGetPublicIp:

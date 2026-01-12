@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from typing import Optional
 
 import click
 
@@ -34,12 +35,26 @@ ALL_SERVICES = [
 @click.option("--alert-webhook", type=str, help="Send alerts to webhook URL.")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output.")
 def main(
-    domain: str | None,
+    domain: Optional[str],
     critical_only: bool,
-    alert_webhook: str | None,
+    alert_webhook: Optional[str],
     verbose: bool,
 ) -> None:
-    """Check health of all Nexus services."""
+    """Run comprehensive health checks across all Nexus services.
+
+    Checks Docker container status, performs HTTP health probes on each service,
+    validates SSL certificates, and reports disk space usage. Outputs a formatted
+    report and optionally sends alerts for failures.
+
+    Args:
+        domain: Base domain for constructing service URLs and SSL checks.
+        critical_only: Limit checks to critical infrastructure services only.
+        alert_webhook: Webhook URL for sending failure notifications.
+        verbose: Enable debug-level logging output.
+
+    Raises:
+        SystemExit: Exit code 1 if any service is unhealthy, 0 otherwise.
+    """
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 

@@ -88,26 +88,62 @@ def format(c):
 
 @task
 def deploy(
-    c, preset="home", skip_dns=False, skip_ansible=False, no_tunnel=False, dry_run=False
+    c,
+    services=None,
+    preset=None,
+    all_services=False,
+    skip_dns=False,
+    skip_ansible=False,
+    skip_cloudflared=False,
+    no_tunnel=False,
+    dry_run=False,
+    yes=False,
 ):
     """
-    Deploy Nexus services.
+    Deploy Nexus services (handles everything: vault, terraform, cloudflared, ansible).
 
-    --preset       Service preset to deploy (core, home)
-    --skip-dns     Skip Terraform DNS management
-    --skip-ansible Skip Ansible deployment
-    --no-tunnel    Use legacy A records instead of Cloudflare Tunnel
-    --dry-run      Preview changes without applying
+    --services         Comma-separated list of services to deploy
+    --preset           Service preset to deploy (core, home)
+    --all              Deploy all services
+    --skip-dns         Skip Terraform DNS/tunnel management
+    --skip-ansible     Skip Ansible deployment
+    --skip-cloudflared Skip starting cloudflared
+    --no-tunnel        Use legacy A records instead of Cloudflare Tunnel
+    --dry-run          Preview changes without applying
+    --yes              Skip confirmation prompts
+
+    Examples:
+        invoke deploy                           # Deploy 'home' preset (default)
+        invoke deploy --preset core             # Deploy core services only
+        invoke deploy --services traefik,auth   # Deploy specific services
+        invoke deploy --all                     # Deploy all available services
     """
-    args = [f"-p {preset}"]
+    args = []
+
+    if services:
+        # Split comma-separated services and pass as positional args
+        for svc in services.split(","):
+            args.append(svc.strip())
+    elif all_services:
+        args.append("--all")
+    elif preset:
+        args.append(f"-p {preset}")
+    else:
+        # Default to home preset
+        args.append("-p home")
+
     if skip_dns:
         args.append("--skip-dns")
     if skip_ansible:
         args.append("--skip-ansible")
+    if skip_cloudflared:
+        args.append("--skip-cloudflared")
     if no_tunnel:
         args.append("--no-tunnel")
     if dry_run:
         args.append("--dry-run")
+    if yes:
+        args.append("-y")
 
     c.run(f"uv run python -m nexus.cli.deploy {' '.join(args)}")
 
@@ -312,20 +348,27 @@ def tf_init(c):
 @task
 def tf_plan(c):
     """
-    Show Terraform plan.
+    Show Terraform plan (reads credentials and domain from vault.yml).
     """
-    c.run("terraform -chdir=terraform plan")
+    c.run(
+        'uv run python -c "'
+        "from nexus.deploy.terraform import apply_tunnel; "
+        "apply_tunnel(dry_run=True)"
+        '"'
+    )
 
 
 @task
-def tf_apply(c, auto_approve=False):
+def tf_apply(c):
     """
-    Apply Terraform changes.
-
-    --auto-approve  Skip interactive approval
+    Apply Terraform changes (reads credentials and domain from vault.yml).
     """
-    approve_arg = "-auto-approve" if auto_approve else ""
-    c.run(f"terraform -chdir=terraform apply {approve_arg}")
+    c.run(
+        'uv run python -c "'
+        "from nexus.deploy.terraform import apply_tunnel; "
+        "apply_tunnel(dry_run=False)"
+        '"'
+    )
 
 
 # =============================================================================

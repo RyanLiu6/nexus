@@ -18,7 +18,14 @@ async def _run_bot(port: int) -> None:
 @click.command()
 @click.option("--port", type=int, default=8080, help="Webhook server port.")
 def main(port: int) -> None:
-    """Run the Discord alert bot."""
+    """Start the Discord alert bot webhook server.
+
+    Launches an HTTP server that receives Alertmanager webhooks and forwards
+    them to Discord. The bot runs indefinitely until interrupted.
+
+    Args:
+        port: The port number for the webhook server to listen on.
+    """
     asyncio.run(_run_bot(port))
 
 

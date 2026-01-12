@@ -14,7 +14,17 @@ logger = logging.getLogger(__name__)
 @click.option("--monthly", is_flag=True, help="Run monthly maintenance tasks.")
 @click.option("--all", "run_all", is_flag=True, help="Run all maintenance tasks.")
 def main(daily: bool, weekly: bool, monthly: bool, run_all: bool) -> None:
-    """Run Nexus maintenance operations."""
+    """Execute scheduled maintenance tasks for Nexus infrastructure.
+
+    Runs maintenance operations grouped by frequency. Tasks include log rotation,
+    Docker image cleanup, backup verification, and system health checks.
+
+    Args:
+        daily: Run daily maintenance tasks (log rotation, temp cleanup).
+        weekly: Run weekly maintenance tasks (image pruning, backup checks).
+        monthly: Run monthly maintenance tasks (full system audit).
+        run_all: Run all maintenance tasks regardless of schedule.
+    """
     if run_all or daily:
         daily_tasks()
 

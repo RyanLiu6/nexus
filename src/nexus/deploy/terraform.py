@@ -6,7 +6,7 @@ import urllib.request
 from typing import Any
 
 from nexus.config import TERRAFORM_PATH
-from nexus.utils import read_vault, run_command
+from nexus.utils import read_vault
 
 
 def _get_public_ip() -> str:
@@ -32,14 +32,15 @@ def _get_terraform_vars_from_vault(use_tunnel: bool) -> dict[str, str]:
     """
     try:
         vault = read_vault()
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         raise ValueError(
-            "vault.yml not found. Run: cp ansible/vars/vault.yml.sample ansible/vars/vault.yml"
-        )
-    except subprocess.CalledProcessError:
+            "vault.yml not found. "
+            "Run: cp ansible/vars/vault.yml.sample ansible/vars/vault.yml"
+        ) from err
+    except subprocess.CalledProcessError as err:
         raise ValueError(
             "Failed to decrypt vault.yml. Check your vault password."
-        )
+        ) from err
 
     # Map vault keys to Terraform variables
     key_mapping = {
@@ -124,7 +125,8 @@ def run_terraform(
 
     if dry_run:
         logging.info("[DRY RUN] Configuration:")
-        logging.info(f"  Mode: {'Cloudflare Tunnel' if use_tunnel else 'Port Forwarding'}")
+        mode = "Cloudflare Tunnel" if use_tunnel else "Port Forwarding"
+        logging.info(f"  Mode: {mode}")
         logging.info(f"  Domain: {domain}")
         logging.info(json.dumps(tf_vars, indent=2))
         logging.info("[DRY RUN] Would run: terraform plan")
@@ -152,8 +154,8 @@ def run_terraform(
 
         if use_tunnel:
             logging.info("\n✅ Tunnel created! Next steps:")
-            logging.info("   1. Get tunnel token: cd terraform && terraform output -raw tunnel_token")
-            logging.info("   2. Run cloudflared: cloudflared tunnel run --token <token>")
+            logging.info("   1. Get token: terraform output -raw tunnel_token")
+            logging.info("   2. Run: cloudflared tunnel run --token <token>")
         else:
             logging.info("✅ DNS records updated successfully!")
     except subprocess.CalledProcessError:
@@ -166,7 +168,6 @@ def _run_terraform_cmd(
     env: dict[str, str],
     capture: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a Terraform command with the given environment variables."""
     logging.debug(f"Running: {' '.join(command)}")
     return subprocess.run(
         command,
@@ -176,3 +177,34 @@ def _run_terraform_cmd(
         text=True,
         check=True,
     )
+
+
+def apply_tunnel(dry_run: bool = False) -> None:
+    """Apply Cloudflare Tunnel configuration, reading all values from vault.
+
+    This is a convenience function for standalone terraform operations.
+    Reads domain and all credentials from vault.yml.
+
+    Args:
+        dry_run: If True, show plan without applying.
+
+    Raises:
+        ValueError: If required vault values are missing.
+    """
+    try:
+        vault = read_vault()
+    except FileNotFoundError as err:
+        raise ValueError("vault.yml not found. Run: invoke setup") from err
+    except subprocess.CalledProcessError as err:
+        raise ValueError(
+            "Failed to decrypt vault.yml. Check your vault password."
+        ) from err
+
+    domain = vault.get("nexus_domain")
+    if not domain or domain == "example.com":
+        raise ValueError(
+            "nexus_domain not configured in vault.yml.\n"
+            "Edit vault.yml: ansible-vault edit ansible/vars/vault.yml"
+        )
+
+    run_terraform(services=[], domain=domain, dry_run=dry_run, use_tunnel=True)

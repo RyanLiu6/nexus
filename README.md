@@ -31,15 +31,23 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 git clone <repo-url> ~/dev/nexus && cd ~/dev/nexus
 ./scripts/bootstrap
 
-# 2. Configure secrets
-cp ansible/vars/vault.yml.sample ansible/vars/vault.yml
-nano ansible/vars/vault.yml
-ansible-vault encrypt ansible/vars/vault.yml
+# 2. Activate virtual environment
+# Option A: Using direnv (recommended) - auto-activates on cd
+echo "layout uv" > .envrc && direnv allow
+# Option B: Manual activation
+source .venv/bin/activate
 
-# 3. Deploy
-docker network create proxy
-invoke deploy --preset home
+# 3. Setup and configure secrets
+invoke setup
+nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, etc.
+
+# 4. Deploy everything
+invoke deploy
 ```
+
+The deploy command handles vault encryption, Terraform, cloudflared, and Ansible automatically.
+
+> **Tip:** For a complete shell setup with direnv + uv integration, see [RyanLiu6/setup](https://github.com/RyanLiu6/setup).
 
 ## Invoke Commands
 
@@ -76,10 +84,11 @@ invoke ops --daily               # Daily maintenance
 
 | Doc | Contents |
 |-----|----------|
-| [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, docker-compose generation, monitoring & alerting, secrets |
-| [Deployment](docs/DEPLOYMENT.md) | Setup, secrets management, invoke tasks, maintenance |
-| [Access Control](docs/ACCESS_CONTROL.md) | Authelia, Tailscale, SSH, user groups |
-| [Runbooks](docs/runbooks/) | Troubleshooting per service |
+| [Deployment](docs/DEPLOYMENT.md) | Step-by-step setup guide, invoke tasks, maintenance |
+| [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, monitoring & alerting |
+| [Access Control](docs/ACCESS_CONTROL.md) | Authelia, Tailscale SSH, user groups |
+
+Each service also has its own README in `services/<name>/README.md`.
 
 ## Project Structure
 

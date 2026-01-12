@@ -6,7 +6,7 @@ This guide covers the complete deployment process for Nexus. For other documenta
 - **[Access Control](ACCESS_CONTROL.md)** - Authelia, Tailscale, SSH, and user groups
 - **[README](../README.md)** - Project overview and quick reference
 
-**New to Nexus?** Follow this guide from top to bottom for initial setup.
+**New to Nexus?** Follow the [Step-by-Step Setup](#step-by-step-setup) from Step 1 to Step 10.
 
 **Already deployed?** Jump to [Advanced Features](#advanced-features) for optional enhancements.
 
@@ -14,27 +14,31 @@ This guide covers the complete deployment process for Nexus. For other documenta
 
 ## Table of Contents
 
-**Basic Setup:**
-1. [Prerequisites](#prerequisites)
-2. [Quick Start](#quick-start)
-3. [Secrets Management](#secrets-management)
-4. [Network Access (Cloudflare Tunnel)](#network-access-cloudflare-tunnel)
-5. [Deploy Services](#deploy-services)
+**Step-by-Step Setup** (follow in order):
+1. [Install Dependencies](#step-1-install-dependencies)
+2. [Clone & Bootstrap](#step-2-clone--bootstrap)
+3. [Activate Virtual Environment](#step-3-activate-virtual-environment)
+4. [Create Data Directories](#step-4-create-data-directories)
+5. [Initial Setup](#step-5-initial-setup)
+6. [Configure Secrets](#step-6-configure-secrets)
+7. [Deploy](#step-7-deploy)
 
-**Advanced Features:**
-6. [Discord Alerting](#advanced-discord-alerting)
-7. [Sure AI Integration](#advanced-sure-ai-integration)
-8. [Tailscale SSH](#advanced-tailscale-ssh)
-9. [Legacy: Port Forwarding](#legacy-port-forwarding)
+**Advanced Features** (optional, after basic setup):
+- [Discord Alerting](#advanced-discord-alerting)
+- [Sure AI Integration](#advanced-sure-ai-integration)
+- [Tailscale SSH](#advanced-tailscale-ssh)
+- [Legacy: Port Forwarding](#legacy-port-forwarding)
 
 **Operations:**
-10. [Invoke Tasks](#invoke-tasks)
-11. [Maintenance](#maintenance)
-12. [Troubleshooting](#troubleshooting)
+- [Invoke Tasks](#invoke-tasks)
+- [Maintenance](#maintenance)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-# Basic Setup
+# Step-by-Step Setup
+
+Follow these steps in order. Each step depends on the previous ones.
 
 ## Prerequisites
 
@@ -47,9 +51,9 @@ This guide covers the complete deployment process for Nexus. For other documenta
 
 **No port forwarding required** - Nexus uses Cloudflare Tunnels by default.
 
-## Quick Start
+---
 
-### 1. Install System Dependencies
+## Step 1: Install Dependencies
 
 **macOS:**
 ```bash
@@ -67,75 +71,202 @@ sudo dpkg -i cloudflared-linux-amd64.deb
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Clone and Bootstrap
+**Verify installations:**
+```bash
+docker --version
+cloudflared --version
+uv --version
+```
+
+---
+
+## Step 2: Clone & Bootstrap
 
 ```bash
-git clone <repo-url> ~/dev/nexus && cd ~/dev/nexus
+git clone <repo-url> ~/dev/nexus
+cd ~/dev/nexus
 ./scripts/bootstrap
 ```
 
 The bootstrap script installs: Python 3.12+, Ansible, Terraform, pre-commit hooks, and Python dependencies.
 
-### 3. Data Directory
+---
+
+## Step 3: Activate Virtual Environment
+
+The virtual environment must be activated to use `invoke` commands.
+
+### Option A: Using direnv (Recommended)
+
+[direnv](https://direnv.net/) automatically activates the venv when you `cd` into the project.
+
+**Setup direnv with uv layout:**
+
+1. Install direnv (see [RyanLiu6/setup](https://github.com/RyanLiu6/setup) for a complete shell setup with direnv + uv integration)
+
+2. Create `.envrc` in the project root:
+   ```bash
+   echo "layout uv" > .envrc
+   direnv allow
+   ```
+
+Now the venv activates automatically when you enter the directory.
+
+### Option B: Manual Activation
+
+Activate in every new terminal session:
+
+```bash
+cd ~/dev/nexus
+source .venv/bin/activate
+```
+
+**Verify it's working:**
+```bash
+invoke --list
+```
+
+You should see a list of available tasks. If you get "command not found", the venv isn't activated.
+
+---
+
+## Step 4: Create Data Directories
 
 **macOS:**
 ```bash
 mkdir -p ~/Data/{Config,Media}
-echo "export DATA_DIRECTORY=$HOME/Data" >> ~/.zshrc && source ~/.zshrc
 ```
 
 **Ubuntu:**
 ```bash
 sudo mkdir -p /data/{Config,Media}
 sudo chown -R $USER:$USER /data
-echo "export DATA_DIRECTORY=/data" >> ~/.bashrc && source ~/.bashrc
 ```
 
 ---
 
-## Secrets Management
+## Step 5: Initial Setup
 
-Nexus uses `ansible-vault` for encrypted secrets. All secrets live in `ansible/vars/vault.yml`.
-
-### Initial Setup
+This creates the Docker network and copies the vault sample:
 
 ```bash
-# Copy sample vault
-cp ansible/vars/vault.yml.sample ansible/vars/vault.yml
-
-# Edit with your secrets
-nano ansible/vars/vault.yml
-
-# Encrypt the vault (SAVE THIS PASSWORD!)
-ansible-vault encrypt ansible/vars/vault.yml
+invoke setup
 ```
 
-### Required Secrets
+You should see:
+```
+✅ Created 'proxy' network
+✅ Created vault.yml from sample. Edit it with your secrets.
+```
 
-See `ansible/vars/vault.yml.sample` for the complete list with inline documentation.
+---
 
-**Key secrets to configure:**
+## Step 6: Configure Secrets
 
-| Secret | Description | How to Generate |
-|--------|-------------|-----------------|
-| `nexus_domain` | Your domain (e.g., example.com) | - |
-| `cloudflare_api_token` | Cloudflare API token | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
-| `cloudflare_zone_id` | Cloudflare Zone ID | Domain Overview page on Cloudflare |
-| `cloudflare_account_id` | Cloudflare Account ID | Account Settings or dashboard URL |
-| `tunnel_secret` | Tunnel encryption secret | `openssl rand -hex 32` |
-| `authelia_jwt_secret` | JWT signing key | `openssl rand -hex 32` |
-| `authelia_session_secret` | Session encryption | `openssl rand -hex 32` |
-| `authelia_storage_encryption_key` | Storage encryption | `openssl rand -hex 32` |
-| `mysql_root_password` | Nextcloud database password | `openssl rand -base64 32` |
-| `sure_postgres_password` | Sure database password | `openssl rand -base64 32` |
-| `grafana_admin_password` | Grafana admin (API access only) | `openssl rand -base64 24` |
+Open `ansible/vars/vault.yml` and fill in your values:
 
-**API Token Permissions:**
-- Zone:DNS:Edit
-- Zone:Zone:Read
-- Account:Cloudflare Tunnel:Edit
+```bash
+nano ansible/vars/vault.yml
+# or: code ansible/vars/vault.yml
+```
 
-### Vault Commands
+### Required Values
+
+**Paths and domain (all deployments):**
+```yaml
+nexus_root_directory: "/Users/yourname/dev/nexus"  # Where you cloned nexus
+nexus_backup_directory: "/Users/yourname/Data/Backups"
+data_directory: "/Users/yourname/Data"
+nexus_domain: "yourdomain.com"
+tz: "America/Vancouver"  # Your timezone
+```
+
+**Cloudflare credentials (for tunnel):**
+```yaml
+cloudflare_api_token: "your-api-token"
+cloudflare_zone_id: "your-zone-id"
+cloudflare_account_id: "your-account-id"
+tunnel_secret: "generate-with-command-below"
+```
+
+Generate secrets:
+```bash
+# For tunnel_secret:
+openssl rand -hex 32
+
+# For authelia secrets (need 3 different values):
+openssl rand -hex 32
+openssl rand -hex 32
+openssl rand -hex 32
+```
+
+**Where to find Cloudflare values:**
+- **API Token**: [Cloudflare Dashboard > Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+  - Create token with permissions: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
+- **Zone ID**: Your domain's Overview page in Cloudflare dashboard
+- **Account ID**: In URL bar `dash.cloudflare.com/<account-id>/...` or Account Settings
+
+**Authelia secrets (required for SSO):**
+```yaml
+authelia_jwt_secret: "first-random-hex"
+authelia_session_secret: "second-random-hex"
+authelia_storage_encryption_key: "third-random-hex"
+```
+
+**Service-specific secrets:** Configure only for services you'll use. See `vault.yml.sample` for the full list.
+
+---
+
+## Step 7: Deploy
+
+The `invoke deploy` command handles everything:
+- ✅ Encrypts vault.yml (if not already encrypted)
+- ✅ Creates Docker proxy network
+- ✅ Runs Terraform to create Cloudflare Tunnel and DNS
+- ✅ Starts cloudflared to connect the tunnel
+- ✅ Deploys all services with Ansible
+
+```bash
+invoke deploy
+```
+
+You'll be prompted to:
+1. **Confirm prerequisites** - acknowledge you've run bootstrap and configured vault
+2. **Create vault password** - if vault isn't encrypted (SAVE THIS PASSWORD!)
+3. **Enter vault password** - for Terraform to read Cloudflare credentials
+
+The deployment takes a few minutes. When complete, you'll see:
+
+```
+============================================================
+  ✅ Deployment Complete!
+============================================================
+
+Access your services:
+  Dashboard: https://hub.yourdomain.com
+  Auth:      https://auth.yourdomain.com
+```
+
+### Deploy Options
+
+```bash
+# Deploy with a specific preset
+invoke deploy --preset core    # Just core services
+invoke deploy --preset home    # Full home setup (default)
+
+# Skip certain steps
+invoke deploy --skip-dns           # Skip Terraform (if tunnel exists)
+invoke deploy --skip-cloudflared   # Don't start cloudflared
+invoke deploy --skip-ansible       # Only do DNS, no containers
+
+# Preview without changes
+invoke deploy --dry-run
+
+# Non-interactive (for scripts)
+invoke deploy --yes
+```
+
+### Vault Commands (for later)
 
 ```bash
 # View secrets (read-only)
@@ -150,106 +281,19 @@ ansible-vault rekey ansible/vars/vault.yml
 
 ---
 
-## Network Access (Cloudflare Tunnel)
+## 🎉 Setup Complete!
 
-Nexus uses **Cloudflare Tunnels** by default - no port forwarding required. The tunnel is created and managed entirely by Terraform.
+Your Nexus homelab is now running. Access your services at:
+- **Dashboard**: `https://hub.yourdomain.com`
+- **Auth Portal**: `https://auth.yourdomain.com`
 
-### Benefits
-
-- ✅ **No port forwarding** - Works behind CGNAT, dynamic IPs
-- ✅ **No public IP exposure** - Your home IP stays private
-- ✅ **DDoS protection** - Cloudflare handles attacks
-- ✅ **Zero config** - Terraform creates everything
-
-### Setup
-
-**1. Configure Cloudflare credentials in vault.yml:**
-
-All Cloudflare credentials are stored in your encrypted vault:
-
-```bash
-# Edit vault (will prompt for vault password)
-ansible-vault edit ansible/vars/vault.yml
-```
-
-Ensure these values are configured:
-
-```yaml
-cloudflare_api_token: "your-api-token"
-cloudflare_zone_id: "your-zone-id"
-cloudflare_account_id: "your-account-id"
-tunnel_secret: "generate-with-openssl-rand-hex-32"
-```
-
-**Where to find these:**
-- **API Token**: [Cloudflare Dashboard > Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens)
-  - Permissions needed: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
-- **Zone ID**: Domain Overview page in Cloudflare
-- **Account ID**: URL bar when logged in (`dash.cloudflare.com/<account-id>/...`) or Account Settings
-- **Tunnel Secret**: Generate with `openssl rand -hex 32`
-
-**2. Initialize Terraform and create the tunnel:**
-
-```bash
-# Initialize Terraform
-invoke tf-init
-
-# Create tunnel and DNS records (reads credentials from vault.yml)
-invoke tf-apply
-```
-
-You'll be prompted for your vault password. Terraform will:
-- Create a Cloudflare Tunnel named `nexus-yourdomain.com`
-- Create CNAME records pointing `@` and `*` to the tunnel
-- Output the tunnel token
-
-**3. Get the tunnel token:**
-
-```bash
-cd terraform && terraform output -raw tunnel_token
-```
-
-**4. Run cloudflared:**
-
-```bash
-# Test run (foreground)
-cloudflared tunnel run --token <your-tunnel-token>
-
-# Or run as a service (recommended for Linux)
-sudo cloudflared service install <your-tunnel-token>
-sudo systemctl enable cloudflared
-sudo systemctl start cloudflared
-```
-
-**macOS (run as launchd service):**
-```bash
-cloudflared service install <your-tunnel-token>
-```
-
-### Verification
-
-After starting cloudflared:
-- Check Cloudflare dashboard > Zero Trust > Tunnels - should show "Healthy"
-- Visit `https://yourdomain.com` - should show Traefik (after deployment)
+Continue to [Advanced Features](#advanced-features) for optional enhancements.
 
 ---
 
-## Deploy Services
+# How It Works
 
-After completing the bootstrap and configuring your vault.yml:
-
-```bash
-# Run setup (creates proxy network)
-invoke setup
-
-# Deploy services using preset
-invoke deploy --preset home
-
-# Or deploy specific services
-invoke deploy --services traefik,auth,dashboard
-```
-
-### How Deployment Works
+## Deployment Architecture
 
 1. **Terraform** manages Cloudflare Tunnel and DNS records
 2. **Ansible** generates the root `docker-compose.yml` by:
@@ -260,7 +304,7 @@ invoke deploy --services traefik,auth,dashboard
 
 The generated `docker-compose.yml` is not committed (it contains secrets).
 
-### Authentication Architecture (SSO-First)
+## Authentication Architecture (SSO-First)
 
 Nexus uses **Authelia** as the single sign-on (SSO) authentication layer. All services trust Authelia headers and do not require additional login prompts.
 

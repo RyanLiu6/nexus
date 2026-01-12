@@ -3,6 +3,7 @@ import logging
 import shutil
 import subprocess
 import time
+from typing import Optional
 
 import aiohttp
 
@@ -25,9 +26,9 @@ class ServiceHealth:
         self.name = name
         self.url = url
         self.healthy: bool = False
-        self.status_code: int | None = None
-        self.response_time: float | None = None
-        self.error: str | None = None
+        self.status_code: Optional[int] = None
+        self.response_time: Optional[float] = None
+        self.error: Optional[str] = None
 
 
 async def check_service_health(
@@ -105,8 +106,8 @@ def check_docker_containers() -> dict[str, bool]:
     return container_status
 
 
-def _format_size(size: int) -> str:
-    """Format a byte size into a human-readable string."""
+def _format_size(size_bytes: int) -> str:
+    size = float(size_bytes)
     for unit in ["B", "K", "M", "G", "T", "P"]:
         if size < 1024:
             return f"{size:.1f}{unit}"
@@ -124,10 +125,10 @@ def check_disk_space() -> dict[str, str]:
     """
     try:
         total, used, free = shutil.disk_usage("/")
-        
+
         # Calculate percentage
         percent = (used / total) * 100 if total > 0 else 0
-        
+
         return {
             "total": _format_size(total),
             "used": _format_size(used),

@@ -1,6 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 from nexus.utils import run_command
 
@@ -8,7 +9,7 @@ from nexus.utils import run_command
 def run_docker_compose(
     service_path: Path,
     action: str = "up",
-    extra_args: list[str] | None = None,
+    extra_args: Optional[list[str]] = None,
     dry_run: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """Execute a docker compose command for a specific service.

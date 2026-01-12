@@ -40,7 +40,20 @@ def main(
     verify: bool,
     dry_run: bool,
 ) -> None:
-    """Restore Nexus services from backups."""
+    """Restore Nexus services from backup archives.
+
+    Lists available backups, verifies backup integrity, and restores service
+    data or databases from backup files. Supports full restores or targeting
+    specific services.
+
+    Args:
+        show_list: Display available backups and exit.
+        backup: Filename of the backup archive to restore from.
+        service: Limit restore to a specific service name.
+        db: Path to SQL dump file for database restoration.
+        verify: Validate backup integrity without restoring.
+        dry_run: Preview restore operations without executing them.
+    """
     if show_list:
         backups = list_backups()
         if not backups:

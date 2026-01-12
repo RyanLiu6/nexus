@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, Optional, Union
 
 import yaml
 
@@ -10,10 +10,10 @@ from nexus.config import ROOT_PATH, VAULT_PATH
 
 def run_command(
     command: list[str],
-    cwd: Path | None = None,
+    cwd: Optional[Path] = None,
     capture: bool = False,
     check: bool = True,
-    stdin: IO[Any] | int | None = None,
+    stdin: Optional[Union[IO[Any], int]] = None,
 ) -> subprocess.CompletedProcess[str]:
     """Execute a shell command with standardized error handling and logging.
 
@@ -54,7 +54,7 @@ def run_command(
         raise
 
 
-def read_vault(vault_path: Path | None = None) -> dict[str, Any]:
+def read_vault(vault_path: Optional[Path] = None) -> dict[str, Any]:
     """Read and decrypt the Ansible vault file.
 
     Uses ansible-vault to decrypt the vault.yml file and parse its contents.
@@ -78,7 +78,7 @@ def read_vault(vault_path: Path | None = None) -> dict[str, Any]:
         raise FileNotFoundError(f"Vault file not found: {path}")
 
     # Check if vault is encrypted
-    with open(path, "r") as f:
+    with open(path) as f:
         first_line = f.readline()
 
     if first_line.startswith("$ANSIBLE_VAULT"):
@@ -92,7 +92,8 @@ def read_vault(vault_path: Path | None = None) -> dict[str, Any]:
     else:
         # Unencrypted (development mode)
         logging.debug(f"Reading unencrypted vault: {path}")
-        with open(path, "r") as f:
+        with open(path) as f:
             vault_content = f.read()
 
-    return yaml.safe_load(vault_content)
+    parsed: dict[str, Any] = yaml.safe_load(vault_content)
+    return parsed
