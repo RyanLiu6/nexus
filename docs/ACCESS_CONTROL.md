@@ -2,13 +2,23 @@
 
 ## Overview
 
-Nexus uses a three-tier access model:
+Nexus uses a **tiered access control model** with Tailscale as the foundation:
 
-| Level | Method | Behavior |
-|-------|--------|----------|
-| **Public Internet** | Authelia SSO | Login required (1FA or 2FA) |
-| **Tailscale VPN** | IP whitelist | Bypasses Authelia for admin |
-| **User Groups** | Authelia rules | Scoped access by role |
+| Tier | Layer | Method | Purpose |
+|------|-------|--------|---------|
+| **Tier 0** | Network Access | Tailscale VPN | Secure network connectivity (SSH, admin access) |
+| **Tier 1** | Authentication | Authelia SSO | Single sign-on for all web services |
+| **Tier 2** | Authorization | Authelia Rules + Groups | Per-service access control by user/group |
+
+### Access Paths
+
+**Via Tailscale (Trusted Network):**
+- Access from Tailscale → Bypasses Authelia → Direct service access (SSO via headers)
+- SSH access via Tailscale (no port forwarding needed)
+
+**Via Public Internet:**
+- Access via Cloudflare Tunnel → Authelia SSO login (1FA or 2FA) → Service access (if authorized)
+- **No ports exposed on router** - all HTTP/HTTPS traffic through Cloudflare Tunnel
 
 ## User Groups
 
@@ -20,9 +30,14 @@ Nexus uses a three-tier access model:
 
 ---
 
-## Tailscale Integration
+## Tier 0: Tailscale VPN (Network Access)
 
-[Tailscale](https://tailscale.com) provides secure VPN access without exposing ports to the public internet.
+[Tailscale](https://tailscale.com) is the **foundation of Nexus security**. It provides:
+
+- **Zero Trust Network**: Encrypted mesh VPN (WireGuard) between all your devices
+- **No Port Forwarding**: No need to expose SSH or other ports on your router
+- **Seamless SSH**: Built-in SSH with ACLs and key management
+- **Trusted Network**: Authelia recognizes Tailscale IPs as trusted and bypasses login prompts
 
 ### Setup
 
@@ -33,74 +48,135 @@ brew install --cask tailscale
 
 # Ubuntu
 curl -fsSL https://tailscale.com/install.sh | sh
-sudo tailscale up
+sudo tailscale up --ssh  # Enable Tailscale SSH
 ```
 
 **On client devices:** Install Tailscale app and sign in with same account.
 
-### How Bypass Works
+### How Authelia Bypass Works
 
-Authelia trusts the Tailscale IP range (`100.64.0.0/10`):
+Authelia trusts the Tailscale IP range (`100.64.0.0/10`) and uses **policy: bypass** for Tailscale traffic:
 
-- **Public access:** `https://plex.domain.com` → Authelia login → Service
-- **Tailscale access:** `https://plex.domain.com` → Bypasses Authelia → Service
+**From Public Internet:**
+```
+https://grafana.domain.com
+  ↓
+Cloudflare Tunnel
+  ↓
+Traefik → Authelia (requires 2FA login)
+  ↓
+Grafana (user logged in via SSO headers)
+```
 
-**Note:** Bypass means Authelia gets out of the way. Apps with their own login (Sure, Nextcloud) still show their login screen.
+**From Tailscale:**
+```
+https://grafana.domain.com
+  ↓
+Traefik → Authelia (bypass - trusts Tailscale network)
+  ↓
+Grafana (user logged in via SSO headers from Authelia)
+```
+
+**Key Point:** Services are configured for SSO (single sign-on). Whether you're on Tailscale or public internet, **you never see application login screens** - authentication is handled by Authelia at the proxy layer.
+
+**Exception:** Nextcloud and FoundryVTT have their own user management systems independent of Authelia.
 
 ### Docker Desktop on macOS
 
-Docker Desktop runs in a VM with NAT, so Traefik may see `192.168.65.1` instead of the Tailscale IP. If bypass doesn't work, just use normal Authelia login.
+Docker Desktop runs in a VM with NAT, so Traefik may see `192.168.65.1` instead of the Tailscale IP. If bypass doesn't work:
+- Access services via public domain (Authelia will prompt for login)
+- Or configure Docker to use host networking (advanced)
 
 ---
 
-## SSH Access
+## SSH Access via Tailscale
 
-### Option 1: Tailscale SSH (Recommended)
+**SSH is only accessible via Tailscale** - no ports are exposed on your router.
 
-No SSH keys needed - Tailscale handles authentication.
+### Setup Tailscale SSH
+
+Tailscale SSH provides zero-config SSH access with built-in authentication and ACLs.
 
 **Enable on server:**
 ```bash
 sudo tailscale up --ssh
 ```
 
-**Connect from any Tailscale device:**
+This enables SSH access for all devices on your tailnet without SSH keys.
+
+### Connect from Tailscale Devices
+
+**From desktop/laptop:**
 ```bash
+# Using Tailscale hostname
 ssh username@server-name.tailnet-name.ts.net
-# Or use Tailscale IP
+
+# Or using Tailscale IP (find with: tailscale status)
 ssh username@100.x.y.z
 ```
 
-**Mobile:** Use Termius or built-in Tailscale app terminal.
+**From mobile:**
+- iOS/Android: Use Termius app or Tailscale's built-in terminal
+- Connect using Tailscale hostname or IP
 
-### Option 2: Traditional SSH Keys
+### Tailscale ACLs (Optional)
+
+Control SSH access with ACLs in the Tailscale admin console:
+
+```json
+{
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:server:22"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:server"],
+      "users": ["root", "username"]
+    }
+  ]
+}
+```
+
+### Traditional SSH Keys (Fallback)
+
+If you prefer traditional SSH keys:
 
 ```bash
 # Generate key
 ssh-keygen -t ed25519 -C "your_email" -f ~/.ssh/nexus_key
 
-# Copy to server
-ssh-copy-id -i ~/.ssh/nexus_key.pub user@server
+# Copy to server (via Tailscale)
+ssh-copy-id -i ~/.ssh/nexus_key.pub username@100.x.y.z
 
 # Add to ~/.ssh/config
 Host nexus
-    HostName server-ip
+    HostName 100.x.y.z  # Tailscale IP
     User username
     IdentityFile ~/.ssh/nexus_key
 ```
 
-### Server Hardening (optional)
+### Why No Port Forwarding?
 
-Edit `/etc/ssh/sshd_config`:
-```
-PermitRootLogin no
-PasswordAuthentication no
-PubkeyAuthentication yes
-```
+**Security benefits:**
+- ✅ SSH traffic encrypted by Tailscale (WireGuard)
+- ✅ Only accessible to devices on your tailnet
+- ✅ No SSH port exposed to public internet (no brute force attempts)
+- ✅ Built-in MFA support via Tailscale identity provider
+- ✅ Centralized access management in Tailscale admin console
+
+**No need for port 2222 → 22 forwarding** - remove it from your router if configured.
 
 ---
 
-## Authelia Configuration
+## Tier 1: Authelia SSO (Authentication)
+
+Authelia provides **single sign-on** for all web services. Users authenticate once, then access is granted via headers.
 
 ### Users (`services/auth/users_database.yml`)
 
@@ -117,35 +193,51 @@ users:
     groups: [gaming]
 ```
 
+---
+
+## Tier 2: Authorization (Per-Service Access Control)
+
+Configure who can access which services in `services/auth/configuration.yml`.
+
 ### Access Rules (`services/auth/configuration.yml`)
+
+**Rule order matters** - first match wins. Place specific rules before general ones.
 
 ```yaml
 access_control:
-  default_policy: deny
+  default_policy: deny  # Deny all by default
   networks:
     - name: tailscale
       networks: [100.64.0.0/10]
+
   rules:
-    # Admin-only services (2FA required)
-    - domain: ["traefik.{{ domain }}", "grafana.{{ domain }}"]
+    # 1. Tailscale bypass (most permissive - put first)
+    - domain: "*.{{ domain }}"
+      networks: [tailscale]
+      policy: bypass
+
+    # 2. Admin-only services (2FA required from public internet)
+    - domain: ["traefik.{{ domain }}", "grafana.{{ domain }}", "prometheus.{{ domain }}"]
       policy: two_factor
       subject: "group:admin"
 
-    # Gaming (1FA)
+    # 3. Gaming group (1FA from public internet)
     - domain: ["foundry.{{ domain }}"]
       policy: one_factor
       subject: "group:gaming"
 
-    # Wife (1FA)
-    - domain: ["plex.{{ domain }}", "sure.{{ domain }}"]
+    # 4. Family group (1FA from public internet)
+    - domain: ["plex.{{ domain }}", "jellyfin.{{ domain }}", "sure.{{ domain }}"]
       policy: one_factor
-      subject: "group:wife"
+      subject: "group:family"
 
-    # Tailscale bypass for admin
-    - domain: "*"
-      policy: bypass
-      networks: [tailscale]
+    # 5. Default deny (no match = access denied)
 ```
+
+**Behavior:**
+- **From Tailscale**: Rule 1 matches → `bypass` → user passes through with SSO headers
+- **From Internet**: Rules 2-4 match → Authelia login required (1FA or 2FA) → SSO headers set
+- **Unauthorized user**: No rule matches → `default_policy: deny` → Access Denied page
 
 ### Traefik Middleware Labels
 
@@ -179,9 +271,81 @@ docker restart authelia
 
 | Problem | Solution |
 |---------|----------|
-| Access denied | Check user groups in `users_database.yml` |
-| VPN bypass not working | Verify IP in 100.64.0.0/10 range; check Docker NAT on macOS |
-| Wrong user can access | Check access rules order in `configuration.yml` |
-| Login loop | Verify Redis is running, check domain in config |
-| SSH permission denied | Check `~/.ssh/authorized_keys` permissions (600) |
-| Tailscale SSH not working | Run `tailscale status --json | grep ssh` |
+| **SSH not accessible** | Ensure Tailscale is running (`tailscale status`). Enable SSH: `sudo tailscale up --ssh` |
+| **Tailscale SSH not working** | Check ACLs in Tailscale admin console. Verify user has SSH permissions. |
+| **Access denied to service** | Check user's groups in `users_database.yml`. Verify access rule exists in `configuration.yml`. |
+| **Tailscale bypass not working** | Check client IP (`curl https://ifconfig.me`). Should be 100.64.x.x on Tailscale. Docker Desktop on macOS may show NAT IP. |
+| **Wrong user can access service** | Check rule order in `configuration.yml` - first match wins. Tailscale bypass rule should be first. |
+| **Service shows login screen** | Service not configured for SSO. Check for auth proxy settings (Grafana) or remove USER/PASS env vars (Transmission). |
+| **Authelia login loop** | Verify Redis is running: `docker ps | grep redis`. Check domain matches in `configuration.yml`. |
+| **Can't remove SSH port forwarding** | Safe to remove port 2222 → 22 from router once Tailscale SSH is working. Test first! |
+| **Cloudflare Tunnel not working** | Check `cloudflared` logs: `journalctl -u cloudflared -f` (Linux) or tunnel status in Cloudflare dashboard. |
+
+---
+
+## Network Architecture Summary
+
+### Port Forwarding: NONE Required
+
+Nexus runs with **zero exposed ports** on your router:
+
+- ✅ **HTTP/HTTPS**: Cloudflare Tunnel handles all web traffic
+- ✅ **SSH**: Tailscale provides encrypted SSH access
+- ❌ **No port 80/443 forwarding**: Cloudflare Tunnel connects outbound
+- ❌ **No port 22 forwarding**: Tailscale handles SSH
+
+### Security Layers
+
+```
+┌─────────────────────────────────────────────┐
+│ Tier 0: Tailscale (Network Access)          │
+│ - WireGuard VPN mesh network                 │
+│ - SSH access (no port forwarding)            │
+│ - Trusted network (bypasses Authelia)        │
+└─────────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────────┐
+│ Tier 1: Authelia SSO (Authentication)       │
+│ - Single sign-on for all services            │
+│ - 1FA or 2FA based on rules                  │
+│ - Sets user identity headers                 │
+└─────────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────────┐
+│ Tier 2: Service Authorization                │
+│ - Per-service access rules                   │
+│ - Group-based permissions                    │
+│ - Services trust Authelia headers (SSO)      │
+└─────────────────────────────────────────────┘
+```
+
+### Access Decision Flow
+
+**User attempts to access Grafana:**
+
+1. **Check network**: Is user on Tailscale?
+   - ✅ Yes → Policy: `bypass` → Set SSO headers → Grant access
+   - ❌ No → Continue to step 2
+
+2. **Check authentication**: Is user authenticated?
+   - ❌ No → Redirect to Authelia login
+   - ✅ Yes → Continue to step 3
+
+3. **Check authorization**: Does user have access to Grafana?
+   - ✅ Yes (user in `group:admin`) → Set SSO headers → Grant access
+   - ❌ No → Show "Access Denied" page
+
+4. **Service receives request**: Grafana sees `Remote-User: username` header → Logs user in automatically
+
+### Migration Checklist
+
+If migrating to this architecture:
+
+- [ ] Enable Tailscale SSH: `sudo tailscale up --ssh`
+- [ ] Test SSH access via Tailscale from all devices
+- [ ] Configure Cloudflare Tunnel for HTTP/HTTPS
+- [ ] Remove transmission USER/PASS environment variables
+- [ ] Configure Grafana with auth proxy mode
+- [ ] **Remove SSH port forwarding from router** (port 2222 → 22)
+- [ ] Test access from both Tailscale and public internet
+- [ ] Verify SSO works (no service login screens)

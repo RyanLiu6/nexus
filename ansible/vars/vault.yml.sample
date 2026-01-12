@@ -2,11 +2,20 @@
 # Nexus Encrypted Secrets
 # Copy to vault.yml and encrypt with: ansible-vault encrypt vault.yml
 # Edit with: ansible-vault edit vault.yml
+#
+# Password Generation:
+#   Use a password manager (recommended) or generate with:
+#   - Regular passwords: openssl rand -base64 24
+#   - Long secrets: openssl rand -base64 32
+#   - Hex secrets (JWT, sessions): openssl rand -hex 32 or openssl rand -hex 64
 
 # =============================================================================
 # Nexus Configuration
 # =============================================================================
 nexus_root_directory: "/path/to/nexus"
+# Backup directory recommendations:
+#   macOS: ~/Data/Backups or /Volumes/Data/Backups
+#   Linux: /data/Backups
 nexus_backup_directory: "/path/to/backups"
 data_directory: "/Volumes/Data"
 nexus_domain: "example.com"
@@ -15,7 +24,10 @@ tz: "America/Vancouver"
 # =============================================================================
 # Cloudflare
 # =============================================================================
+# Get token from: https://dash.cloudflare.com/profile/api-tokens
+# Required permissions: Zone:DNS:Edit, Zone:Zone:Read
 cloudflare_api_token: "CHANGE_ME"
+# Find zone ID in your domain's Overview page on Cloudflare dashboard
 cloudflare_zone_id: "CHANGE_ME"
 acme_email: "your-email@example.com"
 
@@ -28,63 +40,59 @@ authelia_session_secret: "CHANGE_ME"
 authelia_storage_encryption_key: "CHANGE_ME"
 
 # =============================================================================
-# Traefik
-# =============================================================================
-traefik_user: "admin"
-# Generate with: htpasswd -nb admin yourpassword | sed -e 's/\$/\$\$/g'
-traefik_password_hash: "CHANGE_ME"
-
-# =============================================================================
 # Databases
 # =============================================================================
-postgres_password: "CHANGE_ME"
+# Used by Nextcloud's MariaDB container
+# Generate with: openssl rand -base64 32
 mysql_root_password: "CHANGE_ME"
 
 # =============================================================================
 # FoundryVTT
 # =============================================================================
+# Foundry has its own user management system (separate from Authelia SSO)
 foundry_username: "admin"
 foundry_password: "CHANGE_ME"
 foundry_admin_key: "CHANGE_ME"
 
 # =============================================================================
-# Transmission
-# =============================================================================
-transmission_username: "admin"
-transmission_password: "CHANGE_ME"
-
-# =============================================================================
 # Sure
 # =============================================================================
+# Sure has its own dedicated PostgreSQL database
 sure_postgres_user: "sure_user"
-sure_postgres_password: "CHANGE_ME"
+sure_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
 sure_postgres_db: "sure_production"
-sure_secret_key_base: "CHANGE_ME"
-sure_openai_access_token: ""
+sure_secret_key_base: "CHANGE_ME"  # openssl rand -hex 64
+sure_openai_access_token: ""  # Optional: for AI features
 sure_port: "5006"
 
 # =============================================================================
 # Nextcloud
 # =============================================================================
+# Nextcloud uses MariaDB (MySQL)
 mysql_user: "nextcloud"
 mysql_database: "nextcloud"
-nextcloud_db_password: "CHANGE_ME"
+nextcloud_db_password: "CHANGE_ME"  # openssl rand -base64 32
 
 # =============================================================================
 # Monitoring
 # =============================================================================
+# Grafana admin credentials (for initial setup and API access only)
+# Users will NOT be prompted for login - Authelia handles all authentication
+# Configure Grafana with auth proxy mode to trust Authelia headers
 grafana_admin_user: "admin"
-grafana_admin_password: "CHANGE_ME"
+grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
 # =============================================================================
 # Alerting (Discord)
 # =============================================================================
+# Optional: Leave empty to disable Discord alerts
 discord_bot_token: ""
-discord_webhook_url: ""
+discord_webhook_url: ""  # Get from Discord Server Settings > Integrations
 discord_channel_id: ""
 alert_provider: "discord"
 
 # =============================================================================
 # Backups (Borgmatic)
 # =============================================================================
-borg_passphrase: "CHANGE_ME"
+# Used by Borg backup encryption
+borg_passphrase: "CHANGE_ME"  # openssl rand -base64 32

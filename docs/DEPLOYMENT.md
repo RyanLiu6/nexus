@@ -71,16 +71,25 @@ ansible-vault encrypt ansible/vars/vault.yml
 
 ### Required Secrets
 
+See `ansible/vars/vault.yml.sample` for the complete list with inline documentation.
+
+**Key secrets to configure:**
+
 | Secret | Description | How to Generate |
 |--------|-------------|-----------------|
 | `nexus_domain` | Your domain (e.g., example.com) | - |
-| `cloudflare_api_token` | Cloudflare API token | Cloudflare dashboard |
-| `cloudflare_zone_id` | Cloudflare Zone ID | Cloudflare dashboard |
+| `cloudflare_api_token` | Cloudflare API token (Zone:DNS:Edit, Zone:Zone:Read) | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
+| `cloudflare_zone_id` | Cloudflare Zone ID | Domain Overview page on Cloudflare |
 | `authelia_jwt_secret` | JWT signing key | `openssl rand -hex 32` |
 | `authelia_session_secret` | Session encryption | `openssl rand -hex 32` |
 | `authelia_storage_encryption_key` | Storage encryption | `openssl rand -hex 32` |
-| `postgres_password` | Database password | `openssl rand -hex 16` |
-| `discord_webhook_url` | For alerts | Discord server settings |
+| `mysql_root_password` | Nextcloud database password | `openssl rand -base64 32` |
+| `sure_postgres_password` | Sure database password | `openssl rand -base64 32` |
+| `grafana_admin_password` | Grafana admin (initial setup + API access only) | `openssl rand -base64 24` |
+
+**Optional:**
+- `discord_webhook_url` - For Discord alerts (leave empty to disable)
+- `sure_openai_access_token` - For Sure AI features
 
 ### Vault Commands
 
@@ -98,17 +107,23 @@ ansible-vault rekey ansible/vars/vault.yml
 ansible-vault decrypt ansible/vars/vault.yml --output /tmp/vault-decrypted.yml
 ```
 
-### Password File (Optional)
+### Vault Password File (Optional)
 
-For automation, store password in a file:
+The vault password file stores your **ansible-vault encryption password** (not your service passwords). This is the password that encrypts/decrypts `vault.yml`.
+
+**Without it:** You'll be prompted for the vault password every time (`--ask-vault-pass`)
+**With it:** Automation can access the vault without prompting
 
 ```bash
+# Store your ansible-vault password
 echo "your-vault-password" > ~/.vault_pass
 chmod 600 ~/.vault_pass
 
-# Use in playbooks
+# Use in automated deployments
 ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
 ```
+
+**Security tradeoff:** Convenience (no password prompts) vs. storing decryption key on disk.
 
 **Never commit vault password to git.**
 
@@ -116,16 +131,24 @@ ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
 
 ## Deploy Services
 
-```bash
-# Create Docker network
-docker network create proxy
+After completing the bootstrap and configuring your vault.yml:
 
-# Deploy using invoke
+```bash
+# Run setup (creates proxy network and vault.yml from sample)
+invoke setup
+
+# Edit and encrypt your vault.yml with secrets
+nano ansible/vars/vault.yml
+ansible-vault encrypt ansible/vars/vault.yml
+
+# Deploy services using preset
 invoke deploy --preset home
 
 # Or deploy specific services
 invoke deploy --services traefik,auth,dashboard
 ```
+
+**Note:** If you already have a configured vault.yml, just run `invoke deploy --preset home`.
 
 ### How Deployment Works
 
@@ -138,17 +161,84 @@ invoke deploy --services traefik,auth,dashboard
 
 The generated `docker-compose.yml` is not committed (it contains secrets).
 
+### Authentication Architecture (SSO-First)
+
+Nexus uses **Authelia** as the single sign-on (SSO) authentication layer. All services trust Authelia headers and do not require additional login prompts.
+
+**How it works:**
+
+1. **User accesses a service** (e.g., `grafana.yourdomain.com`)
+2. **Traefik forwards to Authelia** for authentication
+3. **Authelia checks permissions** against access control rules in `services/auth/configuration.yml`
+   - ✅ **If authorized**: Authelia passes the request with user identity headers (`Remote-User`, `Remote-Email`, etc.)
+   - ❌ **If denied**: User sees "Access Denied" and is redirected to `auth.yourdomain.com` (Authelia portal)
+4. **Service receives request** with authenticated user info and grants access automatically (no additional login)
+
+**Access Control:**
+
+Configure per-service access rules in `services/auth/configuration.yml`. Users attempting to access services they don't have permission for will be denied at the Authelia layer before reaching the application.
+
+For the dashboard to show only accessible services, configure your dashboard application to read Authelia's access control rules or user groups.
+
+**Service-specific notes:**
+
+- **Grafana**: Configured with auth proxy mode to trust Authelia headers. Admin credentials are only for initial setup and API access.
+- **Transmission**: Built-in auth is disabled. Access controlled entirely by Authelia.
+- **Nextcloud**: Has its own user management (users create accounts within Nextcloud), but access is still gated by Authelia.
+- **FoundryVTT**: Has its own user/world management system (separate from Authelia SSO).
+
+**Database credentials** (postgres, mysql) are separate infrastructure-level secrets and not user-facing.
+
 ---
 
-## Router Setup
+## Network Access Setup
 
-1. Forward ports 80 and 443 to your server's local IP
-2. Add Cloudflare DNS records:
+You have two options for exposing your services to the internet:
+
+### Option 1: Cloudflare Tunnel (Recommended)
+
+**Benefits:**
+- No port forwarding needed
+- No exposing your home IP address
+- Works with CGNAT/dynamic IPs
+- Ideal for Tailscale + Authelia setups
+
+**Setup:**
+
+```bash
+# Install cloudflared
+brew install cloudflare/cloudflare/cloudflared  # macOS
+# Or download from GitHub releases for Linux
+
+# Authenticate and create tunnel
+cloudflared tunnel login
+cloudflared tunnel create nexus
+
+# Configure tunnel (create config.yml)
+# Then run the tunnel
+cloudflared tunnel run nexus
+```
+
+See "Cloudflare Tunnel (Alternative to Port Forwarding)" section below for details.
+
+### Option 2: Traditional Port Forwarding
+
+If you prefer traditional port forwarding:
+
+1. Forward ports 80 and 443 to your server's local IP in your router settings
+2. Ensure your public IP is set in `vault.yml` (Terraform will use this)
+3. Run `invoke deploy` - Terraform automatically creates all DNS records:
    - A record: `@` → your public IP
-   - CNAME: `*` → `@`
-3. Enable Cloudflare proxy (orange cloud) for DDoS protection
+   - Wildcard: `*` → your public IP
+   - Subdomain records for each service
 
-Verify at `https://traefik.yourdomain.com/dashboard`
+**No manual Cloudflare configuration needed** - Terraform handles all DNS records.
+
+### Verification
+
+After deployment, verify Traefik is accessible:
+- With Cloudflare Tunnel: `https://traefik.yourdomain.com/dashboard`
+- With port forwarding: Same URL, but traffic routes through your router
 
 ---
 
@@ -260,19 +350,80 @@ invoke health --domain yourdomain.com --verbose
 
 ---
 
-## Cloudflare Tunnel (Alternative to Port Forwarding)
+## Cloudflare Tunnel Details
 
-Skip port forwarding by using Cloudflare Tunnel:
+Cloudflare Tunnel creates a secure outbound connection from your server to Cloudflare's network, eliminating the need for port forwarding.
 
+### Installation
+
+**macOS:**
 ```bash
-# Install
-brew install cloudflare/cloudflare/cloudflared  # macOS
-# Or download from GitHub releases for Linux
-
-# Setup
-cloudflared tunnel login
-cloudflared tunnel create nexus
-cloudflared tunnel run nexus
+brew install cloudflare/cloudflare/cloudflared
 ```
 
-This routes traffic through Cloudflare without exposing ports.
+**Ubuntu/Debian:**
+```bash
+# Download latest release
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+```
+
+### Setup
+
+```bash
+# 1. Authenticate with Cloudflare
+cloudflared tunnel login
+
+# 2. Create a tunnel
+cloudflared tunnel create nexus
+
+# 3. Create tunnel configuration
+mkdir -p ~/.cloudflared
+nano ~/.cloudflared/config.yml
+```
+
+**Example config.yml:**
+```yaml
+tunnel: nexus
+credentials-file: /home/user/.cloudflared/TUNNEL-UUID.json
+
+ingress:
+  - hostname: "*.yourdomain.com"
+    service: http://localhost:80
+  - hostname: yourdomain.com
+    service: http://localhost:80
+  - service: http_status:404
+```
+
+### Running the Tunnel
+
+```bash
+# Test the tunnel
+cloudflared tunnel run nexus
+
+# Run as a service (recommended)
+sudo cloudflared service install
+sudo systemctl start cloudflared
+sudo systemctl enable cloudflared
+```
+
+### DNS Setup
+
+After creating the tunnel, point your DNS to it:
+
+```bash
+# Route all traffic through the tunnel
+cloudflared tunnel route dns nexus yourdomain.com
+cloudflared tunnel route dns nexus "*.yourdomain.com"
+```
+
+Or manually create CNAME records in Cloudflare:
+- `@` → `TUNNEL-UUID.cfargotunnel.com`
+- `*` → `TUNNEL-UUID.cfargotunnel.com`
+
+### Benefits
+
+- **No open ports:** All traffic routed through Cloudflare
+- **Dynamic IP friendly:** Works behind CGNAT, no static IP needed
+- **DDoS protection:** Cloudflare handles malicious traffic
+- **Easy management:** Control access through Cloudflare dashboard

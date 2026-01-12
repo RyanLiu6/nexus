@@ -23,8 +23,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
-      - USER=${TRANSMISSION_USERNAME}
-      - PASS=${TRANSMISSION_PASSWORD}
+      # No USER/PASS - authentication handled by Authelia SSO
       - DOCKER_MODS=linuxserver/mods:transmission-floodui
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
     healthcheck:

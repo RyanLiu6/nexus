@@ -28,7 +28,8 @@ access_control:
         - 100.64.0.0/10
   rules:
     # 1. Bypass Auth if on Tailscale VPN
-    # Note: This bypasses the Authelia portal. Apps may still require their own login.
+    # Note: This bypasses the Authelia portal. Apps will NOT require their own login.
+    #       Services are configured to trust Authelia headers (SSO).
     - domain: "*.example.com"
       networks: "tailscale"
       policy: bypass
@@ -36,7 +37,7 @@ access_control:
     # 2. Public Routes
     - domain: "public.example.com"
       policy: bypass
-    
+
     # 3. Admin Routes (Always require 2FA, even on VPN)
     - domain: "traefik.example.com"
       subject: "group:admins"
