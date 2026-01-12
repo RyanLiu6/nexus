@@ -62,8 +62,31 @@ sure_postgres_user: "sure_user"
 sure_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
 sure_postgres_db: "sure_production"
 sure_secret_key_base: "CHANGE_ME"  # openssl rand -hex 64
-sure_openai_access_token: ""  # Optional: for AI features
 sure_port: "5006"
+
+# AI Configuration (Optional)
+# Choose ONE of the following options:
+
+# Option 1: Local AI with Ollama (RECOMMENDED for privacy)
+# See: services/sure/docs/ollama-setup.md
+# Setup: Install Ollama on macOS with: brew install ollama
+# Then: ollama pull qwen2.5:7b && ollama create ena -f services/sure/Modelfile
+sure_openai_access_token: "ollama-local"
+sure_openai_uri_base: "http://host.docker.internal:11434/v1"
+sure_openai_model: "ena"  # Custom model created from Modelfile
+
+# Option 2: Cloud AI (OpenAI, Claude, Gemini, etc.)
+# sure_openai_access_token: "sk-proj-your-key-here"  # OpenAI API key
+# sure_openai_uri_base: ""  # Leave empty for OpenAI, or use custom endpoint
+# sure_openai_model: "gpt-4"  # Or: claude-sonnet-4-20250514, gemini-pro-1.5, etc.
+
+# Option 3: OpenRouter (Multiple providers via single API)
+# sure_openai_access_token: "sk-or-v1-your-key"
+# sure_openai_uri_base: "https://openrouter.ai/api/v1"
+# sure_openai_model: "deepseek/deepseek-chat"  # Or: anthropic/claude-sonnet-4.5
+
+# Note: Web subscriptions (Claude Pro, Gemini Pro) do NOT provide API access
+# You need separate API keys for Sure's AI features
 
 # =============================================================================
 # Nextcloud

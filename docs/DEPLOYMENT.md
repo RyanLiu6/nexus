@@ -1,5 +1,40 @@
 # Deployment Guide
 
+This guide covers the complete deployment process for Nexus. For other documentation, see:
+
+- **[Architecture](ARCHITECTURE.md)** - System design, tech stack, and how components work together
+- **[Runbooks](runbooks/)** - Service-specific configuration and troubleshooting
+- **[README](../README.md)** - Project overview and quick reference
+
+**New to Nexus?** Follow this guide from top to bottom for initial setup.
+
+**Already deployed?** Jump to [Post-Deployment Configuration](#post-deployment-configuration) for optional features.
+
+## Table of Contents
+
+**Initial Setup:**
+1. [Prerequisites](#prerequisites)
+2. [Quick Start](#quick-start)
+3. [Secrets Management](#secrets-management)
+4. [Deploy Services](#deploy-services)
+5. [Network Access Setup](#network-access-setup)
+
+**Post-Deployment:**
+6. [Post-Deployment Configuration](#post-deployment-configuration)
+   - [Monitoring & Discord Alerts](#post-deployment-monitoring)
+   - [Sure AI Features (Ollama/Cloud)](#post-deployment-sure-ai-features)
+   - [Service-Specific Setup](#post-deployment-service-specific-setup)
+
+**Operations:**
+7. [Invoke Tasks](#invoke-tasks)
+8. [Maintenance](#maintenance)
+9. [Troubleshooting](#troubleshooting)
+
+**Advanced:**
+10. [Cloudflare Tunnel Details](#cloudflare-tunnel-details)
+
+---
+
 ## Prerequisites
 
 | Category | Requirement |
@@ -88,8 +123,8 @@ See `ansible/vars/vault.yml.sample` for the complete list with inline documentat
 | `grafana_admin_password` | Grafana admin (initial setup + API access only) | `openssl rand -base64 24` |
 
 **Optional:**
-- `discord_webhook_url` - For Discord alerts (leave empty to disable)
-- `sure_openai_access_token` - For Sure AI features
+- `discord_webhook_url` - For Discord alerts (see [Monitoring Setup](#post-deployment-monitoring))
+- Sure AI configuration - For automatic transaction categorization (see [Sure AI Setup](#post-deployment-sure-ai-features))
 
 ### Vault Commands
 
@@ -188,6 +223,111 @@ For the dashboard to show only accessible services, configure your dashboard app
 - **FoundryVTT**: Has its own user/world management system (separate from Authelia SSO).
 
 **Database credentials** (postgres, mysql) are separate infrastructure-level secrets and not user-facing.
+
+---
+
+## Post-Deployment Configuration
+
+After deploying services, you'll want to configure optional features and service-specific settings.
+
+### Post-Deployment: Monitoring
+
+**Set up Discord alerts for your monitoring stack.**
+
+Discord notifications keep you informed about service outages, high resource usage, and other critical events.
+
+**Quick Setup:**
+
+1. Create a Discord webhook in your server
+2. Add `discord_webhook_url` to `vault.yml`
+3. Start the alert bot: `invoke alert-bot`
+
+**Full Instructions:** See [Monitoring Runbook - Discord Setup](runbooks/monitoring.md#discord-alerting-setup)
+
+**What you'll get:**
+- 🚨 Alerts when services go down
+- ✅ Notifications when issues resolve
+- ⚠️ Warnings for high CPU, memory, or disk usage
+- 📊 Configurable alert rules and routing
+
+### Post-Deployment: Sure AI Features
+
+**Enable automatic transaction categorization with local or cloud AI.**
+
+Sure supports multiple AI options - you can keep your financial data completely private with local Ollama, or use cloud providers for convenience.
+
+**Option 1: Local AI with Ollama (Recommended for Privacy)**
+
+Keep your financial data on your machine:
+
+```bash
+# Install Ollama
+brew install ollama  # macOS
+
+# Create custom financial model
+cd services/sure
+ollama pull qwen2.5:7b
+ollama create ena -f Modelfile
+
+# Configure in vault.yml
+ansible-vault edit ansible/vars/vault.yml
+```
+
+Add to vault.yml:
+```yaml
+sure_openai_access_token: "ollama-local"
+sure_openai_uri_base: "http://host.docker.internal:11434/v1"
+sure_openai_model: "ena"
+```
+
+**Full Instructions:** See [Sure Ollama Setup Guide](../services/sure/docs/ollama-setup.md)
+
+**Option 2: Cloud AI (OpenAI, Claude, Gemini, etc.)**
+
+For convenience at the cost of sharing transaction data with AI providers:
+
+```yaml
+# OpenAI
+sure_openai_access_token: "sk-proj-your-key"
+sure_openai_model: "gpt-4"
+
+# Or use OpenRouter for multiple providers
+sure_openai_access_token: "sk-or-v1-your-key"
+sure_openai_uri_base: "https://openrouter.ai/api/v1"
+sure_openai_model: "deepseek/deepseek-chat"
+```
+
+**Full Instructions:** See [Sure AI Integration Guide](../services/sure/docs/ai-integration.md)
+
+**Cost Comparison:**
+- Local (Ollama): $0/month (uses your hardware)
+- Deepseek: $2-5/month
+- Claude API: $10-25/month
+- OpenAI: $5-20/month
+
+After configuring, redeploy:
+```bash
+invoke deploy --preset home
+```
+
+### Post-Deployment: Service-Specific Setup
+
+Each service may have additional configuration options. See the individual runbooks:
+
+| Service | Quick Start | Full Documentation |
+|---------|-------------|-------------------|
+| **Traefik** | Auto-configured | [runbooks/traefik.md](runbooks/traefik.md) |
+| **Authelia** | Configure users in `configuration.yml` | [runbooks/authelia.md](runbooks/authelia.md) |
+| **Monitoring** | Set up Discord alerts | [runbooks/monitoring.md](runbooks/monitoring.md) |
+| **Sure** | Enable AI features | [runbooks/sure.md](runbooks/sure.md), [services/sure/docs/](../services/sure/docs/) |
+| **Nextcloud** | Web setup wizard on first access | [runbooks/nextcloud.md](runbooks/nextcloud.md) |
+| **Plex** | Claim server, add libraries | [runbooks/plex.md](runbooks/plex.md) |
+| **Jellyfin** | Web setup wizard, add libraries | [runbooks/jellyfin.md](runbooks/jellyfin.md) |
+| **FoundryVTT** | License key, world setup | [runbooks/foundryvtt.md](runbooks/foundryvtt.md) |
+| **Transmission** | Configure download directories | [runbooks/transmission.md](runbooks/transmission.md) |
+| **Backups** | Verify backup schedule | [runbooks/backups.md](runbooks/backups.md) |
+
+**Browse all runbooks:** [docs/runbooks/](runbooks/)
 
 ---
 
@@ -320,15 +460,36 @@ docker compose exec sure-db pg_dump -U sure_user sure_production > sure-backup.s
 
 ## Troubleshooting
 
+### Common Issues
+
 | Problem | Solution |
 |---------|----------|
-| Services won't start | `invoke logs --service <name>` |
+| Services won't start | `invoke logs --service <name>`, check service-specific runbook |
 | SSL issues | Delete `services/traefik/letsencrypt/*`, restart traefik |
 | Authelia login loop | Check domain in config, verify Redis is running |
 | Permission errors (macOS) | `sudo chown -R $USER:staff /Volumes/Data` |
 | Permission errors (Linux) | `sudo chown -R $USER:$USER /data` |
 | Vault password wrong | Check password manager, or recreate vault |
 | Terraform state lost | Re-import resources or start fresh |
+| Discord alerts not working | See [Monitoring Runbook - Troubleshooting](runbooks/monitoring.md#troubleshooting-discord-alerts) |
+| Sure AI not working | Check API keys, see [Sure Runbook](runbooks/sure.md) |
+
+### Service-Specific Troubleshooting
+
+For detailed troubleshooting of individual services, see the runbooks:
+
+- **[Traefik](runbooks/traefik.md)** - Proxy and SSL certificate issues
+- **[Authelia](runbooks/authelia.md)** - Authentication and SSO issues
+- **[Monitoring](runbooks/monitoring.md)** - Prometheus, Grafana, alerts
+- **[Sure](runbooks/sure.md)** - Database, AI, transaction issues
+- **[Nextcloud](runbooks/nextcloud.md)** - File sync, database issues
+- **[Plex](runbooks/plex.md)** - Media library, transcoding issues
+- **[Jellyfin](runbooks/jellyfin.md)** - Streaming and library issues
+- **[FoundryVTT](runbooks/foundryvtt.md)** - Game world and module issues
+- **[Transmission](runbooks/transmission.md)** - Download and permissions issues
+- **[Backups](runbooks/backups.md)** - Backup failures and restoration
+
+**View all runbooks:** [docs/runbooks/](runbooks/)
 
 ### Getting Logs
 
