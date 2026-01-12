@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   borgmatic:
     image: b3vis/borgmatic:latest
@@ -18,6 +16,12 @@ services:
       - BORG_PASSPHRASE=${BORG_PASSPHRASE}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
       - NEXUS_BACKUP_DIRECTORY=${NEXUS_BACKUP_DIRECTORY}
+    healthcheck:
+      test: ["CMD", "borgmatic", "--version"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     volumes:
       - ${NEXUS_ROOT_DIRECTORY}/services/backups/config:/root/.config/borgmatic.d
       - ${NEXUS_ROOT_DIRECTORY}:/mnt/source:ro

@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   sure-web:
     image: ghcr.io/we-promise/sure:latest
@@ -129,5 +127,5 @@ networks:
   proxy:
     external: true
   sure:
-    name: focus_sure
+    name: nexus_sure
     driver: bridge

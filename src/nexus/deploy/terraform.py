@@ -17,15 +17,19 @@ def _get_public_ip() -> str:
 
 
 def run_terraform(services: list[str], domain: str, dry_run: bool = False) -> None:
-    """Run Terraform to update Cloudflare DNS records.
+    """Execute Terraform to manage Cloudflare DNS records for services.
 
-    Generates a terraform.tfvars.json file dynamically based on the
-    provided services and current public IP.
+    Generates a terraform.tfvars.json file with the current public IP and
+    service subdomains, then runs terraform init and apply to update DNS.
 
     Args:
-        services: List of services to create DNS records for.
-        domain: Base domain.
-        dry_run: If True, do not execute the Terraform commands.
+        services: List of service names to create DNS A records for.
+            Each service gets a subdomain (e.g., "plex" -> "plex.domain.com").
+        domain: Base domain for DNS records (e.g., "example.com").
+        dry_run: If True, generate and display the config without applying.
+
+    Raises:
+        subprocess.CalledProcessError: If terraform init or apply fails.
     """
     if not (TERRAFORM_PATH / "main.tf").exists():
         logging.warning("Terraform configuration not found. Skipping DNS management.")

@@ -13,10 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 async def send_alert(alert_data: dict[str, Any]) -> None:
-    """Send alert to Discord channel.
+    """Send an alert notification to Discord via webhook.
+
+    Creates a formatted embed from the alert data and sends it to the
+    configured Discord webhook URL. Also logs the alert to a file.
 
     Args:
-        alert_data: A dictionary containing the alert data.
+        alert_data: Dictionary containing alert information including
+            alertname, status, annotations, and labels.
     """
     if not DISCORD_WEBHOOK_URL:
         logger.warning("No Discord webhook URL configured")
@@ -37,14 +41,6 @@ async def send_alert(alert_data: dict[str, Any]) -> None:
 
 
 def _create_embed(alert_data: dict[str, Any]) -> Embed:
-    """Create Discord embed from alert data.
-
-    Args:
-        alert_data: A dictionary containing the alert data.
-
-    Returns:
-        A Discord Embed object representing the alert.
-    """
     status = alert_data.get("status", "firing").capitalize()
 
     if status == "firing":
@@ -77,21 +73,22 @@ def _create_embed(alert_data: dict[str, Any]) -> Embed:
 
 
 class AlertBot:
-    """Discord alert bot for Nexus."""
-
     def __init__(self) -> None:
         pass
 
     async def send_alert(self, alert_data: dict[str, Any]) -> None:
-        """Send alert to Discord channel.
+        """Send an alert notification to Discord.
 
         Args:
-            alert_data: A dictionary containing the alert data.
+            alert_data: Dictionary containing alert information.
         """
         await send_alert(alert_data)
 
     async def start_webhook_server(self, port: int = 8080) -> None:
-        """Start webhook server to receive alerts from Alertmanager.
+        """Start an HTTP server to receive alerts from Alertmanager.
+
+        Creates an aiohttp web application that listens for POST requests
+        on /webhook and forwards them to Discord.
 
         Args:
             port: The port to bind the webhook server to.

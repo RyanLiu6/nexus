@@ -1,5 +1,0 @@
-#!/bin/bash
-set -e
-echo "Bootstrapping environment..."
-uv sync
-echo "Done."

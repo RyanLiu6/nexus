@@ -19,13 +19,16 @@ PRESETS = {
 
 
 def resolve_preset(name: str) -> list[str]:
-    """Resolve preset with inheritance.
+    """Resolve a preset name to its list of services, handling nested presets.
+
+    Recursively expands presets that reference other presets to build the
+    complete list of services.
 
     Args:
         name: The name of the preset to resolve.
 
     Returns:
-        A list of service names included in the preset.
+        A deduplicated list of service names included in the preset.
     """
     services = []
     for item in PRESETS.get(name, []):
@@ -37,9 +40,10 @@ def resolve_preset(name: str) -> list[str]:
 
 
 def get_base_domain() -> Optional[str]:
-    """Get base domain from NEXUS_DOMAIN environment variable.
+    """Retrieve the base domain from the NEXUS_DOMAIN environment variable.
 
     Returns:
-        The base domain if found, None otherwise.
+        The base domain string if the environment variable is set,
+        None if not configured.
     """
     return os.environ.get("NEXUS_DOMAIN")

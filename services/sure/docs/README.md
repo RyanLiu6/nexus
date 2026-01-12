@@ -158,7 +158,7 @@ Found an error in the docs or have a suggestion?
 
 ## Documentation Updates
 
-These docs are maintained alongside Sure deployment in the Focus repository.
+These docs are maintained alongside Sure deployment in the Nexus repository.
 
 **Last Updated:** January 2026
 

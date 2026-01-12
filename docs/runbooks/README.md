@@ -1,118 +1,91 @@
-# Nexus Runbooks
+# Runbooks
 
-This directory contains operational procedures for Nexus homelab services.
+Troubleshooting guides for Nexus services.
 
 ## Quick Commands
 
-### Docker Commands
 ```bash
-# View all containers
-docker ps
-
-# View status of all services
-docker compose ps
+# Check status
+invoke ps                        # Running containers
+invoke health --domain example.com
 
 # View logs
-docker compose logs <service-name>
-docker compose logs -f <service-name>  # Follow logs
+invoke logs --service traefik
+invoke logs --service auth --follow
 
-# Restart service
-docker compose restart <service-name>
+# Restart
+invoke restart --service auth
 
-# Stop/start services
-docker compose stop <service-name>
-docker compose start <service-name>
-
-# View resource usage
-docker stats
+# Maintenance
+invoke ops --daily               # Container checks, disk, logs
+invoke ops --weekly              # Backup verification, cleanup
 ```
 
-### Health Checks
+## Emergency: Service Down
+
+1. **Check container**: `docker ps | grep <service>`
+2. **View logs**: `invoke logs --service <name>`
+3. **Restart**: `docker restart <container>`
+4. **Check dependencies**: Is database/Redis running?
+5. **Check network**: `docker network inspect proxy`
+
+## Emergency: Complete Outage
+
+1. **Check Docker**: `docker info`
+2. **Check disk**: `df -h`
+3. **Restart Docker**: Docker Desktop (macOS) or `sudo systemctl restart docker` (Linux)
+4. **Bring up services**: `invoke up`
+
+## Common Issues
+
+### SSL Certificate Expired
+
 ```bash
-# Run health check
-./scripts/health_check.py --domain yourdomain.com
-
-# Run with alerts
-./scripts/health_check.py --domain yourdomain.com --alert-webhook <webhook-url>
+docker compose logs traefik        # Check logs
+rm -rf services/traefik/letsencrypt/*
+docker restart traefik
 ```
-
-## Emergency Procedures
-
-### Service Down
-1. Check container status: `docker ps`
-2. Check logs: `docker compose logs <service>`
-3. Restart service: `docker compose restart <service>`
-4. If failing, check dependencies (database, network)
-
-### Authelia Issues
-1. Verify Redis is running: `docker ps | grep redis`
-2. Check logs: `docker compose logs auth`
-3. Verify configuration: `services/auth/configuration.yml`
-4. Test password hash generation
-
-### SSL Certificate Issues
-1. Check Traefik logs: `docker compose logs traefik`
-2. Verify DNS records at Cloudflare
-3. Check ACME email configuration
-4. Clear certificates: `sudo rm -rf services/traefik/letsencrypt/*`
-
-### Backup Failure
-1. Check backup service logs: `docker compose logs borgmatic`
-2. Verify backup destination (S3, rclone, etc.)
-3. Check available disk space: `df -h`
-4. Test manual backup: `./scripts/restore.py --list`
-
-## Common Troubleshooting
 
 ### High Disk Usage
+
 ```bash
-# Check disk usage
-df -h
-
-# Find large directories
-du -sh /Volumes/Data/*
-
-# Clean up Docker
-docker system prune -a
-docker volume prune
+df -h                              # Check disk
+docker system prune -a             # Clean Docker
+docker volume prune                # Remove unused volumes
 ```
 
-### Slow Performance
-```bash
-# Check container resources
-docker stats
+### Authentication Loop
 
-# Check CPU/Memory usage
-top
-htop
+1. Check Redis: `docker ps | grep redis`
+2. Check Authelia logs: `invoke logs --service auth`
+3. Verify domain in `services/auth/configuration.yml`
+
+### Container Won't Start
+
+```bash
+invoke logs --service <name>       # Check error
+docker inspect <container> --format='{{.State.ExitCode}}'
 ```
 
-### Network Issues
-```bash
-# Check Docker network
-docker network ls
-docker network inspect proxy
+## Service Runbooks
 
-# Test DNS resolution
-nslookup yourdomain.com
-dig yourdomain.com
-```
+| Service | Common Issues |
+|---------|--------------|
+| [traefik](./traefik.md) | SSL, routing, 404s |
+| [authelia](./authelia.md) | Login, 2FA, access denied |
+| [dashboard](./dashboard.md) | Layout, icons |
+| [monitoring](./monitoring.md) | Prometheus, Grafana, alerts |
+| [backups](./backups.md) | Backup failures, restore |
+| [jellyfin](./jellyfin.md) | Transcoding, library |
+| [plex](./plex.md) | Media scanning, streaming |
+| [transmission](./transmission.md) | Downloads, VPN |
+| [foundryvtt](./foundryvtt.md) | Game data, modules |
+| [sure](./sure.md) | Database, sync |
 
-## All Runbooks
+## Maintenance Schedule
 
-### Core Services
-- [Traefik](./traefik.md) - Reverse proxy and SSL issues
-- [Authelia](./authelia.md) - Authentication and SSO
-- [Dashboard](./dashboard.md) - Homepage dashboard issues
-- [Monitoring](./monitoring.md) - Prometheus and Grafana
-- [Backups](./backups.md) - Borgmatic backup issues
-
-### Media Services
-- [Plex](./plex.md) - Media streaming
-- [Jellyfin](./jellyfin.md) - Media server
-- [Transmission](./transmission.md) - Torrent client
-
-### Application Services
-- [Sure](./sure.md) - Finance and budgeting
-- [FoundryVTT](./foundryvtt.md) - Virtual Tabletop
-- [Nextcloud](./nextcloud.md) - File storage
+| Frequency | Tasks |
+|-----------|-------|
+| Daily (auto) | Container health, disk monitoring |
+| Weekly | `invoke ops --weekly` - backup check, cleanup |
+| Monthly | `invoke pull && invoke up` - updates |

@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   foundryvtt:
     image: felddy/foundryvtt:release
@@ -25,6 +23,12 @@ services:
       - TIMEZONE=${TZ}
       - CONTAINER_PATCH_URLS=https://gist.githubusercontent.com/yddlef/df54ee1bbca93095a71d75cd15e216eb/raw/plutonium.sh
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"

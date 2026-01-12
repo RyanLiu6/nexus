@@ -9,10 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 def list_backups() -> list[Path]:
-    """List available backups.
+    """Retrieve all available backup files from the backup directory.
+
+    Scans the configured backup directory for tar.gz files and returns
+    them sorted with the most recent first.
 
     Returns:
-        A list of paths to backup files, sorted by newest first.
+        List of Path objects pointing to backup files, sorted by
+        modification time (newest first). Empty list if directory
+        doesn't exist or contains no backups.
     """
     if not BACKUP_DIR.exists():
         logger.error(f"Backup directory not found: {BACKUP_DIR}")
@@ -25,12 +30,17 @@ def list_backups() -> list[Path]:
 def restore_backup(
     backup_path: Path, services: Optional[list[str]] = None, dry_run: bool = False
 ) -> None:
-    """Restore from backup file.
+    """Restore services from a backup archive.
+
+    Stops all running containers, extracts the backup archive to root,
+    and restarts the containers. This is a full restoration that
+    overwrites existing data.
 
     Args:
-        backup_path: Path to the backup file.
-        services: List of specific services to restore. If None, restores all.
-        dry_run: If True, do not execute the restore command.
+        backup_path: Path to the backup tar.gz file to restore from.
+        services: Optional list of specific services to restore.
+            If None, all services in the backup are restored.
+        dry_run: If True, log the restoration steps without executing.
     """
     logger.info(f"Restoring from: {backup_path}")
 
@@ -46,24 +56,27 @@ def restore_backup(
         return
 
     run_command(["docker", "compose", "down"])
-
     run_command(["tar", "-xzf", str(backup_path), "-C", "/"])
-
     run_command(["docker", "compose", "up", "-d"])
 
     logger.info("Restore complete!")
 
 
 def restore_database(service: str, sql_file: Path, dry_run: bool = False) -> None:
-    """Restore database from SQL file.
+    """Restore a service's PostgreSQL database from an SQL dump.
+
+    Connects to the service's database container and pipes the SQL file
+    to psql for restoration. Currently only supports the 'sure' service.
 
     Args:
-        service: The name of the service to restore the database for.
-        sql_file: Path to the SQL file.
-        dry_run: If True, do not execute the restore command.
+        service: Name of the service whose database to restore.
+            Only "sure" is currently implemented.
+        sql_file: Path to the SQL dump file to restore.
+        dry_run: If True, log the command without executing.
 
     Raises:
-        NotImplementedError: If database restore is not implemented for the service.
+        NotImplementedError: If database restore is not implemented for
+            the specified service.
     """
     logger.info(f"Restoring database for {service} from {sql_file}")
 

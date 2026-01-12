@@ -1,18 +1,17 @@
 [project]
 name = "nexus"
 version = "2.0.0"
-description = "Self-hosted homelab solution"
+description = "Self-hosted homelab solution for macOS"
 authors = [
     {name = "Ryan Liu", email = "ryanliu6@pm.me"},
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "click>=8.1.2",
@@ -30,16 +29,11 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.5.0",
     "mypy>=1.0.0",
-    "types-PyYAML>=6.0.0", 
+    "types-PyYAML>=6.0.0",
+    "types-requests>=2.31.0",
+    "invoke>=2.2.0",
+    "pre-commit>=3.5.0",
 ]
-
-[project.scripts]
-nexus-deploy = "scripts.deploy:main"
-nexus-generate-dashboard = "scripts.generate_dashboard:main"
-nexus-restore = "scripts.restore:main"
-nexus-health = "scripts.health_check:main"
-nexus-operations = "scripts.operations:main"
-nexus-alert-bot = "scripts.alert_bot:main"
 
 [build-system]
 requires = ["hatchling>=1.18.0"]
@@ -48,9 +42,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/nexus"]
 
+[project.scripts]
+nexus-deploy = "nexus.cli.deploy:main"
+nexus-health = "nexus.cli.health:main"
+nexus-restore = "nexus.cli.restore:main"
+nexus-ops = "nexus.cli.operations:main"
+nexus-alert-bot = "nexus.cli.alert_bot:main"
+
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.format]
 quote-style = "double"
@@ -58,33 +59,30 @@ line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "B",  # flake8-bugbear
-    "I",  # isort
-    "UP", # pyupgrade
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "I",   # isort
+    "UP",  # pyupgrade
     "RUF", # Ruff-specific rules
-    "D",   # pydocstyle (Added this because user wants docstrings)
+    "D",   # pydocstyle
 ]
 ignore = [
-    "D100",  # Missing docstring in public module
-    "D104",  # Missing docstring in public package
-    "D107",  # Missing docstring in __init__
-    "D203",  # 1 blank line required before class docstring
-    "D213",  # Multi-line docstring summary should start at the second line
-    "D406",  # Section name should end with a newline
-    "D407",  # Missing dashed underline after section
-    "D413",  # Missing blank line after last section
-    "COM812",  # Missing trailing comma
-    "ISC001",  # Single line import statements
-    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
-    "UP007",  # Use X | Y for type annotations (we prefer Optional for readability)
-    "UP045",  # Use X | None instead of Optional[X] (we prefer Optional for readability)
-]
-
-exclude = [
-    ".*/tests/.*",
-    'conftest\.py',
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D104",   # Missing docstring in public package
+    "D107",   # Missing docstring in __init__
+    "D203",   # 1 blank line required before class docstring
+    "D213",   # Multi-line docstring summary should start at the second line
+    "D406",   # Section name should end with a newline
+    "D407",   # Missing dashed underline after section
+    "D413",   # Missing blank line after last section
+    "COM812", # Missing trailing comma
+    "ISC001", # Single line import statements
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+    "UP007",  # Use X | Y for type annotations (prefer Optional for readability)
+    "UP045",  # Use X | None instead of Optional[X] (prefer Optional for readability)
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -93,8 +91,12 @@ convention = "google"
 [tool.ruff.lint.isort]
 combine-as-imports = true
 
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["D"]
+"conftest.py" = ["D"]
+
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 mypy_path = "src"
 warn_return_any = true
 warn_unused_configs = true
@@ -110,12 +112,16 @@ warn_unreachable = true
 strict_equality = true
 exclude = [
     ".*/tests/.*",
-    'conftest\.py',
+    "conftest.py",
 ]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --cov"
+addopts = "-ra -q"
 testpaths = [
-    "tests",
+    "src/nexus/tests",
+    "src/nexus/deploy/tests",
+    "src/nexus/generate/tests",
+    "src/nexus/operations/tests",
 ]
+pythonpath = ["src"]

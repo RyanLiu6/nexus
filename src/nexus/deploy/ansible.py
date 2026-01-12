@@ -6,15 +6,19 @@ from nexus.utils import run_command
 
 
 def run_ansible(services: list[str], dry_run: bool = False) -> None:
-    """Run Ansible playbook to deploy services.
+    """Execute the Ansible playbook to deploy Docker services.
+
+    Runs the main playbook with the specified services passed as extra
+    variables. The playbook handles container orchestration and configuration.
 
     Args:
-        services: List of services to deploy.
-        dry_run: If True, do not execute the playbook.
+        services: List of service names to deploy (e.g., ["traefik", "auth"]).
+            These are passed to ansible-playbook as a comma-separated string.
+        dry_run: If True, log the intended actions without executing the playbook.
 
     Raises:
-        FileNotFoundError: If the Ansible playbook is not found.
-        subprocess.CalledProcessError: If the Ansible command fails.
+        FileNotFoundError: If the Ansible playbook does not exist.
+        subprocess.CalledProcessError: If ansible-playbook returns non-zero exit code.
     """
     if not (ANSIBLE_PATH / "playbook.yml").exists():
         logging.error("Ansible playbook not found. Cannot deploy services.")

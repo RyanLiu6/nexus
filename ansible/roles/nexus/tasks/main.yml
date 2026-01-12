@@ -6,7 +6,7 @@
     msg: "Deploying services: {{ nexus_services }}"
 
 - name: Check if services list is "all"
-  set_fact:
+  ansible.builtin.set_fact:
     deploy_all_services: "{{ nexus_services == 'all' }}"
 
 - name: Get all available services
@@ -16,32 +16,48 @@
   register: service_directories
 
 - name: Set service list
-  set_fact:
-    final_services: "{{ service_directories.files | map(attribute='path') | map('basename') | list if deploy_all_services else nexus_services.split(',') }}"
+  ansible.builtin.set_fact:
+    final_services: >-
+      {{ service_directories.files | map(attribute='path') | map('basename') | list
+         if deploy_all_services else nexus_services.split(',') }}
 
-- name: Decrypt secrets from ansible-vault
-  ansible.builtin.command:
-    cmd: "ansible-vault decrypt {{ nexus_root_directory }}/ansible/vars/vault.yml --output /tmp/nexus-secrets.yml"
-    when: vault_password is defined
-  register: vault_decrypt
+- name: Display final service list
+  ansible.builtin.debug:
+    msg: "Final services to deploy: {{ final_services }}"
 
-- name: Load secrets into environment
-  ansible.builtin.include_vars:
-    file: /tmp/nexus-secrets.yml
-  when: vault_decrypt is succeeded
+# Generate combined docker-compose.yml from individual service files
+- name: Read service docker-compose files
+  ansible.builtin.slurp:
+    src: "{{ nexus_root_directory }}/services/{{ item }}/docker-compose.yml"
+  loop: "{{ final_services }}"
+  register: compose_files
+  failed_when: false
 
-- name: Start selected services using docker compose
+- name: Generate combined docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ nexus_root_directory }}/docker-compose.yml"
+    mode: "0644"
+  vars:
+    service_compose_files: "{{ compose_files.results }}"
+
+- name: Ensure Docker network exists
+  community.docker.docker_network:
+    name: proxy
+    state: present
+
+- name: Start services using docker compose
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_root_directory }}"
     project_name: nexus
     state: present
-    pull: true
+    pull: policy
   environment:
     # Nexus Configuration
     NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
     NEXUS_BACKUP_DIRECTORY: "{{ nexus_backup_directory }}"
-    DATA_DIRECTORY: "{{ data_directory | default('/data') }}"
-    NEXUS_DOMAIN: "{{ nexus_domain | default('') }}"
+    DATA_DIRECTORY: "{{ data_directory | default('/Volumes/Data') }}"
+    NEXUS_DOMAIN: "{{ nexus_domain }}"
     TZ: "{{ tz | default('America/Vancouver') }}"
     # Cloudflare
     CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
@@ -67,7 +83,7 @@
     # Sure
     SURE_POSTGRES_USER: "{{ sure_postgres_user | default('sure_user') }}"
     SURE_POSTGRES_PASSWORD: "{{ sure_postgres_password | default('') }}"
-    SURE_POSTGRES_DB: "{{ sure_postgres_db | default('') }}"
+    SURE_POSTGRES_DB: "{{ sure_postgres_db | default('sure_production') }}"
     SURE_SECRET_KEY_BASE: "{{ sure_secret_key_base | default('') }}"
     SURE_OPENAI_ACCESS_TOKEN: "{{ sure_openai_access_token | default('') }}"
     SURE_PORT: "{{ sure_port | default('5006') }}"
@@ -87,19 +103,13 @@
     BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
   register: compose_result
 
-- name: Clean up decrypted secrets
-  ansible.builtin.file:
-    path: /tmp/nexus-secrets.yml
-    state: absent
-  when: vault_decrypt is succeeded
-
 - name: Display deployment result
   ansible.builtin.debug:
-    msg: "{{ compose_result }}"
+    msg: "Docker Compose {{ 'updated' if compose_result.changed else 'unchanged' }}"
 
 - name: Wait for services to be healthy
   ansible.builtin.pause:
-    seconds: 10
+    seconds: 15
   when: compose_result.changed
 
 - name: Check container status
@@ -111,6 +121,6 @@
 
 - name: Display container status
   ansible.builtin.debug:
-    msg: "{{ item.name }}: {{ item.container.State.Status }}"
+    msg: "{{ item.container.Name | default(item.item) }}: {{ item.container.State.Status | default('not found') }}"
   loop: "{{ container_status.results }}"
-  when: item.exists
+  when: item.exists | default(false)

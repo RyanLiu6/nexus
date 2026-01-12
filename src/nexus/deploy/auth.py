@@ -4,11 +4,15 @@ from nexus.config import SERVICES_PATH
 
 
 def generate_authelia_config(domain: str, dry_run: bool = False) -> None:
-    """Generate Authelia configuration from sample, injecting domain.
+    """Generate Authelia configuration file from sample template.
+
+    Reads the sample configuration file and replaces placeholder domain
+    with the actual domain to create a working Authelia configuration.
 
     Args:
-        domain: The base domain (e.g., ryanliu6.xyz)
-        dry_run: If True, do not write changes.
+        domain: The base domain to use (e.g., "example.com"). All
+            occurrences of "example.com" in the sample will be replaced.
+        dry_run: If True, log what would be done without writing files.
     """
     auth_dir = SERVICES_PATH / "auth"
     sample_config = auth_dir / "configuration.yml.sample"
@@ -20,11 +24,7 @@ def generate_authelia_config(domain: str, dry_run: bool = False) -> None:
 
     logging.info(f"Generating Authelia config for domain: {domain}")
 
-    # Read sample
     content = sample_config.read_text()
-
-    # Replace placeholders
-    # We replace 'example.com' with the actual domain
     new_content = content.replace("example.com", domain)
 
     if dry_run:

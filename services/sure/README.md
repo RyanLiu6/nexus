@@ -104,4 +104,4 @@ SURE_OPENAI_MODEL=deepseek/deepseek-chat
 - **AI Costs**: Set appropriate spend limits on your AI provider account
 - **Privacy**: Local AI (Ollama) keeps your data on your server; cloud AI sends transaction data to providers
 - **First Run**: On first startup, Sure will automatically run database migrations. This may take a few minutes.
-- **Troubleshooting**: If you encounter database connection issues on initial setup, try removing the database volume: `docker volume rm focus_sure_postgres`
+- **Troubleshooting**: If you encounter database connection issues on initial setup, try removing the database volume: `docker volume rm nexus_sure_postgres`

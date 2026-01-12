@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
 import logging
 import os
+import subprocess
 import sys
 from typing import Optional
 
 import click
+import yaml
 
 from nexus.config import ALL_SERVICES, PRESETS, SERVICES_PATH, resolve_preset
 from nexus.deploy.ansible import run_ansible
@@ -13,49 +14,7 @@ from nexus.deploy.terraform import run_terraform
 from nexus.generate.dashboard import generate_dashboard_config
 
 
-def generate_configs(
-    services: list[str], domain: Optional[str], dry_run: bool = False
-) -> None:
-    """Run generate script to create dashboard config.
-
-    Args:
-        services: List of services to generate config for.
-        domain: Base domain for the services.
-        dry_run: If True, do not write changes to disk.
-    """
-    logging.info("Generating configuration files...")
-
-    # 1. Dashboard Config
-    dashboard_config_path = SERVICES_PATH / "dashboard" / "config" / "services.yaml"
-    dashboard_config = generate_dashboard_config(
-        services, domain or "example.com", dry_run
-    )
-
-    if dry_run:
-        logging.info(
-            f"[DRY RUN] Would write dashboard config to {dashboard_config_path}"
-        )
-    else:
-        logging.info(f"Writing dashboard config to {dashboard_config_path}")
-        dashboard_config_path.parent.mkdir(parents=True, exist_ok=True)
-        import yaml
-
-        with dashboard_config_path.open("w") as f:
-            yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
-            
-    # 2. Authelia Config
-    if domain:
-        generate_authelia_config(domain, dry_run)
-
-
-def check_dependencies() -> None:
-    """Check if required tools are installed.
-
-    Raises:
-        SystemExit: If any required tool is missing.
-    """
-    import subprocess
-
+def _check_dependencies() -> None:
     required = ["docker", "terraform", "ansible"]
     missing = []
 
@@ -83,6 +42,30 @@ def check_dependencies() -> None:
         sys.exit(1)
 
 
+def _generate_configs(
+    services: list[str], domain: Optional[str], dry_run: bool = False
+) -> None:
+    logging.info("Generating configuration files...")
+
+    dashboard_config_path = SERVICES_PATH / "dashboard" / "config" / "services.yaml"
+    dashboard_config = generate_dashboard_config(
+        services, domain or "example.com", dry_run
+    )
+
+    if dry_run:
+        logging.info(
+            f"[DRY RUN] Would write dashboard config to {dashboard_config_path}"
+        )
+    else:
+        logging.info(f"Writing dashboard config to {dashboard_config_path}")
+        dashboard_config_path.parent.mkdir(parents=True, exist_ok=True)
+        with dashboard_config_path.open("w") as f:
+            yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
+
+    if domain:
+        generate_authelia_config(domain, dry_run)
+
+
 @click.command()
 @click.argument("services", nargs=-1, required=False)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Verbose mode.")
@@ -95,7 +78,7 @@ def check_dependencies() -> None:
     help="Use a service preset.",
 )
 @click.option(
-    "-d", "--domain", type=str, default=None, help="Base domain (e.g., ryanliu6.xyz)."
+    "-d", "--domain", type=str, default=None, help="Base domain (e.g., example.com)."
 )
 @click.option("--skip-dns", is_flag=True, default=False, help="Skip DNS management.")
 @click.option(
@@ -120,22 +103,11 @@ def main(
     skip_ansible: bool,
     dry_run: bool,
 ) -> None:
-    """Deploy Nexus services with Terraform (DNS) and Ansible (containers).
-
-    Args:
-        services: List of services to deploy.
-        verbose: Enable verbose logging.
-        all: Deploy all services.
-        preset: Use a service preset.
-        domain: Base domain.
-        skip_dns: Skip DNS management.
-        skip_ansible: Skip Ansible deployment.
-        dry_run: Preview changes without making them.
-    """
+    """Deploy Nexus services with Terraform (DNS) and Ansible (containers)."""
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
-    check_dependencies()
+    _check_dependencies()
 
     if all:
         services_list = ALL_SERVICES
@@ -167,9 +139,12 @@ def main(
     print("=" * 60 + "\n")
 
     if not skip_dns:
-        run_terraform(services_list, domain, dry_run)
+        if not domain:
+            logging.warning("Domain not set, skipping DNS management")
+        else:
+            run_terraform(services_list, domain, dry_run)
 
-    generate_configs(services_list, domain, dry_run)
+    _generate_configs(services_list, domain, dry_run)
 
     if not skip_ansible:
         run_ansible(services_list, dry_run)

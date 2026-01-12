@@ -31,21 +31,21 @@ CLOUDFLARE_DNS_API_TOKEN=<some token>
 
 Other DNS Providers will have differing configuration. You can find providers [here](https://doc.traefik.io/traefik/https/acme/#providers) and additional configuration [here](https://go-acme.github.io/lego/dns/).
 
-4. Configure the following directories, as this guide assumes that Focus is cloned to `$HOME/dev/focus`, as that is my own personal preference. This behaviour can be configured with the following in `docker-compose.yml`.
+4. Configure the following directories, as this guide assumes that Nexus is cloned to `$HOME/dev/nexus`, as that is my own personal preference. This behaviour can be configured with the following in `docker-compose.yml`.
 
 ```yaml
-  - ${HOME}/dev/focus/traefik/traefik.yml:/traefik.yml:ro
-  - ${HOME}/dev/focus/traefik/rules:/rules:ro
-  - ${HOME}/dev/focus/traefik/letsencrypt:/letsencrypt
+  - ${HOME}/dev/nexus/traefik/traefik.yml:/traefik.yml:ro
+  - ${HOME}/dev/nexus/traefik/rules:/rules:ro
+  - ${HOME}/dev/nexus/traefik/letsencrypt:/letsencrypt
 ```
 
 5. Run it!
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 > [!NOTE]
-> This assumes that `focus` is checked out at `$HOME/dev/focus`!
+> This assumes that `nexus` is checked out at `$HOME/dev/nexus`!
 
 
 ## Backups

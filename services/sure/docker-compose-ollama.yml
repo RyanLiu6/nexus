@@ -1,5 +1,3 @@
-version: "3"
-
 # Optional: Docker Compose configuration with local AI (Ollama)
 #
 # This is an alternative to the standard docker-compose.yml that includes
@@ -178,5 +176,5 @@ networks:
   proxy:
     external: true
   sure:
-    name: focus_sure
+    name: nexus_sure
     driver: bridge

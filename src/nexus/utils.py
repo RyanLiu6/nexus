@@ -13,17 +13,20 @@ def run_command(
     check: bool = True,
     stdin: Optional[Union[IO[Any], int]] = None,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a shell command with error handling.
+    """Execute a shell command with standardized error handling and logging.
+
+    Provides a wrapper around subprocess.run with consistent behavior across
+    the codebase, including debug logging and proper error propagation.
 
     Args:
-        command: The command to run as a list of strings.
+        command: The command to run as a list of strings (e.g., ["docker", "ps"]).
         cwd: The working directory for the command. Defaults to ROOT_PATH.
-        capture: If True, capture stdout/stderr.
-        check: If True, check the return code and raise CalledProcessError if non-zero.
-        stdin: File object or file descriptor to use as stdin.
+        capture: If True, capture stdout/stderr into the result object.
+        check: If True, raise CalledProcessError on non-zero exit code.
+        stdin: File object or file descriptor to use as stdin for piping input.
 
     Returns:
-        The completed process object.
+        The subprocess.CompletedProcess object containing return code and output.
 
     Raises:
         subprocess.CalledProcessError: If the command fails and check is True.

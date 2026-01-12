@@ -1,75 +1,284 @@
-# Homelab Architecture
+# Nexus Architecture
 
-## Overview
+## What is Nexus?
 
-Nexus is a self-hosted homelab using Docker Compose with Traefik (reverse proxy), Authelia (SSO/2FA), and Cloudflare DNS.
+Nexus is a self-hosted homelab solution that provides:
+
+- **Centralized access** to all services via a single dashboard
+- **Secure authentication** with Authelia SSO/2FA
+- **Private VPN access** via Tailscale (bypasses auth for admin)
+- **Automated DNS** via Terraform + Cloudflare
+- **Containerized services** managed by Ansible + Docker Compose
+
+## Features Checklist
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Dashboard | ✅ | Homepage with links to all services |
+| SSO/2FA Auth | ✅ | Authelia for user authentication |
+| Admin VPN Bypass | ✅ | Tailscale bypasses Authelia for admin |
+| User Groups | ✅ | Separate access for wife, gaming friends |
+| Auto SSL | ✅ | Let's Encrypt via Traefik |
+| DNS Management | ✅ | Terraform + Cloudflare |
+| Health Checks | ✅ | Docker healthchecks on all services |
+| Monitoring | ✅ | Prometheus + Grafana |
+| Alerting | ✅ | Discord webhook alerts |
+| Backups | ✅ | Borgmatic automated backups |
+| Media Server | ✅ | Jellyfin (primary), Plex (optional) |
+| Gaming | ✅ | FoundryVTT for D&D |
+| Finance | ✅ | Sure for budgeting |
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| Containers | Docker & Docker Compose |
-| Proxy | Traefik (SSL termination, routing) |
-| Auth | Authelia (SSO, 2FA) |
-| DNS | Cloudflare |
-| VPN | Tailscale (optional) |
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Runtime | Docker + Docker Compose | Container orchestration |
+| Proxy | Traefik | Reverse proxy, SSL, routing |
+| Auth | Authelia | SSO, 2FA, access control |
+| DNS | Terraform + Cloudflare | DNS record management |
+| Config | Ansible | Docker Compose generation |
+| Secrets | Ansible Vault | Encrypted credentials |
+| VPN | Tailscale | Secure remote access |
+| CLI | Python + Invoke | User interface |
+
+---
+
+## Deployment Flow
+
+```
+User runs: invoke deploy --preset home
+    │
+    ├── 1. Python validates config and services
+    │
+    ├── 2. Terraform updates Cloudflare DNS
+    │       └── Creates A/CNAME records for each service
+    │
+    ├── 3. Ansible runs playbook
+    │       ├── Reads services from preset
+    │       ├── Combines individual docker-compose.yml files
+    │       ├── Generates root docker-compose.yml from template
+    │       └── Runs docker compose up -d
+    │
+    └── 4. Services start with health checks
+```
+
+### docker-compose.yml Generation
+
+Ansible generates the root `docker-compose.yml` by combining individual service files:
+
+1. Each service has its own `services/<name>/docker-compose.yml`
+2. Ansible reads the preset to determine which services to include
+3. The `ansible/roles/nexus/templates/docker-compose.yml.j2` template combines them
+4. Variables from `vault.yml` are injected (domains, passwords, etc.)
+5. Final `docker-compose.yml` is written to the project root
+
+This allows:
+- Individual service files to be version controlled
+- Secrets to remain encrypted in vault.yml
+- Different presets (core, home) to generate different compositions
+
+---
+
+## Traffic Flow
+
+```
+Internet → Cloudflare DNS → Router:443 → Traefik → Authelia → Service
+                                              ↓
+                                        SSL Termination
+
+Tailscale → Device (100.x.x.x) → Traefik → Service (bypasses Authelia)
+```
+
+---
+
+## Monitoring & Alerting
+
+### Stack
+
+| Component | Purpose |
+|-----------|---------|
+| **Prometheus** | Metrics collection and storage |
+| **Grafana** | Dashboards and visualization |
+| **Alertmanager** | Alert routing and deduplication |
+| **Discord Bot** | Receives alerts, posts to Discord |
+
+### Alert Flow
+
+```
+Service (down/high CPU) → Prometheus → Alert Rule → Alertmanager → Webhook → Discord
+```
+
+### Setting Up Discord Alerts
+
+1. **Create Discord webhook:**
+   - Server Settings → Integrations → Webhooks → New Webhook
+   - Copy webhook URL
+
+2. **Configure Alertmanager** (`services/monitoring/alertmanager.yml`):
+   ```yaml
+   route:
+     receiver: 'discord'
+   receivers:
+     - name: 'discord'
+       webhook_configs:
+         - url: 'http://localhost:8080/webhook'
+   ```
+
+3. **Run alert bot:**
+   ```bash
+   uv run nexus-alert-bot --port 8080
+   ```
+
+4. **Configure webhook URL in vault.yml:**
+   ```yaml
+   discord_webhook_url: "https://discord.com/api/webhooks/..."
+   ```
+
+### Example Alerts
+
+- Service down for > 5 minutes
+- CPU usage > 80% for > 15 minutes
+- Disk usage > 90%
+- Container restart loop
+
+---
+
+## Service Presets
+
+```python
+PRESETS = {
+    "core": ["traefik", "auth", "dashboard", "monitoring"],
+    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
+}
+```
 
 ## Services
 
 | Service | Purpose | Access |
 |---------|---------|--------|
-| Traefik | Reverse proxy | Admin (2FA) |
-| Authelia | Authentication | Admin (2FA) |
-| Dashboard | Landing page | Admin (2FA) |
-| Plex | Media streaming | Admin + Wife |
-| Jellyfin | Media server | Admin |
-| Transmission | Torrent client | Admin |
-| Nextcloud | File storage | Admin |
-| FoundryVTT | Virtual Tabletop | Admin + Gaming |
-| Sure | Finance tracking | Admin + Wife |
+| **traefik** | Reverse proxy, SSL | Admin (2FA) |
+| **auth** | Authelia SSO | Admin (2FA) |
+| **dashboard** | Homepage | Admin (2FA) |
+| **monitoring** | Prometheus + Grafana | Admin (2FA) |
+| **jellyfin** | Media server | Admin |
+| **plex** | Media streaming | Admin + Wife |
+| **transmission** | Torrent client | Admin |
+| **foundryvtt** | Virtual tabletop | Admin + Gaming |
+| **sure** | Finance tracking | Admin + Wife |
+| **backups** | Borgmatic | Automated |
 
-## Traffic Flow
-
-```
-Internet → Cloudflare DNS (80/443) → Traefik (SSL) → Authelia → Service
-```
-
-## Authentication Levels
-
-| Level | Policy | Use Case |
-|-------|--------|----------|
-| Admin | 2FA | All services |
-| Gaming | 1FA | FoundryVTT only |
-| Wife | 1FA | Plex + Sure |
-| Tailscale | Bypass | Full access via VPN |
+---
 
 ## Directory Structure
 
 ```
-focus/
-├── services/        # Service configs (auth, dashboard, plex, etc.)
-├── scripts/         # Deployment and utility scripts
-├── src/nexus/       # Python library
-├── terraform/       # DNS management
-└── ansible/         # Configuration management
+nexus/
+├── ansible/                  # Configuration management
+│   ├── playbook.yml          # Main Ansible playbook
+│   ├── roles/nexus/          # Service deployment role
+│   │   ├── tasks/main.yml
+│   │   └── templates/        # docker-compose.yml.j2
+│   └── vars/
+│       └── vault.yml.sample  # Template for secrets
+│
+├── docs/                     # Documentation
+│   ├── ARCHITECTURE.md       # This file
+│   ├── DEPLOYMENT.md         # Setup instructions
+│   ├── ACCESS_CONTROL.md     # Auth, Tailscale, SSH
+│   └── runbooks/             # Troubleshooting guides
+│
+├── scripts/
+│   └── bootstrap             # Initial setup script
+│
+├── services/                 # Service definitions
+│   ├── auth/
+│   │   ├── docker-compose.yml
+│   │   └── configuration.yml.sample
+│   ├── traefik/
+│   ├── dashboard/
+│   ├── monitoring/
+│   │   ├── docker-compose.yml
+│   │   ├── prometheus.yml
+│   │   └── alertmanager.yml
+│   └── ...
+│
+├── src/nexus/                # Python library
+│   ├── cli/                  # CLI entry points
+│   ├── config.py             # Presets and configuration
+│   ├── deploy/               # Ansible, Terraform, Docker
+│   ├── generate/             # Config generation
+│   ├── health/               # Health checks
+│   ├── operations/           # Maintenance tasks
+│   ├── alerts/               # Discord alert bot
+│   └── restore/              # Backup restoration
+│
+├── terraform/                # DNS management
+│   ├── main.tf
+│   └── cloudflare_dns.tf
+│
+├── tasks.py                  # Invoke task definitions
+└── pyproject.toml            # Python project config
 ```
 
-## Data Storage
+---
 
-All persistent data at `$DATA_DIRECTORY`:
-- `Config/*` - Application configs
-- `Media/*` - Media files
-- `sure/*` - Finance app data
-- `Foundry/*` - Game data
+## Secrets Management
+
+All secrets stored in `ansible/vars/vault.yml` (encrypted with ansible-vault).
+
+### Required Secrets
+
+```yaml
+# Domain and DNS
+nexus_domain: "example.com"
+cloudflare_api_token: "..."
+cloudflare_zone_id: "..."
+
+# Authelia
+authelia_jwt_secret: "..."
+authelia_session_secret: "..."
+authelia_storage_encryption_key: "..."
+
+# Databases
+postgres_password: "..."
+sure_db_password: "..."
+
+# Alerting
+discord_webhook_url: "..."
+```
+
+### Generating Secrets
+
+```bash
+# Random 64-char secret
+openssl rand -hex 32
+
+# Authelia password hash
+docker run authelia/authelia:latest authelia crypto hash generate argon2 --password 'password'
+
+# Traefik password hash
+htpasswd -nb admin password | sed 's/\$/\$\$/g'
+```
+
+### Vault Commands
+
+```bash
+# Create encrypted vault
+ansible-vault create ansible/vars/vault.yml
+
+# Edit secrets
+ansible-vault edit ansible/vars/vault.yml
+
+# View secrets
+ansible-vault view ansible/vars/vault.yml
+```
+
+**Store your vault password securely** (password manager). If lost, you must recreate all secrets.
+
+---
 
 ## Limitations
 
-- Single machine (no HA)
-- Manual initial Authelia/Dashboard setup
-- Docker Desktop NAT issues with Tailscale on Mac
-
-## Related Docs
-
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Setup guide
-- [ACCESS_CONTROL.md](./ACCESS_CONTROL.md) - Auth configuration
-- [SECRETS.md](./SECRETS.md) - Secrets management
+- **Single machine** - No high availability
+- **Docker Desktop NAT** - Tailscale bypass may not work on macOS
+- **Manual initial setup** - Authelia users, initial certificates

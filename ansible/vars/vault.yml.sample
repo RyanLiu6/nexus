@@ -6,7 +6,7 @@
 # =============================================================================
 # Nexus Configuration
 # =============================================================================
-nexus_root_directory: "/path/to/focus"
+nexus_root_directory: "/path/to/nexus"
 nexus_backup_directory: "/path/to/backups"
 data_directory: "/Volumes/Data"
 nexus_domain: "example.com"

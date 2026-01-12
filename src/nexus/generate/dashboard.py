@@ -5,16 +5,62 @@ import yaml
 
 from nexus.config import SERVICES_PATH
 
+DESCRIPTIONS = {
+    "traefik": "Reverse proxy and SSL management",
+    "auth": "SSO and 2FA authentication",
+    "dashboard": "Homepage dashboard",
+    "backups": "Automated backups",
+    "plex": "Media streaming",
+    "jellyfin": "Media server",
+    "transmission": "Torrent client",
+    "sure": "Finance and budgeting",
+    "foundryvtt": "Virtual Tabletop",
+    "nextcloud": "File storage",
+    "monitoring": "Metrics collection and visualization",
+}
+
+ICONS = {
+    "traefik": "traefik.png",
+    "auth": "authelia.png",
+    "dashboard": "homepage.png",
+    "backups": "borg.png",
+    "plex": "plex.png",
+    "jellyfin": "jellyfin.png",
+    "transmission": "transmission.png",
+    "sure": "sh-sure.png",
+    "foundryvtt": "foundryvtt.png",
+    "nextcloud": "nextcloud.png",
+    "monitoring": "prometheus.png",
+}
+
+CATEGORIES = {
+    "traefik": "Core",
+    "auth": "Core",
+    "dashboard": "Core",
+    "backups": "Utilities",
+    "plex": "Media",
+    "jellyfin": "Media",
+    "transmission": "Media",
+    "sure": "Finance",
+    "foundryvtt": "Gaming",
+    "nextcloud": "Files",
+    "monitoring": "Core",
+}
+
 
 def get_service_config(service_name: str) -> dict[str, Any]:
-    """Read docker-compose.yml for a service and extract relevant info.
+    """Parse a service's docker-compose.yml to extract Traefik routing info.
+
+    Reads the compose file and looks for Traefik labels to determine
+    the service's hostname and routing rules.
 
     Args:
-        service_name: The name of the service to retrieve configuration for.
+        service_name: Name of the service directory to read from.
 
     Returns:
-        A dictionary containing the service configuration, or an empty dictionary
-        if the configuration file is not found.
+        Dictionary with keys 'name', 'container', 'rule', 'description',
+        and 'icon' if Traefik labels are found. Empty dict if the compose
+        file doesn't exist or has no Traefik configuration.
     """
     compose_file = SERVICES_PATH / service_name / "docker-compose.yml"
     if not compose_file.exists():
@@ -24,7 +70,7 @@ def get_service_config(service_name: str) -> dict[str, Any]:
     with compose_file.open() as f:
         compose_data = yaml.safe_load(f)
 
-    service_info = {}
+    service_info: dict[str, Any] = {}
     services = compose_data.get("services", {})
 
     for svc_name, svc_config in services.items():
@@ -59,92 +105,58 @@ def get_service_config(service_name: str) -> dict[str, Any]:
 
 
 def get_service_description(service_name: str) -> str:
-    """Get description for a service.
+    """Look up the human-readable description for a service.
 
     Args:
-        service_name: The name of the service.
+        service_name: Name of the service to look up.
 
     Returns:
-        The description of the service, or an empty string if not found.
+        Description string for the service, or empty string if not found.
     """
-    descriptions = {
-        "traefik": "Reverse proxy and SSL management",
-        "auth": "SSO and 2FA authentication",
-        "dashboard": "Homepage dashboard",
-        "backups": "Automated backups",
-        "plex": "Media streaming",
-        "jellyfin": "Media server",
-        "transmission": "Torrent client",
-        "sure": "Finance and budgeting",
-        "foundryvtt": "Virtual Tabletop",
-        "nextcloud": "File storage",
-        "monitoring": "Metrics collection and visualization",
-    }
-    return descriptions.get(service_name, "")
+    return DESCRIPTIONS.get(service_name, "")
 
 
 def get_service_icon(service_name: str) -> str:
-    """Get icon filename for a service.
+    """Look up the icon filename for a service.
 
     Args:
-        service_name: The name of the service.
+        service_name: Name of the service to look up.
 
     Returns:
-        The filename of the service's icon.
+        Icon filename (e.g., "traefik.png"), or "unknown.png" if not found.
     """
-    icons = {
-        "traefik": "traefik.png",
-        "auth": "authelia.png",
-        "dashboard": "homepage.png",
-        "backups": "borg.png",
-        "plex": "plex.png",
-        "jellyfin": "jellyfin.png",
-        "transmission": "transmission.png",
-        "sure": "sh-sure.png",
-        "foundryvtt": "foundryvtt.png",
-        "nextcloud": "nextcloud.png",
-        "monitoring": "prometheus.png",
-    }
-    return icons.get(service_name, "unknown.png")
+    return ICONS.get(service_name, "unknown.png")
 
 
 def categorize_service(service_name: str) -> str:
-    """Categorize service for dashboard.
+    """Determine which dashboard category a service belongs to.
 
     Args:
-        service_name: The name of the service.
+        service_name: Name of the service to categorize.
 
     Returns:
-        The category of the service.
+        Category name (e.g., "Core", "Media"), or "Other" if not found.
     """
-    categories = {
-        "traefik": "Core",
-        "auth": "Core",
-        "dashboard": "Core",
-        "backups": "Utilities",
-        "plex": "Media",
-        "jellyfin": "Media",
-        "transmission": "Media",
-        "sure": "Finance",
-        "foundryvtt": "Gaming",
-        "nextcloud": "Files",
-        "monitoring": "Core",
-    }
-    return categories.get(service_name, "Other")
+    return CATEGORIES.get(service_name, "Other")
 
 
 def generate_dashboard_config(
     services: list[str], domain: str, dry_run: bool = False
 ) -> dict[str, Any]:
-    """Generate Homepage dashboard config from selected services.
+    """Generate Homepage dashboard configuration for the specified services.
+
+    Reads each service's docker-compose.yml to extract Traefik routing rules
+    and builds a Homepage-compatible configuration grouped by category.
 
     Args:
-        services: A list of service names to include in the dashboard.
-        domain: The base domain for the services.
-        dry_run: Whether to perform a dry run (log output instead of returning).
+        services: List of service names to include in the dashboard.
+            The "dashboard" service itself is automatically excluded.
+        domain: Base domain used as fallback if Host rule not found.
+        dry_run: If True, log what would be generated without side effects.
 
     Returns:
-        A dictionary representing the dashboard configuration.
+        Dictionary mapping category names to lists of service configurations,
+        formatted for Homepage's services.yaml file.
     """
     dashboard_config: dict[str, list[dict[str, Any]]] = {}
 

@@ -12,19 +12,24 @@ def run_docker_compose(
     extra_args: Optional[list[str]] = None,
     dry_run: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    """Run docker compose command for a service.
+    """Execute a docker compose command for a specific service.
+
+    Runs docker compose with the specified action in the service's directory.
+    Supports common actions like up, down, ps, and logs with optional arguments.
 
     Args:
-        service_path: Path to the service directory.
-        action: Docker compose action (up, down, ps, logs, etc.).
-        extra_args: Additional arguments for the command.
-        dry_run: If True, do not execute the command.
+        service_path: Path to the service directory containing docker-compose.yml.
+        action: Docker compose action to execute. Supported values:
+            "up" (starts in detached mode), "down", "ps", "logs", or any other
+            valid docker compose command.
+        extra_args: Additional command-line arguments to pass to docker compose.
+        dry_run: If True, log the command without executing it.
 
     Returns:
-        The completed process object.
+        The subprocess.CompletedProcess result from the docker compose command.
 
     Raises:
-        FileNotFoundError: If the service path does not exist.
+        FileNotFoundError: If the service_path directory does not exist.
     """
     if not service_path.exists():
         raise FileNotFoundError(f"Service path not found: {service_path}")
