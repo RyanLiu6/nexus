@@ -26,4 +26,4 @@ receivers:
   #       from: 'nexus@yourdomain.com'
   #       smarthost: 'smtp.gmail.com'
   #       auth_username: 'your-email@example.com'
-  #       auth_password: 'your-app-password'
+  #       auth_password: '<app_password_here>'

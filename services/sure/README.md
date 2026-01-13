@@ -91,16 +91,16 @@ sure_openai_model: "ena"
 
 ```yaml
 # OpenAI
-sure_openai_access_token: "sk-proj-your-key"
+sure_openai_access_token: "<openai_api_key_here>"
 sure_openai_model: "gpt-4"
 
 # Claude API
-sure_openai_access_token: "sk-ant-your-key"
+sure_openai_access_token: "<anthropic_api_key_here>"
 sure_openai_uri_base: "https://api.anthropic.com/v1"
 sure_openai_model: "claude-sonnet-4-20250514"
 
 # OpenRouter (any provider)
-sure_openai_access_token: "sk-or-v1-your-key"
+sure_openai_access_token: "<openrouter_api_key_here>"
 sure_openai_uri_base: "https://openrouter.ai/api/v1"
 sure_openai_model: "deepseek/deepseek-chat"
 ```

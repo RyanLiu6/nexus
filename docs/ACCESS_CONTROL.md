@@ -336,33 +336,30 @@ Nexus uses **Authelia** for user management. Users are defined in `services/auth
 
    ```yaml
    users:
-     # Admin User (Full Access)
-     admin:
-       displayname: "System Admin"
-       password: "$argon2id$..."
-       email: admin@ryanliu6.xyz
-       groups:
-         - admins
-         - users
-
-     # Gaming/Foundry User (Restricted)
-     gamer:
-       displayname: "Gaming Account"
-       password: "$argon2id$..."
-       email: gamer@ryanliu6.xyz
-       groups:
-         - users
-         - gaming
-
-     # Family/Wife User (Media Access)
-     family:
-       displayname: "Family Member"
-       password: "$argon2id$..."
-       email: family@ryanliu6.xyz
-       groups:
-         - users
-         - media
-   ```
+         # Admin User (Full Access)
+         admin:
+           displayname: "System Admin"
+           password: "<argon2_hash_here>"
+           email: admin@ryanliu6.xyz
+           groups:
+             - admins
+             - users
+         # Gaming/Foundry User (Restricted)
+         gamer:
+           displayname: "Gaming Account"
+           password: "<argon2_hash_here>"
+           email: gamer@ryanliu6.xyz
+           groups:
+             - users
+             - gaming
+         # Family/Wife User (Media Access)
+         family:
+           displayname: "Family Member"
+           password: "<argon2_hash_here>"
+           email: family@ryanliu6.xyz
+           groups:
+             - users
+             - media   ```
 
 3. **Apply Changes:**
    Restart Authelia to load the new users:

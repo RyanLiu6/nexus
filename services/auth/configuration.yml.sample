@@ -64,7 +64,7 @@ session:
   name: authelia_session
   domain: example.com  # REPLACE THIS
   same_site: lax
-  secret: unsecure_session_secret  # REPLACE THIS
+  secret: <session_secret_here>  # REPLACE THIS
   expiration: 1h
   inactivity: 5m
   remember_me_duration: 1M
@@ -78,13 +78,13 @@ regulation:
   ban_time: 5m
 
 storage:
-  encryption_key: unsecure_encryption_key  # REPLACE THIS
+  encryption_key: <encryption_key_here>  # REPLACE THIS
   local:
     path: /config/db.sqlite3
 
 identity_validation:
   reset_password:
-    jwt_secret: unsecure_jwt_secret  # REPLACE THIS
+    jwt_secret: <jwt_secret_here>  # REPLACE THIS
 
 notifier:
   filesystem:

@@ -4,7 +4,7 @@
 users:
   admin:
     displayname: "Admin User"
-    password: "$argon2id$v=19$m=65536,t=3,p=4$DnF5K8n5K8n5K8n5K8n5Kw$TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO8TwO"
+    password: "<argon2_hash_here>"
     email: admin@example.com
     groups:
       - admins

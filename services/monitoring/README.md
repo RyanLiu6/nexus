@@ -235,7 +235,7 @@ launchctl load ~/Library/LaunchAgents/com.nexus.alert-bot.plist
 2. Verify URL is `http://prometheus:9090`
 3. Click "Test"
 
-**Reset admin password:**
+**To reset the admin password:**
 ```bash
 docker compose exec grafana grafana-cli admin reset-admin-password <new-password>
 ```

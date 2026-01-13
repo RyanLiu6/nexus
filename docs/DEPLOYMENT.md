@@ -184,7 +184,7 @@ tz: "America/Vancouver"  # Your timezone
 
 **Cloudflare credentials (for tunnel):**
 ```yaml
-cloudflare_api_token: "your-api-token"
+cloudflare_api_token: "<api_token_here>"
 cloudflare_zone_id: "your-zone-id"
 cloudflare_account_id: "your-account-id"
 tunnel_secret: "generate-with-command-below"
@@ -209,9 +209,9 @@ openssl rand -hex 32
 
 **Authelia secrets (required for SSO):**
 ```yaml
-authelia_jwt_secret: "first-random-hex"
-authelia_session_secret: "second-random-hex"
-authelia_storage_encryption_key: "third-random-hex"
+authelia_jwt_secret: "<generated_hex_here>"
+authelia_session_secret: "<generated_hex_here>"
+authelia_storage_encryption_key: "<generated_hex_here>"
 ```
 
 **Service-specific secrets:** Configure only for services you'll use. See `vault.yml.sample` for the full list.
@@ -433,11 +433,11 @@ For convenience at the cost of sharing transaction data with AI providers:
 
 ```yaml
 # OpenAI
-sure_openai_access_token: "sk-proj-your-key"
+sure_openai_access_token: "<openai_api_key_here>"
 sure_openai_model: "gpt-4"
 
 # Or use OpenRouter for multiple providers
-sure_openai_access_token: "sk-or-v1-your-key"
+sure_openai_access_token: "<openrouter_api_key_here>"
 sure_openai_uri_base: "https://openrouter.ai/api/v1"
 sure_openai_model: "deepseek/deepseek-chat"
 ```
