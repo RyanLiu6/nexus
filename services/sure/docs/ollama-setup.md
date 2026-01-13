@@ -31,8 +31,8 @@ We will create a custom model named `ena`. This model embeds your specific categ
    Open your terminal, navigate to the `sure` directory, and run:
 
    ```bash
-   # Pull the base model first (we use qwen2.5:7b for speed/quality balance)
-   ollama pull qwen2.5:7b
+   # Pull the base model first (we use qwen3:7b for speed/quality balance)
+   ollama pull qwen3:7b
 
    # Create your custom model
    ollama create ena -f Modelfile

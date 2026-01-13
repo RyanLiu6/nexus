@@ -74,7 +74,7 @@ Keep your financial data completely private:
 brew install ollama
 
 # Pull base model and create custom financial model
-ollama pull qwen2.5:7b
+ollama pull qwen3:7b
 ollama create ena -f Modelfile
 ```
 

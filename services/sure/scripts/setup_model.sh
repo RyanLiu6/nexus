@@ -10,7 +10,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 MODEL_FILE="$PROJECT_DIR/Modelfile"
 MODEL_NAME="ena"
-BASE_MODEL="qwen2.5:7b"
+BASE_MODEL="qwen3:7b"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -37,7 +37,7 @@ if ! pgrep -x "ollama" > /dev/null && ! pgrep -x "Ollama" > /dev/null; then
     else
         ollama serve &
     fi
-    
+
     # Wait for it to be ready
     echo "Waiting for Ollama to initialize..."
     while ! curl -s http://localhost:11434/api/tags > /dev/null; do

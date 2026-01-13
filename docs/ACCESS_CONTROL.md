@@ -103,16 +103,28 @@ sudo tailscale up --ssh
 ```
 
 **macOS:**
-Tailscale SSH on macOS works differently - you must enable it via the admin console:
+> ⚠️ **Important:** Tailscale SSH on macOS requires the **open source CLI variant**, not the Mac App Store version.
 
-1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/machines)
-2. Click on your macOS machine
-3. Enable "Tailscale SSH" in the machine settings
-4. Configure SSH ACLs in [Access Controls](https://login.tailscale.com/admin/acls)
+The standard Tailscale macOS app does NOT support Tailscale SSH as a server. You must use the open source `tailscale` + `tailscaled` CLI version:
 
-> **Note:** The `--ssh` flag does not work on macOS. You must use the admin console.
+1. **Install the open source variant:**
+   ```bash
+   # Uninstall the Mac App Store version first if installed
+   # Then install the CLI variant
+   brew install tailscale
 
-This enables SSH access for all devices on your tailnet without SSH keys.
+   # Start the daemon
+   sudo tailscaled &
+
+   # Authenticate and enable SSH
+   tailscale up --ssh
+   ```
+
+2. **Or follow the official guide:** [Tailscaled on macOS](https://github.com/tailscale/tailscale/wiki/Tailscaled-on-macOS)
+
+3. Configure SSH ACLs in [Access Controls](https://login.tailscale.com/admin/acls)
+
+> **Note:** If you're using macOS as a **client** (connecting TO other machines), the regular Mac App Store version works fine. The CLI variant is only needed when macOS is the **SSH server**.
 
 ### Connect from Tailscale Devices
 
@@ -129,38 +141,62 @@ ssh username@100.x.y.z
 - iOS/Android: Use Termius app or Tailscale's built-in terminal
 - Connect using Tailscale hostname or IP
 
-### Tailscale ACLs (Required for macOS)
+### Tailscale ACLs (Required)
 
-Control SSH access with ACLs in the [Tailscale admin console](https://login.tailscale.com/admin/acls).
+SSH ACLs must be configured in the [Tailscale admin console](https://login.tailscale.com/admin/acls) for Tailscale SSH to work.
 
-**Basic SSH access:**
+#### Step 1: Navigate to ACL Editor
+
+1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/acls)
+2. You'll see a JSON editor with your current policy
+
+#### Step 2: Add the SSH Section
+
+Add this to your ACL policy file. If you already have content, merge it carefully.
+
+**Recommended Configuration for Nexus:**
+
 ```json
 {
-  "ssh": [
+  // Tag your Nexus server (optional but recommended)
+  "tagOwners": {
+    "tag:server": ["autogroup:admin"],
+    "tag:nexus": ["autogroup:admin"]
+  },
+
+  // Network ACLs (allow traffic between devices)
+  "acls": [
+    // Allow all traffic between your devices
     {
       "action": "accept",
-      "src": ["autogroup:member"],
-      "dst": ["autogroup:self"],
-      "users": ["autogroup:nonroot"]
+      "src": ["*"],
+      "dst": ["*:*"]
     }
-  ]
-}
-```
+  ],
 
-**Stricter access with check mode (recommended for root):**
-```json
-{
+  // SSH ACLs - THIS IS REQUIRED FOR TAILSCALE SSH
   "ssh": [
+    // Rule 1: Allow SSH to your own devices as any non-root user
     {
       "action": "accept",
       "src": ["autogroup:member"],
       "dst": ["autogroup:self"],
       "users": ["autogroup:nonroot"]
     },
+
+    // Rule 2: Allow SSH to tagged servers as your username
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["tag:server", "tag:nexus"],
+      "users": ["autogroup:nonroot"]
+    },
+
+    // Rule 3: Require re-auth for root access (extra security)
     {
       "action": "check",
       "src": ["autogroup:member"],
-      "dst": ["tag:prod"],
+      "dst": ["tag:server", "tag:nexus"],
       "users": ["root"],
       "checkPeriod": "12h"
     }
@@ -168,7 +204,67 @@ Control SSH access with ACLs in the [Tailscale admin console](https://login.tail
 }
 ```
 
-**Check mode** requires re-authentication before SSH access, providing an extra layer of security for sensitive operations.
+#### Step 3: Tag Your Server (Optional but Recommended)
+
+After saving the ACL policy, tag your Nexus server:
+
+1. Go to [Machines](https://login.tailscale.com/admin/machines)
+2. Click on your Nexus server
+3. Click "Edit tags"
+4. Add `tag:server` and/or `tag:nexus`
+
+#### Understanding the Rules
+
+| Rule | Source | Destination | Users | Effect |
+|------|--------|-------------|-------|--------|
+| **Rule 1** | All members | Their own devices | Non-root | SSH to your own machines |
+| **Rule 2** | All members | Tagged servers | Non-root | SSH to Nexus as your user |
+| **Rule 3** | All members | Tagged servers | root | Re-auth required every 12h |
+
+#### Minimal Configuration (Quick Start)
+
+If you just want SSH to work without tags:
+
+```json
+{
+  "acls": [
+    {"action": "accept", "src": ["*"], "dst": ["*:*"]}
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ]
+}
+```
+
+> ⚠️ **Note:** This allows root SSH without re-authentication. Use the recommended config above for better security.
+
+#### Action Types
+
+| Action | Behavior |
+|--------|----------|
+| `accept` | Allow SSH immediately |
+| `check` | Require browser re-authentication (MFA) before allowing |
+| `deny` | Block SSH access |
+
+**Check mode** prompts you to re-authenticate via browser before SSH access, providing extra security for sensitive operations like root access.
+
+#### Verify Your Configuration
+
+After saving ACLs, test SSH:
+
+```bash
+# From another Tailscale device
+ssh your-username@nexus-server.tailnet-name.ts.net
+
+# Or using Tailscale IP
+tailscale status  # Find the IP
+ssh your-username@100.x.y.z
+```
 
 See [Tailscale SSH Documentation](https://tailscale.com/kb/1193/tailscale-ssh) for more details.
 
@@ -314,6 +410,19 @@ Nexus services use **subdomains** (e.g., `hub.ryanliu6.xyz`, `plex.ryanliu6.xyz`
 
 Now, when you are connected to Tailscale, requests to `*.ryanliu6.xyz` will resolve directly to your server's internal IP. Traefik will see the request coming from your Tailscale IP and allow the bypass.
 
+| Problem | Solution |
+|---------|----------|
+| **SSH not accessible** | Ensure Tailscale is running (`tailscale status`). Linux: `sudo tailscale up --ssh`. macOS: Requires open source CLI variant (see setup above). |
+| **Tailscale SSH not working on macOS** | The Mac App Store version does NOT support Tailscale SSH as a server. Install the open source `tailscaled` CLI variant instead. See [Tailscaled on macOS](https://github.com/tailscale/tailscale/wiki/Tailscaled-on-macOS). |
+| **"Permission denied (publickey)"** | 1) Check SSH ACLs in admin console. 2) On macOS server, verify you're using the CLI variant, not the App Store version. 3) Verify user is allowed in ACL rules. |
+| **Access denied to service** | Check user's groups in `users_database.yml`. Verify access rule exists in `configuration.yml`. |
+| **Tailscale bypass not working** | Check client IP (`curl https://ifconfig.me`). Should be 100.64.x.x on Tailscale. Docker Desktop on macOS may show NAT IP. |
+| **Wrong user can access service** | Check rule order in `configuration.yml` - first match wins. Tailscale bypass rule should be first. |
+| **Service shows login screen** | Service not configured for SSO. Check for auth proxy settings (Grafana) or remove USER/PASS env vars (Transmission). |
+| **Authelia login loop** | Verify Redis is running: `docker ps | grep redis`. Check domain matches in `configuration.yml`. |
+| **Can't remove SSH port forwarding** | Safe to remove port 2222 → 22 from router once Tailscale SSH is working. Test first! |
+| **Cloudflare Tunnel not working** | Check `cloudflared` logs: `journalctl -u cloudflared -f` (Linux) or tunnel status in Cloudflare dashboard. |
+
 ---
 
 ## 5. User Management
@@ -431,7 +540,7 @@ Nexus runs with **zero exposed ports** on your router:
 
 If migrating to this architecture:
 
-- [ ] Enable Tailscale SSH: Linux: `sudo tailscale up --ssh` / macOS: Enable in admin console
+- [ ] Enable Tailscale SSH: Linux: `sudo tailscale up --ssh` / macOS: Install CLI variant (see setup above)
 - [ ] Configure SSH ACLs in Tailscale admin console
 - [ ] Test SSH access via Tailscale from all devices
 - [ ] Configure Cloudflare Tunnel for HTTP/HTTPS

@@ -589,7 +589,7 @@ SURE_OPENAI_MODEL=anthropic/claude-sonnet-4.5
 ```bash
 SURE_OPENAI_ACCESS_TOKEN=ollama-local
 SURE_OPENAI_URI_BASE=http://sure-ollama:11434/v1
-SURE_OPENAI_MODEL=qwen2.5:14b
+SURE_OPENAI_MODEL=qwen3:14b
 ```
 
 **If no hardware:**
@@ -941,17 +941,17 @@ SURE_OPENAI_MODEL=meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
 #### NVIDIA/AMD GPUs (Linux/Windows)
 
 **Minimum (8GB VRAM):**
-- Models: `llama3.2:7b`, `gemma2:7b`, `qwen2.5:7b`
+- Models: `llama3.2:7b`, `gemma2:7b`, `qwen3:7b`
 - Performance: Basic chat, slower categorization
 - GPUs: RTX 3070, RTX 4060 Ti, AMD RX 6700 XT
 
 **Recommended (16GB VRAM):**
-- Models: `llama3.1:13b`, `qwen2.5:14b`
+- Models: `llama3.1:13b`, `qwen3:14b`
 - Performance: Good chat and categorization
 - GPUs: RTX 4070 Ti, RTX 3090, AMD RX 7900 XT
 
 **Ideal (24GB+ VRAM):**
-- Models: `qwen2.5:32b`, `llama3.1:70b` (with quantization)
+- Models: `qwen3:32b`, `llama3.1:70b` (with quantization)
 - Performance: Excellent quality
 - GPUs: RTX 4090, RTX 6000 Ada
 
@@ -960,21 +960,21 @@ SURE_OPENAI_MODEL=meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
 **✨ Great news for Mac Mini M4 users!** Apple Silicon has excellent ML performance using unified memory.
 
 **Mac Mini M4 Base (16GB RAM):**
-- Models: `llama3.2:3b`, `qwen2.5:7b`, `gemma2:9b`
+- Models: `llama3.2:3b`, `qwen3:7b`, `gemma2:9b`
 - Performance: Good for basic chat and categorization
-- **Recommended model**: `qwen2.5:7b` (best balance)
+- **Recommended model**: `qwen3:7b` (best balance)
 - Inference speed: ~10-20 tokens/sec
 - **Good enough** for personal finance use
 
 **Mac Mini M4 with 24GB RAM:**
-- Models: `llama3.1:13b`, `qwen2.5:14b`, `gemma2:27b`
+- Models: `llama3.1:13b`, `qwen3:14b`, `gemma2:27b`
 - Performance: Very good quality
-- **Recommended model**: `qwen2.5:14b` (excellent quality)
+- **Recommended model**: `qwen3:14b` (excellent quality)
 - Inference speed: ~15-25 tokens/sec
 - **Great choice** for privacy + quality
 
 **Mac Studio M2 Ultra (64GB+ RAM):**
-- Models: `qwen2.5:32b`, `llama3.1:70b` (4-bit quantized)
+- Models: `qwen3:32b`, `llama3.1:70b` (4-bit quantized)
 - Performance: Excellent quality
 - Inference speed: ~20-40 tokens/sec
 - **Best local option** without dedicated GPU
@@ -995,11 +995,11 @@ brew install ollama
 ollama serve
 
 # Pull a model (choose based on your RAM)
-ollama pull qwen2.5:7b    # For 16GB Mac Mini M4
-ollama pull qwen2.5:14b   # For 24GB Mac Mini M4
+ollama pull qwen3:7b    # For 16GB Mac Mini M4
+ollama pull qwen3:14b   # For 24GB Mac Mini M4
 
 # Test the model
-ollama run qwen2.5:7b
+ollama run qwen3:7b
 ```
 
 **Configure Sure to use local Ollama:**
@@ -1007,7 +1007,7 @@ ollama run qwen2.5:7b
 # In your .env file
 SURE_OPENAI_ACCESS_TOKEN=ollama-local
 SURE_OPENAI_URI_BASE=http://host.docker.internal:11434/v1  # Note: host.docker.internal for Mac
-SURE_OPENAI_MODEL=qwen2.5:7b
+SURE_OPENAI_MODEL=qwen3:7b
 ```
 
 **Why run Ollama natively on Mac instead of Docker?**
@@ -1084,10 +1084,10 @@ services:
 
 | Model | Size | VRAM | Quality | Speed | Best For |
 |-------|------|------|---------|-------|----------|
-| qwen2.5:32b | 32B | 24GB+ | Excellent | Medium | Best local option |
+| qwen3:32b | 32B | 24GB+ | Excellent | Medium | Best local option |
 | llama3.1:13b | 13B | 16GB | Good | Fast | Balanced choice |
 | gemma2:9b | 9B | 12GB | Good | Fast | Budget option |
-| qwen2.5:7b | 7B | 8GB | Fair | Very Fast | Minimum viable |
+| qwen3:7b | 7B | 8GB | Fair | Very Fast | Minimum viable |
 
 **For Transaction Categorization:**
 
@@ -1100,7 +1100,7 @@ Try different models to find what works for you:
 ```bash
 # Pull and test multiple models
 ollama pull llama3.1:13b
-ollama pull qwen2.5:14b
+ollama pull qwen3:14b
 ollama pull gemma2:9b
 
 # Test each model
