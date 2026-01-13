@@ -25,7 +25,7 @@ services:
     container_name: sure-web
     restart: unless-stopped
     networks:
-      - proxy
+      - nexus
       - sure
     ports:
       - ${SURE_PORT}:3000
@@ -56,12 +56,10 @@ services:
         condition: service_started
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.sure-web.rule=Host(`${SURE_DOMAIN}`)"
       - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
-      - "traefik.http.routers.sure-web.entrypoints=https"
-      - "traefik.http.routers.sure-web.tls=true"
-      - "traefik.http.routers.sure-web.tls.certresolver=certchallenge"
+      - "traefik.http.routers.sure-web.entrypoints=http"
 
   sure-worker:
     image: ghcr.io/we-promise/sure:latest
@@ -173,7 +171,7 @@ services:
   #     - sure-ollama
 
 networks:
-  proxy:
+  nexus:
     external: true
   sure:
     name: nexus_sure

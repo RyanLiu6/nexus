@@ -9,6 +9,14 @@ server:
   buffers:
     read: 4096
     write: 4096
+  endpoints:
+    authz:
+      forward-auth:
+        implementation: ForwardAuth
+        authn_strategies:
+          - name: HeaderProxyAuthorization
+            schemes: []
+          - name: CookieSession
 
 log:
   level: info
@@ -26,12 +34,17 @@ access_control:
     - name: tailscale
       networks:
         - 100.64.0.0/10
+    - name: docker
+      networks:
+        - 172.16.0.0/12
   rules:
-    # 1. Bypass Auth if on Tailscale VPN
+    # 1. Bypass Auth if on Tailscale VPN or Docker network (local access)
     # Note: This bypasses the Authelia portal. Apps will NOT require their own login.
     #       Services are configured to trust Authelia headers (SSO).
     - domain: "*.example.com"
-      networks: "tailscale"
+      networks:
+        - "tailscale"
+        - "docker"
       policy: bypass
 
     # 2. Public Routes
@@ -68,6 +81,10 @@ storage:
   encryption_key: unsecure_encryption_key  # REPLACE THIS
   local:
     path: /config/db.sqlite3
+
+identity_validation:
+  reset_password:
+    jwt_secret: unsecure_jwt_secret  # REPLACE THIS
 
 notifier:
   filesystem:

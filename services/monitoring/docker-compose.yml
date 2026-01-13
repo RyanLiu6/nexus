@@ -5,7 +5,7 @@ services:
     container_name: node-exporter
     restart: unless-stopped
     networks:
-      - proxy
+      - nexus
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
       interval: 30s
@@ -21,11 +21,10 @@ services:
       - /:/rootfs:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.node-exporter.rule=Host(`node-exporter.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.node-exporter.loadbalancer.server.port=9100"
-      - "traefik.http.routers.node-exporter.entrypoints=https"
-      - "traefik.http.routers.node-exporter.tls=true"
+      - "traefik.http.routers.node-exporter.entrypoints=http"
       - "traefik.http.routers.node-exporter.middlewares=authelia@docker"
 
   # Prometheus
@@ -40,7 +39,7 @@ services:
         reservations:
           memory: 256M
     networks:
-      - proxy
+      - nexus
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -51,11 +50,10 @@ services:
       - prometheus-data:/prometheus
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
-      - "traefik.http.routers.prometheus.entrypoints=https"
-      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.entrypoints=http"
       - "traefik.http.routers.prometheus.middlewares=authelia@docker"
 
   # Grafana
@@ -70,7 +68,7 @@ services:
         reservations:
           memory: 128M
     networks:
-      - proxy
+      - nexus
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
@@ -95,11 +93,10 @@ services:
       - TZ=${TZ:-America/Vancouver}
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.grafana.rule=Host(`grafana.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      - "traefik.http.routers.grafana.entrypoints=https"
-      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
       - "traefik.http.routers.grafana.middlewares=authelia@docker"
 
   # Alertmanager
@@ -114,7 +111,7 @@ services:
         reservations:
           memory: 128M
     networks:
-      - proxy
+      - nexus
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
       interval: 30s
@@ -128,11 +125,10 @@ services:
       - '--storage.path=/alertmanager'
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
-      - "traefik.http.routers.alertmanager.entrypoints=https"
-      - "traefik.http.routers.alertmanager.tls=true"
+      - "traefik.http.routers.alertmanager.entrypoints=http"
       - "traefik.http.routers.alertmanager.middlewares=authelia@docker"
 
 volumes:
@@ -141,5 +137,5 @@ volumes:
   alertmanager-data:
 
 networks:
-  proxy:
+  nexus:
     external: true

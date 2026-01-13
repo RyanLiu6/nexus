@@ -56,11 +56,11 @@
     # Nexus Configuration
     NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
     NEXUS_BACKUP_DIRECTORY: "{{ nexus_backup_directory }}"
-    DATA_DIRECTORY: "{{ data_directory | default('/Volumes/Data') }}"
+    NEXUS_DATA_DIRECTORY: "{{ nexus_data_directory | default('/Volumes/Data') }}"
     NEXUS_DOMAIN: "{{ nexus_domain }}"
     TZ: "{{ tz | default('America/Vancouver') }}"
     # Cloudflare
-    CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
+    CLOUDFLARE_DNS_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
     CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"
     ACME_EMAIL: "{{ acme_email | default('') }}"
     # Authelia
@@ -70,27 +70,24 @@
     # Traefik
     TRAEFIK_USER: "{{ traefik_user | default('admin') }}"
     TRAEFIK_PASSWORD_HASH: "{{ traefik_password_hash | default('') }}"
-    # Databases
-    POSTGRES_PASSWORD: "{{ postgres_password | default('') }}"
-    MYSQL_ROOT_PASSWORD: "{{ mysql_root_password | default('') }}"
     # FoundryVTT
     FOUNDRY_USERNAME: "{{ foundry_username | default('admin') }}"
     FOUNDRY_PASSWORD: "{{ foundry_password | default('') }}"
     FOUNDRY_ADMIN_KEY: "{{ foundry_admin_key | default('') }}"
-    # Transmission
-    TRANSMISSION_USERNAME: "{{ transmission_username | default('') }}"
-    TRANSMISSION_PASSWORD: "{{ transmission_password | default('') }}"
     # Sure
     SURE_POSTGRES_USER: "{{ sure_postgres_user | default('sure_user') }}"
     SURE_POSTGRES_PASSWORD: "{{ sure_postgres_password | default('') }}"
     SURE_POSTGRES_DB: "{{ sure_postgres_db | default('sure_production') }}"
     SURE_SECRET_KEY_BASE: "{{ sure_secret_key_base | default('') }}"
     SURE_OPENAI_ACCESS_TOKEN: "{{ sure_openai_access_token | default('') }}"
+    SURE_OPENAI_URI_BASE: "{{ sure_openai_uri_base | default('') }}"
+    SURE_OPENAI_MODEL: "{{ sure_openai_model | default('') }}"
     SURE_PORT: "{{ sure_port | default('5006') }}"
     # Nextcloud
     MYSQL_USER: "{{ mysql_user | default('nextcloud') }}"
+    MYSQL_PASSWORD: "{{ mysql_password | default('') }}"
     MYSQL_DATABASE: "{{ mysql_database | default('nextcloud') }}"
-    NEXTCLOUD_DB_PASSWORD: "{{ nextcloud_db_password | default('') }}"
+    MYSQL_ROOT_PASSWORD: "{{ mysql_root_password | default('') }}"
     # Monitoring
     GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
     GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"

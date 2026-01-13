@@ -5,7 +5,6 @@
 - name: Deploy Nexus Homelab
   hosts: localhost
   connection: local
-  become: yes
   vars_files:
     - vars/vault.yml
 

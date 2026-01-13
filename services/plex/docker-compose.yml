@@ -10,7 +10,7 @@ services:
         reservations:
           memory: 1G
     networks:
-      - proxy
+      - nexus
     ports:
       - 32400:32400
     volumes:
@@ -31,14 +31,12 @@ services:
       start_period: 60s
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.plex.loadbalancer.server.port=32400"
-      - "traefik.http.routers.plex.entrypoints=https"
-      - "traefik.http.routers.plex.tls=true"
-      - "traefik.http.routers.plex.tls.certresolver=certchallenge"
-      - "traefik.http.routers.plex.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.plex.entrypoints=http"
+      - "traefik.http.routers.plex.middlewares=authelia@docker,security-headers@file"
 
 networks:
-  proxy:
+  nexus:
     external: true

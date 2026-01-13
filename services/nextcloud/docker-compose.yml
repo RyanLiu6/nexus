@@ -15,7 +15,7 @@ services:
         reservations:
           memory: 256M
     networks:
-      - proxy
+      - nexus
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     volumes:
       - db_volume:/var/lib/mysql
@@ -37,7 +37,7 @@ services:
         reservations:
           memory: 512M
     networks:
-      - proxy
+      - nexus
     ports:
       - 10080:80
     depends_on:
@@ -56,14 +56,12 @@ services:
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
-      - "traefik.http.routers.nextcloud.entrypoints=https"
-      - "traefik.http.routers.nextcloud.tls=true"
-      - "traefik.http.routers.nextcloud.tls.certresolver=certchallenge"
-      - "traefik.http.routers.nextcloud.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.nextcloud.entrypoints=http"
+      - "traefik.http.routers.nextcloud.middlewares=authelia@docker,security-headers@file"
 
 networks:
-  proxy:
+  nexus:
     external: true

@@ -10,12 +10,12 @@ services:
         reservations:
           memory: 1G
     networks:
-      - proxy
+      - nexus
     ports:
       - 8096:8096
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/Config/jellyfin:/config
-      - ${NEXUS_ROOT_DIRECTORY}/Media/movies:/data/movies
+      - ${NEXUS_DATA_DIRECTORY}/Config/jellyfin:/config
+      - ${NEXUS_DATA_DIRECTORY}/Media/movies:/data/movies
     environment:
       - PUID=1000
       - PGID=1000
@@ -30,14 +30,12 @@ services:
       start_period: 30s
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
-      - "traefik.http.routers.jellyfin.entrypoints=https"
-      - "traefik.http.routers.jellyfin.tls=true"
-      - "traefik.http.routers.jellyfin.tls.certresolver=certchallenge"
-      - "traefik.http.routers.jellyfin.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.jellyfin.entrypoints=http"
+      - "traefik.http.routers.jellyfin.middlewares=authelia@docker,security-headers@file"
 
 networks:
-  proxy:
+  nexus:
     external: true

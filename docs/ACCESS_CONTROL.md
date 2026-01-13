@@ -294,24 +294,87 @@ docker run authelia/authelia:latest authelia crypto hash generate argon2 --passw
 docker restart authelia
 ```
 
+## 4. Tailscale & Local Access
+
+To access services internally via Tailscale (bypassing Cloudflare and potential authentication checks), you **must** configure **Split DNS** in your Tailscale Admin Console.
+
+### Why is this required?
+Nexus services use **subdomains** (e.g., `hub.ryanliu6.xyz`, `plex.ryanliu6.xyz`). Traefik uses the `Host` header to route requests to the correct service.
+- Accessing via IP (`http://100.x.y.z`) fails because the `Host` header doesn't match any service.
+- Accessing via public domain (`https://hub.ryanliu6.xyz`) routes through Cloudflare, which sees the request as coming from the public internet (not your Tailscale IP), thus failing the "Bypass Auth" check.
+
+### How to Configure Split DNS
+1. Go to the [Tailscale Admin Console](https://login.tailscale.com/admin/dns).
+2. Under **Nameservers**, ensure "MagicDNS" is enabled.
+3. Scroll to **Split DNS**.
+4. Click **Add nameserver**.
+5. **Domain:** Enter your root domain (e.g., `ryanliu6.xyz`).
+6. **Nameserver:** Enter the **Tailscale IP** of your Nexus server (e.g., `100.x.y.z`).
+7. Save.
+
+Now, when you are connected to Tailscale, requests to `*.ryanliu6.xyz` will resolve directly to your server's internal IP. Traefik will see the request coming from your Tailscale IP and allow the bypass.
+
 ---
 
-## Troubleshooting
+## 5. User Management
 
-| Problem | Solution |
-|---------|----------|
-| **SSH not accessible** | Ensure Tailscale is running (`tailscale status`). Linux: `sudo tailscale up --ssh`. macOS: Enable in admin console. |
-| **Tailscale SSH not working** | Check ACLs in Tailscale admin console. Verify user has SSH permissions. For macOS, ensure SSH is enabled per-machine in admin console. |
-| **"Permission denied (publickey)"** | On macOS, Tailscale SSH must be enabled in admin console, not via CLI. Check SSH ACLs allow your user. |
-| **Access denied to service** | Check user's groups in `users_database.yml`. Verify access rule exists in `configuration.yml`. |
-| **Tailscale bypass not working** | Check client IP (`curl https://ifconfig.me`). Should be 100.64.x.x on Tailscale. Docker Desktop on macOS may show NAT IP. |
-| **Wrong user can access service** | Check rule order in `configuration.yml` - first match wins. Tailscale bypass rule should be first. |
-| **Service shows login screen** | Service not configured for SSO. Check for auth proxy settings (Grafana) or remove USER/PASS env vars (Transmission). |
-| **Authelia login loop** | Verify Redis is running: `docker ps | grep redis`. Check domain matches in `configuration.yml`. |
-| **Can't remove SSH port forwarding** | Safe to remove port 2222 → 22 from router once Tailscale SSH is working. Test first! |
-| **Cloudflare Tunnel not working** | Check `cloudflared` logs: `journalctl -u cloudflared -f` (Linux) or tunnel status in Cloudflare dashboard. |
+Nexus uses **Authelia** for user management. Users are defined in `services/auth/users_database.yml`.
 
----
+### Creating a New User
+
+1. **Generate a Password Hash:**
+   You must hash passwords using Argon2 before adding them to the configuration. Run this command (requires Docker):
+
+   ```bash
+   docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'YourSecretPassword'
+   ```
+
+   *Output example:* `$argon2id$v=19$m=65536,t=3,p=4$DnF...`
+
+2. **Edit the Database:**
+   Open `services/auth/users_database.yml` and add the user.
+
+   ```yaml
+   users:
+     # Admin User (Full Access)
+     admin:
+       displayname: "System Admin"
+       password: "$argon2id$..."
+       email: admin@ryanliu6.xyz
+       groups:
+         - admins
+         - users
+
+     # Gaming/Foundry User (Restricted)
+     gamer:
+       displayname: "Gaming Account"
+       password: "$argon2id$..."
+       email: gamer@ryanliu6.xyz
+       groups:
+         - users
+         - gaming
+
+     # Family/Wife User (Media Access)
+     family:
+       displayname: "Family Member"
+       password: "$argon2id$..."
+       email: family@ryanliu6.xyz
+       groups:
+         - users
+         - media
+   ```
+
+3. **Apply Changes:**
+   Restart Authelia to load the new users:
+
+   ```bash
+   invoke restart --service authelia
+   ```
+
+### User Groups & Permissions
+- **admins**: Full access to all services, including Traefik dashboard and Portainer (if installed).
+- **users**: Basic access to standard services.
+- **media**: Specific access to Plex, Jellyfin, etc. (Configure specific ACLs in `configuration.yml` if needed).
 
 ## Network Architecture Summary
 

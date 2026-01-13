@@ -1,5 +1,3 @@
-import os
-
 from invoke import task
 
 # =============================================================================
@@ -9,8 +7,12 @@ from invoke import task
 
 @task
 def test(c, verbose=False, coverage=True):
-    """
-    Run pytest with coverage.
+    """Run pytest with coverage.
+
+    Args:
+        c: Invoke context.
+        verbose: Enable verbose output.
+        coverage: Enable coverage reporting.
     """
     verbose_flag = "-v" if verbose else ""
     cov_flag = "--cov=src/nexus --cov-report=term-missing" if coverage else ""
@@ -19,8 +21,10 @@ def test(c, verbose=False, coverage=True):
 
 @task
 def test_ci(c):
-    """
-    Run tests for CI with XML output.
+    """Run tests for CI with XML output.
+
+    Args:
+        c: Invoke context.
     """
     c.run(
         "uv run pytest --cov=src/nexus --cov-report=xml --cov-report=term-missing "
@@ -35,8 +39,11 @@ def test_ci(c):
 
 @task
 def ruff_check(c, fix=False):
-    """
-    Check code with ruff.
+    """Check code with ruff.
+
+    Args:
+        c: Invoke context.
+        fix: Auto-fix issues.
     """
     print("Checking code with ruff...")
     fix_arg = "--fix --show-fixes" if fix else ""
@@ -45,8 +52,11 @@ def ruff_check(c, fix=False):
 
 @task
 def ruff_format(c, check_only=False):
-    """
-    Format code with ruff.
+    """Format code with ruff.
+
+    Args:
+        c: Invoke context.
+        check_only: Only check format without making changes.
     """
     print("Formatting code with ruff...")
     check_arg = "--check" if check_only else ""
@@ -55,8 +65,10 @@ def ruff_format(c, check_only=False):
 
 @task
 def mypy(c):
-    """
-    Run mypy type checking.
+    """Run mypy type checking.
+
+    Args:
+        c: Invoke context.
     """
     print("Type checking with mypy...")
     c.run("uv run mypy src/")
@@ -64,8 +76,10 @@ def mypy(c):
 
 @task
 def lint(c):
-    """
-    Run all linting checks (ruff check, ruff format --check, mypy).
+    """Run all linting checks (ruff check, ruff format --check, mypy).
+
+    Args:
+        c: Invoke context.
     """
     ruff_check(c)
     ruff_format(c, check_only=True)
@@ -74,8 +88,10 @@ def lint(c):
 
 @task
 def format(c):
-    """
-    Format and fix all code issues.
+    """Format and fix all code issues.
+
+    Args:
+        c: Invoke context.
     """
     ruff_check(c, fix=True)
     ruff_format(c)
@@ -99,8 +115,7 @@ def deploy(
     dry_run=False,
     yes=False,
 ):
-    """
-    Deploy Nexus services (handles everything: vault, terraform, cloudflared, ansible).
+    """Deploy Nexus services.
 
     --services         Comma-separated list of services to deploy
     --preset           Service preset to deploy (core, home)
@@ -150,16 +165,19 @@ def deploy(
 
 @task
 def generate_dashboard(c, preset="home", domain=None):
-    """
-    Generate dashboard configuration.
+    """Generate dashboard configuration.
 
-    --preset  Service preset to generate for
-    --domain  Base domain
+    Args:
+        c: Invoke context.
+        preset: Service preset to generate for.
+        domain: Base domain.
     """
     args = [f"-p {preset}"]
     if domain:
         args.append(f"-d {domain}")
-    c.run(f"uv run python -m nexus.cli.deploy --skip-dns --skip-ansible {' '.join(args)}")
+    c.run(
+        f"uv run python -m nexus.cli.deploy --skip-dns --skip-ansible {' '.join(args)}"
+    )
 
 
 # =============================================================================
@@ -169,8 +187,11 @@ def generate_dashboard(c, preset="home", domain=None):
 
 @task
 def up(c, service=None):
-    """
-    Start Docker services.
+    """Start Docker services.
+
+    Args:
+        c: Invoke context.
+        service: Specific service to start.
     """
     service_arg = service if service else ""
     c.run(f"docker compose up -d {service_arg}")
@@ -178,16 +199,22 @@ def up(c, service=None):
 
 @task
 def down(c):
-    """
-    Stop all Docker services.
+    """Stop all Docker services.
+
+    Args:
+        c: Invoke context.
     """
     c.run("docker compose down")
 
 
 @task
 def logs(c, service=None, follow=False):
-    """
-    View Docker logs.
+    """View Docker logs.
+
+    Args:
+        c: Invoke context.
+        service: Specific service to view logs for.
+        follow: Follow log output.
     """
     service_arg = service if service else ""
     follow_arg = "-f" if follow else ""
@@ -196,24 +223,31 @@ def logs(c, service=None, follow=False):
 
 @task
 def ps(c):
-    """
-    Show running containers.
+    """Show running containers.
+
+    Args:
+        c: Invoke context.
     """
     c.run("docker compose ps")
 
 
 @task
 def pull(c):
-    """
-    Pull latest images for all services.
+    """Pull latest images for all services.
+
+    Args:
+        c: Invoke context.
     """
     c.run("docker compose pull")
 
 
 @task
 def restart(c, service=None):
-    """
-    Restart services.
+    """Restart services.
+
+    Args:
+        c: Invoke context.
+        service: Specific service to restart.
     """
     service_arg = service if service else ""
     c.run(f"docker compose restart {service_arg}")
@@ -226,11 +260,12 @@ def restart(c, service=None):
 
 @task
 def health(c, domain=None, verbose=False):
-    """
-    Run health checks.
+    """Run health checks.
 
-    --domain   Base domain for SSL checks
-    --verbose  Enable verbose output
+    Args:
+        c: Invoke context.
+        domain: Base domain for SSL checks.
+        verbose: Enable verbose output.
     """
     args = []
     if domain:
@@ -242,13 +277,14 @@ def health(c, domain=None, verbose=False):
 
 @task
 def ops(c, daily=False, weekly=False, monthly=False, all_tasks=False):
-    """
-    Run operations/maintenance tasks.
+    """Run operations/maintenance tasks.
 
-    --daily    Run daily tasks
-    --weekly   Run weekly tasks
-    --monthly  Run monthly tasks
-    --all      Run all tasks
+    Args:
+        c: Invoke context.
+        daily: Run daily tasks.
+        weekly: Run weekly tasks.
+        monthly: Run monthly tasks.
+        all_tasks: Run all tasks.
     """
     args = []
     if daily:
@@ -269,16 +305,21 @@ def ops(c, daily=False, weekly=False, monthly=False, all_tasks=False):
 
 @task
 def backup_list(c):
-    """
-    List available backups.
+    """List available backups.
+
+    Args:
+        c: Invoke context.
     """
     c.run("uv run python -m nexus.cli.restore --list")
 
 
 @task
 def backup_verify(c, backup=None):
-    """
-    Verify backup integrity.
+    """Verify backup integrity.
+
+    Args:
+        c: Invoke context.
+        backup: Specific backup to verify.
     """
     args = ["--verify"]
     if backup:
@@ -288,12 +329,13 @@ def backup_verify(c, backup=None):
 
 @task
 def restore(c, backup, service=None, dry_run=False):
-    """
-    Restore from backup.
+    """Restore from backup.
 
-    --backup   Backup file to restore from
-    --service  Specific service to restore
-    --dry-run  Preview restore without executing
+    Args:
+        c: Invoke context.
+        backup: Backup file to restore from.
+        service: Specific service to restore.
+        dry_run: Preview restore without executing.
     """
     args = [f"--backup {backup}"]
     if service:
@@ -310,19 +352,22 @@ def restore(c, backup, service=None, dry_run=False):
 
 @task
 def ansible_check(c):
-    """
-    Check Ansible playbook syntax.
+    """Check Ansible playbook syntax.
+
+    Args:
+        c: Invoke context.
     """
     c.run("ansible-playbook ansible/playbook.yml --syntax-check")
 
 
 @task
 def ansible_run(c, services="all", check=False):
-    """
-    Run Ansible playbook.
+    """Run Ansible playbook.
 
-    --services  Comma-separated list of services or 'all'
-    --check     Run in check mode (dry-run)
+    Args:
+        c: Invoke context.
+        services: Comma-separated list of services or 'all'.
+        check: Run in check mode (dry-run).
     """
     check_arg = "--check" if check else ""
     c.run(
@@ -339,16 +384,20 @@ def ansible_run(c, services="all", check=False):
 
 @task
 def tf_init(c):
-    """
-    Initialize Terraform.
+    """Initialize Terraform.
+
+    Args:
+        c: Invoke context.
     """
     c.run("terraform -chdir=terraform init")
 
 
 @task
 def tf_plan(c):
-    """
-    Show Terraform plan (reads credentials and domain from vault.yml).
+    """Show Terraform plan (reads credentials and domain from vault.yml).
+
+    Args:
+        c: Invoke context.
     """
     c.run(
         'uv run python -c "'
@@ -360,8 +409,10 @@ def tf_plan(c):
 
 @task
 def tf_apply(c):
-    """
-    Apply Terraform changes (reads credentials and domain from vault.yml).
+    """Apply Terraform changes (reads credentials and domain from vault.yml).
+
+    Args:
+        c: Invoke context.
     """
     c.run(
         'uv run python -c "'
@@ -378,10 +429,11 @@ def tf_apply(c):
 
 @task
 def alert_bot(c, port=8080):
-    """
-    Run the Discord alert bot.
+    """Run the Discord alert bot.
 
-    --port  Port to run the webhook server on
+    Args:
+        c: Invoke context.
+        port: Port to run the webhook server on.
     """
     c.run(f"uv run python -m nexus.cli.alert_bot --port {port}")
 
@@ -393,21 +445,25 @@ def alert_bot(c, port=8080):
 
 @task
 def setup_network(c):
-    """
-    Create Docker proxy network.
+    """Create Docker nexus network.
+
+    Args:
+        c: Invoke context.
     """
     result = c.run("docker network ls --format '{{.Name}}'", hide=True)
-    if "proxy" not in result.stdout:
-        c.run("docker network create proxy")
-        print("✅ Created 'proxy' network")
+    if "nexus" not in result.stdout:
+        c.run("docker network create nexus")
+        print("✅ Created 'nexus' network")
     else:
-        print("✅ 'proxy' network already exists")
+        print("✅ 'nexus' network already exists")
 
 
 @task
 def setup_vault(c):
-    """
-    Create vault.yml from sample if it doesn't exist.
+    """Create vault.yml from sample if it doesn't exist.
+
+    Args:
+        c: Invoke context.
     """
     import shutil
     from pathlib import Path
@@ -426,12 +482,37 @@ def setup_vault(c):
 
 
 @task
-def setup(c):
+def setup_inventory(c):
+    """Create Ansible inventory from example if it doesn't exist.
+
+    Args:
+        c: Invoke context.
     """
-    Run all setup tasks.
+    import shutil
+    from pathlib import Path
+
+    inventory_path = Path("ansible/inventory/hosts.yml")
+    example_path = Path("ansible/inventory/hosts.example")
+
+    if inventory_path.exists():
+        print("⚠️  hosts.yml already exists.")
+    elif example_path.exists():
+        shutil.copy(example_path, inventory_path)
+        print("✅ Created hosts.yml from example.")
+    else:
+        print("❌ hosts.example not found!")
+
+
+@task
+def setup(c):
+    """Run all setup tasks.
+
+    Args:
+        c: Invoke context.
     """
     setup_network(c)
     setup_vault(c)
+    setup_inventory(c)
     print("\n✅ Setup complete! Next steps:")
     print("   1. Edit ansible/vars/vault.yml with your secrets")
     print("   2. Encrypt vault: ansible-vault encrypt ansible/vars/vault.yml")

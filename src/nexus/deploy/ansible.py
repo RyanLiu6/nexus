@@ -39,11 +39,10 @@ def run_ansible(services: list[str], dry_run: bool = False) -> None:
         run_command(
             [
                 "ansible-playbook",
-                "playbook.yml",
+                "ansible/playbook.yml",
                 "--extra-vars",
                 f"services={services_str}",
             ],
-            cwd=ANSIBLE_PATH,
         )
         logging.info("Services deployed successfully!")
     except subprocess.CalledProcessError:

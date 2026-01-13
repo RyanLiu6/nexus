@@ -10,7 +10,7 @@ services:
         reservations:
           memory: 64M
     networks:
-      - proxy
+      - nexus
     volumes:
       - ${NEXUS_ROOT_DIRECTORY}/services/dashboard/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -25,13 +25,11 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.homepage.rule=Host(`hub.${NEXUS_DOMAIN}`)"
-      - "traefik.http.routers.homepage.entrypoints=https"
-      - "traefik.http.routers.homepage.tls=true"
-      - "traefik.http.routers.homepage.tls.certresolver=certchallenge"
-      - "traefik.http.routers.homepage.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.homepage.entrypoints=http"
+      - "traefik.http.routers.homepage.middlewares=authelia@docker,security-headers@file"
 
 networks:
-  proxy:
+  nexus:
     external: true

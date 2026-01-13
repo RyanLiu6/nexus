@@ -36,14 +36,14 @@
 services:
 {% for svc_name, svc_config in all_services.items() %}
   {{ svc_name }}:
-{{ svc_config | to_nice_yaml(indent=2) | indent(4, first=False) }}
+{{ svc_config | to_nice_yaml(indent=2) | indent(4, first=True) }}
 {% endfor %}
 
 networks:
 {% for net_name, net_config in all_networks.items() %}
   {{ net_name }}:
 {% if net_config %}
-{{ net_config | to_nice_yaml(indent=2) | indent(4, first=False) }}
+{{ net_config | to_nice_yaml(indent=2) | indent(4, first=True) }}
 {% else %}
     {}
 {% endif %}
@@ -54,7 +54,7 @@ volumes:
 {% for vol_name, vol_config in all_volumes.items() %}
   {{ vol_name }}:
 {% if vol_config %}
-{{ vol_config | to_nice_yaml(indent=2) | indent(4, first=False) }}
+{{ vol_config | to_nice_yaml(indent=2) | indent(4, first=True) }}
 {% else %}
     {}
 {% endif %}

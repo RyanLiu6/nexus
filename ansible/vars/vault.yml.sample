@@ -43,7 +43,7 @@ nexus_backup_directory: "/path/to/backups"
 # Data directory for service volumes (media, configs, databases)
 # macOS: ~/Data or /Volumes/Data
 # Linux: /data
-data_directory: "/path/to/data"
+nexus_data_directory: "/path/to/data"
 
 # Your domain (e.g., example.com)
 nexus_domain: "example.com"
@@ -234,7 +234,7 @@ foundry_admin_key: "CHANGE_ME"
 # -------------------------  -> --------------------
 # nexus_root_directory       -> NEXUS_ROOT_DIRECTORY
 # nexus_backup_directory     -> NEXUS_BACKUP_DIRECTORY
-# data_directory             -> DATA_DIRECTORY
+# nexus_data_directory       -> NEXUS_DATA_DIRECTORY
 # nexus_domain               -> NEXUS_DOMAIN
 # tz                         -> TZ
 # cloudflare_api_token       -> CLOUDFLARE_DNS_API_TOKEN

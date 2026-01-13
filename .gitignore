@@ -36,11 +36,16 @@ ENV/
 /docker-compose.yml
 
 # Secrets
-ansible/vars/vault.yml
+vault.yml
+hosts.yml
 *.vault
+.vault_pass
+traefik.yml
 
-# Traefik certs (sensitive)
+# Traefik certs and generated configs (sensitive)
 services/traefik/letsencrypt/
+services/traefik/traefik.yml
+services/traefik/rules/middlewares.yml
 
 # Coverage reports
 .coverage
@@ -58,6 +63,7 @@ services/auth/configuration.yml
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfvars
+terraform/*.tfvars.json
 terraform/override.tf
 
 # Logs

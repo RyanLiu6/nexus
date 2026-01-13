@@ -17,7 +17,11 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.auth import generate_authelia_config
+from nexus.deploy.auth import (
+    generate_authelia_config,
+    generate_traefik_config,
+    generate_traefik_middlewares,
+)
 from nexus.deploy.terraform import run_terraform
 from nexus.generate.dashboard import generate_dashboard_config
 from nexus.utils import read_vault
@@ -42,15 +46,15 @@ def _check_docker_network() -> bool:
             text=True,
             check=True,
         )
-        return "proxy" in result.stdout.split("\n")
+        return "nexus" in result.stdout.split("\n")
     except subprocess.CalledProcessError:
         return False
 
 
 def _create_docker_network() -> None:
-    logging.info("Creating Docker proxy network...")
-    subprocess.run(["docker", "network", "create", "proxy"], check=True)
-    logging.info("✅ Created 'proxy' network")
+    logging.info("Creating Docker nexus network...")
+    subprocess.run(["docker", "network", "create", "nexus"], check=True)
+    logging.info("✅ Created 'nexus' network")
 
 
 def _is_vault_encrypted() -> bool:
@@ -146,6 +150,9 @@ def _generate_configs(
 
     if domain:
         generate_authelia_config(domain, dry_run)
+        generate_traefik_middlewares(domain, dry_run)
+
+    generate_traefik_config(dry_run)
 
 
 @click.command()
@@ -333,7 +340,7 @@ def main(
     # =========================================================================
     if not _check_docker_network():
         if dry_run:
-            logging.info("[DRY RUN] Would create Docker proxy network")
+            logging.info("[DRY RUN] Would create Docker nexus network")
         else:
             _create_docker_network()
 

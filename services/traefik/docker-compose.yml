@@ -12,7 +12,7 @@ services:
         reservations:
           memory: 128M
     networks:
-      - proxy
+      - nexus
     ports:
       - 80:80
       - 443:443
@@ -22,7 +22,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${NEXUS_ROOT_DIRECTORY}/services/traefik/traefik.yml:/traefik.yml:ro
       - ${NEXUS_ROOT_DIRECTORY}/services/traefik/rules:/rules:ro
-      - ${NEXUS_ROOT_DIRECTORY}/services/traefik/letsencrypt:/letsencrypt
+      - ${NEXUS_DATA_DIRECTORY}/traefik/letsencrypt:/letsencrypt
     environment:
       - ACME_EMAIL=${ACME_EMAIL}
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
@@ -35,25 +35,24 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
 
-      # global redirect to https
-      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
-      - "traefik.http.routers.http-catchall.entrypoints=http"
-      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
-
-      # middleware redirect
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      # NOTE: HTTP→HTTPS redirect is NOT needed when using Cloudflare Tunnel
+      # Cloudflare handles HTTPS at the edge and sends HTTP to the tunnel
+      # If you enable direct access (not via tunnel), uncomment these:
+      # - "traefik.http.routers.http-catchall.rule=PathPrefix(`/`)"
+      # - "traefik.http.routers.http-catchall.entrypoints=http"
+      # - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      # - "traefik.http.routers.http-catchall.priority=1"
+      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
       # Dashboard
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${NEXUS_DOMAIN}`)"
-      - "traefik.http.routers.dashboard.entrypoints=https"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.routers.dashboard.tls.certresolver=certchallenge"
-      - "traefik.http.routers.dashboard.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.dashboard.entrypoints=http"
+      - "traefik.http.routers.dashboard.middlewares=authelia@docker,security-headers@file"
       - "traefik.http.routers.dashboard.service=api@internal"
 
 networks:
-  proxy:
+  nexus:
     external: true

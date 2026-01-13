@@ -1,12 +1,32 @@
+log:
+  level: INFO
+
 api:
   dashboard: true
   insecure: false
 
+ping:
+  entryPoint: "traefik"
+
 entryPoints:
+  traefik:
+    address: ":8080"
   http:
     address: ":80"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "::1/128"
+        - "172.16.0.0/12"  # Docker networks
+        - "100.64.0.0/10"  # Tailscale VPN
   https:
     address: ":443"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "::1/128"
+        - "172.16.0.0/12"  # Docker networks
+        - "100.64.0.0/10"  # Tailscale VPN
 
 providers:
   docker:

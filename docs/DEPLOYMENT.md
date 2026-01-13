@@ -147,7 +147,7 @@ sudo chown -R $USER:$USER /data
 
 ## Step 5: Initial Setup
 
-This creates the Docker network and copies the vault sample:
+This creates the Docker network, copies the vault sample, and sets up the Ansible inventory:
 
 ```bash
 invoke setup
@@ -157,6 +157,7 @@ You should see:
 ```
 ✅ Created 'proxy' network
 ✅ Created vault.yml from sample. Edit it with your secrets.
+✅ Created hosts.yml from example.
 ```
 
 ---
@@ -279,6 +280,27 @@ ansible-vault edit ansible/vars/vault.yml
 ansible-vault rekey ansible/vars/vault.yml
 ```
 
+### Using a Vault Password File (Optional)
+
+To avoid being prompted for the vault password on every deploy, create a `.vault_pass` file:
+
+```bash
+# Create the password file (replace with your actual vault password)
+echo "your-vault-password" > .vault_pass
+
+# Secure the file permissions
+chmod 600 .vault_pass
+```
+
+The `ansible.cfg` is already configured to use this file. Once created:
+- `invoke deploy` won't prompt for the vault password
+- `ansible-vault view/edit` commands work without `--vault-password-file`
+
+**Security notes:**
+- `.vault_pass` is in `.gitignore` and will never be committed
+- Use `chmod 600` to ensure only you can read it
+- Store your vault password in a password manager as backup
+
 ---
 
 ## 🎉 Setup Complete!
@@ -297,12 +319,15 @@ Continue to [Advanced Features](#advanced-features) for optional enhancements.
 
 1. **Terraform** manages Cloudflare Tunnel and DNS records
 2. **Ansible** generates the root `docker-compose.yml` by:
+   - Reading the inventory file (`ansible/inventory/hosts.yml`) to determine deployment targets
    - Reading the service preset
    - Combining individual `services/<name>/docker-compose.yml` files
    - Injecting secrets from `vault.yml`
    - Running `docker compose up -d`
 
 The generated `docker-compose.yml` is not committed (it contains secrets).
+
+**Inventory file:** `ansible/inventory/hosts.yml` defines where services are deployed. By default, it's set to `localhost` for local deployments. To deploy to remote servers, add them under `[remote_servers]` in this file.
 
 ## Authentication Architecture (SSO-First)
 

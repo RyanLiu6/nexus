@@ -1,8 +1,8 @@
 # Example inventory file
-# Copy this to hosts and modify as needed
+# Copy this to hosts.yml and modify as needed
 
 [localhost]
-127.0.0.1 ansible_connection=local
+127.0.0.1 ansible_connection=local ansible_python_interpreter={{ ansible_playbook_python }}
 
 [remote_servers]
 # Add remote servers here if deploying to remote machines

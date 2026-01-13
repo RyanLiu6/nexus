@@ -10,12 +10,12 @@ services:
         reservations:
           memory: 256M
     networks:
-      - proxy
+      - nexus
       - sure
     ports:
       - ${SURE_PORT:-5006}:3000
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/sure/storage:/rails/storage
+      - ${NEXUS_DATA_DIRECTORY}/sure/storage:/rails/storage
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -38,13 +38,11 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=nexus"
       - "traefik.http.routers.sure-web.rule=Host(`sure.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
-      - "traefik.http.routers.sure-web.entrypoints=https"
-      - "traefik.http.routers.sure-web.tls=true"
-      - "traefik.http.routers.sure-web.tls.certresolver=certchallenge"
-      - "traefik.http.routers.sure-web.middlewares=authelia@docker,security-headers@docker"
+      - "traefik.http.routers.sure-web.entrypoints=http"
+      - "traefik.http.routers.sure-web.middlewares=authelia@docker,security-headers@file"
 
   sure-worker:
     image: ghcr.io/we-promise/sure:latest
@@ -60,7 +58,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/sure/storage:/rails/storage
+      - ${NEXUS_DATA_DIRECTORY}/sure/storage:/rails/storage
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -95,7 +93,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/sure/postgres:/var/lib/postgresql/data
+      - ${NEXUS_DATA_DIRECTORY}/sure/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -120,7 +118,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/sure/redis:/data
+      - ${NEXUS_DATA_DIRECTORY}/sure/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -128,7 +126,7 @@ services:
       retries: 5
 
 networks:
-  proxy:
+  nexus:
     external: true
   sure:
     name: nexus_sure

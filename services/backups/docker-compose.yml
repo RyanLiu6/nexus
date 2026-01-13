@@ -10,7 +10,7 @@ services:
         reservations:
           memory: 128M
     networks:
-      - proxy
+      - nexus
     environment:
       - TZ=${TZ}
       - BORG_PASSPHRASE=${BORG_PASSPHRASE}
@@ -28,13 +28,13 @@ services:
       - ${NEXUS_BACKUP_DIRECTORY}:/mnt/repo
       - ~/.ssh:/root/.ssh:ro
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      # Borgmatic has no web UI - disable Traefik
+      - "traefik.enable=false"
 
 # Note: This container runs on a cron schedule inside the image.
 # You need to configure the crontab in your borgmatic config.
 # See docs/runbooks/backups.md for instructions.
 
 networks:
-  proxy:
+  nexus:
     external: true

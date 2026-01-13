@@ -23,12 +23,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "nexus" {
       service  = "http://localhost:80"
     }
 
-    # Root domain route
-    ingress_rule {
-      hostname = var.domain
-      service  = "http://localhost:80"
-    }
-
     # Catch-all (required by Cloudflare)
     ingress_rule {
       service = "http_status:404"
@@ -36,18 +30,8 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "nexus" {
   }
 }
 
-# DNS CNAME record pointing root domain to the tunnel
-resource "cloudflare_record" "tunnel_root" {
-  count   = var.use_tunnel ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = "@"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-}
-
 # DNS CNAME record pointing wildcard to the tunnel
+# Note: Root domain (ryanliu6.xyz) uses Cloudflare Pages, not the tunnel
 resource "cloudflare_record" "tunnel_wildcard" {
   count   = var.use_tunnel ? 1 : 0
   zone_id = var.cloudflare_zone_id

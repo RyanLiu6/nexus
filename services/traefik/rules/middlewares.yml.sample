@@ -1,5 +1,15 @@
 http:
   middlewares:
+    authelia:
+      forwardAuth:
+        address: "http://authelia:9091/api/verify?rd=https://auth.${NEXUS_DOMAIN}/"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "Remote-User"
+          - "Remote-Groups"
+          - "Remote-Email"
+          - "Remote-Name"
+
     security-headers:
       headers:
         customResponseHeaders:
