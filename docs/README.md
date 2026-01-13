@@ -24,7 +24,7 @@ Welcome to Nexus documentation! This folder contains guides for deploying, confi
 
 - [Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) - Get notified of service issues
 - [Sure AI Integration](DEPLOYMENT.md#advanced-sure-ai-integration) - Auto-categorize transactions
-- [Tailscale SSH](DEPLOYMENT.md#advanced-tailscale-ssh) - Secure SSH without port forwarding
+- [Tailscale SSH](ACCESS_CONTROL.md#ssh-access-via-tailscale) - Secure SSH without port forwarding
 
 ### Service Documentation
 

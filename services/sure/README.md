@@ -63,60 +63,29 @@ cat sure-backup.sql | docker exec -i sure-db psql -U ${SURE_POSTGRES_USER} -d ${
 
 ## AI Integration
 
-Sure supports multiple AI providers for automatic transaction categorization.
+Sure supports multiple AI providers for automatic transaction categorization and financial insights.
 
-### Option 1: Local AI with Ollama (Recommended for Privacy)
+### 📚 Documentation
+- **[Cloud AI Setup](docs/ai-integration.md)**: OpenAI, Claude, Gemini, DeepSeek (Easiest)
+- **[Local AI Setup](docs/ollama-setup.md)**: Privacy-focused setup with Ollama (Recommended for privacy)
 
-Keep your financial data completely private:
+### Quick Config Options
 
-```bash
-# Install Ollama (macOS)
-brew install ollama
-
-# Pull base model and create custom financial model
-ollama pull qwen3:7b
-ollama create ena -f Modelfile
-```
-
-Configure in vault.yml:
+**Option 1: Local AI (Privacy Recommended)**
 ```yaml
+# vault.yml
 sure_openai_access_token: "ollama-local"
 sure_openai_uri_base: "http://host.docker.internal:11434/v1"
 sure_openai_model: "ena"
 ```
 
-**Full Instructions:** [Ollama Setup Guide](docs/ollama-setup.md)
-
-### Option 2: Cloud AI Providers
-
+**Option 2: Cloud AI (OpenRouter/OpenAI/Claude)**
 ```yaml
-# OpenAI
-sure_openai_access_token: "<openai_api_key_here>"
-sure_openai_model: "gpt-4"
-
-# Claude API
-sure_openai_access_token: "<anthropic_api_key_here>"
-sure_openai_uri_base: "https://api.anthropic.com/v1"
-sure_openai_model: "claude-sonnet-4-20250514"
-
-# OpenRouter (any provider)
-sure_openai_access_token: "<openrouter_api_key_here>"
-sure_openai_uri_base: "https://openrouter.ai/api/v1"
-sure_openai_model: "deepseek/deepseek-chat"
+# vault.yml
+sure_openai_access_token: "<api_key>"
+sure_openai_uri_base: "https://openrouter.ai/api/v1" # Optional
+sure_openai_model: "anthropic/claude-3-sonnet"
 ```
-
-**Full Instructions:** [AI Integration Guide](docs/ai-integration.md)
-
-### Cost Comparison
-
-| Provider | Monthly Cost | Privacy |
-|----------|--------------|---------|
-| Ollama (local) | $0 | ✅ Complete |
-| Deepseek | $2-5 | ❌ Cloud |
-| Claude API | $10-25 | ❌ Cloud |
-| OpenAI | $5-20 | ❌ Cloud |
-
-**Important**: Web subscriptions (Claude Pro, Gemini Pro) do NOT provide API access.
 
 ---
 
