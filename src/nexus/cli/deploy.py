@@ -187,7 +187,8 @@ def _generate_configs(
     help="Preview changes without making them.",
 )
 @click.option(
-    "-y", "--yes",
+    "-y",
+    "--yes",
     is_flag=True,
     default=False,
     help="Skip confirmation prompts.",
