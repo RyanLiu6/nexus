@@ -62,7 +62,7 @@ For complete privacy and no ongoing costs:
    ollama pull llama3.1:13b
 
    # Budget: smaller model (requires 8GB VRAM)
-   ollama pull gemma2:7b
+   ollama pull qwen3:8b
    ```
 
 3. **Configure Sure** in `.env`:

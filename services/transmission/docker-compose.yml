@@ -23,7 +23,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
-      # No USER/PASS - authentication handled by Authelia SSO
+      # No USER/PASS - authentication handled by Tailscale
       - DOCKER_MODS=linuxserver/mods:transmission-floodui
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
     healthcheck:
@@ -35,10 +35,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.transmission.rule=Host(`transmission.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"
-      - "traefik.http.routers.transmission.entrypoints=http"
-      - "traefik.http.routers.transmission.middlewares=authelia@docker,security-headers@file"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.transmission.entrypoints=https"
+      - "traefik.http.routers.transmission.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.tls.certresolver=certchallenge"
 
 networks:
   nexus:

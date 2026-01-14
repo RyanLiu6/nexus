@@ -5,8 +5,7 @@
 Nexus is a self-hosted homelab solution that provides:
 
 - **Centralized access** to all services via a single dashboard
-- **Secure authentication** with Authelia SSO/2FA
-- **Private VPN access** via Tailscale (bypasses auth for admin)
+- **Secure authentication** with Tailscale (Network & Service level)
 - **Automated DNS** via Terraform + Cloudflare
 - **Containerized services** managed by Ansible + Docker Compose
 
@@ -15,9 +14,8 @@ Nexus is a self-hosted homelab solution that provides:
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Dashboard | ✅ | Homepage with links to all services |
-| SSO/2FA Auth | ✅ | Authelia for user authentication |
-| Admin VPN Bypass | ✅ | Tailscale bypasses Authelia for admin |
-| User Groups | ✅ | Separate access for wife, gaming friends |
+| Tailscale Auth | ✅ | Network and service-level access control |
+| User Groups | ✅ | Access control via Tailscale ACLs |
 | Auto SSL | ✅ | Let's Encrypt via Traefik |
 | DNS Management | ✅ | Terraform + Cloudflare |
 | Health Checks | ✅ | Docker healthchecks on all services |
@@ -34,7 +32,7 @@ Nexus is a self-hosted homelab solution that provides:
 |-------|------------|---------|
 | Runtime | Docker + Docker Compose | Container orchestration |
 | Proxy | Traefik | Reverse proxy, SSL, routing |
-| Auth | Authelia | SSO, 2FA, access control |
+| Auth | Tailscale + Header Auth | Network security & Identity |
 | DNS | Terraform + Cloudflare | DNS record management |
 | Config | Ansible | Docker Compose generation |
 | Secrets | Ansible Vault | Encrypted credentials |
@@ -82,11 +80,11 @@ This allows:
 ## Traffic Flow
 
 ```
-Internet → Cloudflare DNS → Router:443 → Traefik → Authelia → Service
-                                              ↓
-                                        SSL Termination
+Internet → Cloudflare DNS → Cloudflare Tunnel → FoundryVTT (Public)
 
-Tailscale → Device (100.x.x.x) → Traefik → Service (bypasses Authelia)
+Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Service
+                                                 ↓
+                                         Check Group Access
 ```
 
 ---
@@ -108,38 +106,14 @@ Tailscale → Device (100.x.x.x) → Traefik → Service (bypasses Authelia)
 Service (down/high CPU) → Prometheus → Alert Rule → Alertmanager → Webhook → Discord
 ```
 
-### Setting Up Discord Alerts
+### Setting Up Alerts
 
-1. **Create Discord webhook:**
-   - Server Settings → Integrations → Webhooks → New Webhook
-   - Copy webhook URL
+See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) for setup instructions.
 
-2. **Configure Alertmanager** (`services/monitoring/alertmanager.yml`):
-   ```yaml
-   route:
-     receiver: 'discord'
-   receivers:
-     - name: 'discord'
-       webhook_configs:
-         - url: 'http://localhost:8080/webhook'
-   ```
-
-3. **Run alert bot:**
-   ```bash
-   uv run nexus-alert-bot --port 8080
-   ```
-
-4. **Configure webhook URL in vault.yml:**
-   ```yaml
-   discord_webhook_url: "https://discord.com/api/webhooks/..."
-   ```
-
-### Example Alerts
-
-- Service down for > 5 minutes
-- CPU usage > 80% for > 15 minutes
-- Disk usage > 90%
-- Container restart loop
+**Alert types:**
+- Service down > 5 minutes
+- High CPU/memory/disk usage
+- Container restart loops
 
 ---
 
@@ -147,7 +121,7 @@ Service (down/high CPU) → Prometheus → Alert Rule → Alertmanager → Webho
 
 ```python
 PRESETS = {
-    "core": ["traefik", "auth", "dashboard", "monitoring"],
+    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
     "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
 }
 ```
@@ -156,10 +130,10 @@ PRESETS = {
 
 | Service | Purpose | Access |
 |---------|---------|--------|
-| **traefik** | Reverse proxy, SSL | Admin (2FA) |
-| **auth** | Authelia SSO | Admin (2FA) |
-| **dashboard** | Homepage | Admin (2FA) |
-| **monitoring** | Prometheus + Grafana | Admin (2FA) |
+| **traefik** | Reverse proxy, SSL | Admin (Tailscale) |
+| **tailscale-access**| Auth Middleware | Internal |
+| **dashboard** | Homepage | Admin/Member (Tailscale) |
+| **monitoring** | Prometheus + Grafana | Admin (Tailscale) |
 | **jellyfin** | Media server | Admin |
 | **plex** | Media streaming | Admin + Wife |
 | **transmission** | Torrent client | Admin |
@@ -191,10 +165,8 @@ nexus/
 │   └── bootstrap             # Initial setup script
 │
 ├── services/                 # Service definitions
-│   ├── auth/
-│   │   ├── docker-compose.yml
-│   │   └── configuration.yml.sample
 │   ├── traefik/
+│   ├── tailscale-access/     # Auth middleware
 │   ├── dashboard/
 │   ├── monitoring/
 │   │   ├── docker-compose.yml
@@ -234,11 +206,6 @@ nexus_domain: "example.com"
 cloudflare_api_token: "..."
 cloudflare_zone_id: "..."
 
-# Authelia
-authelia_jwt_secret: "..."
-authelia_session_secret: "..."
-authelia_storage_encryption_key: "..."
-
 # Databases
 postgres_password: "..."
 sure_db_password: "..."
@@ -252,9 +219,6 @@ discord_webhook_url: "..."
 ```bash
 # Random 64-char secret
 openssl rand -hex 32
-
-# Authelia password hash
-docker run authelia/authelia:latest authelia crypto hash generate argon2 --password 'password'
 
 # Traefik password hash
 htpasswd -nb admin password | sed 's/\$/\$\$/g'
@@ -281,4 +245,4 @@ ansible-vault view ansible/vars/vault.yml
 
 - **Single machine** - No high availability
 - **Docker Desktop NAT** - Tailscale bypass may not work on macOS
-- **Manual initial setup** - Authelia users, initial certificates
+- **Manual initial setup** - Tailscale ACLs, initial certificates

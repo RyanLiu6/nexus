@@ -1,0 +1,34 @@
+# Traefik Middlewares
+# Uses Go template syntax for environment variable substitution.
+# NEXUS_DOMAIN must be passed to the Traefik container.
+
+http:
+  middlewares:
+    # Required for Cloudflare Tunnel - sets X-Forwarded-Proto to https
+    # Used only by FoundryVTT (the only public service)
+    cloudflare-proto:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+
+    # IP whitelist for direct HTTPS access (Tailscale + local networks only)
+    # Blocks any direct HTTPS access from the public internet
+    tailscale-only:
+      ipAllowList:
+        sourceRange:
+          - "100.64.0.0/10"     # Tailscale CGNAT range
+          - "172.16.0.0/12"     # Docker networks
+          - "192.168.0.0/16"    # Local LAN
+          - "10.0.0.0/8"        # Private networks
+          - "127.0.0.1/32"      # Localhost
+          - "::1/128"           # IPv6 localhost
+
+    # Security headers for all responses
+    security-headers:
+      headers:
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "geolocation=(self), microphone=(), camera=()"

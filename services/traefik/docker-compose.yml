@@ -27,6 +27,7 @@ services:
       - ACME_EMAIL=${ACME_EMAIL}
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+      - NEXUS_DOMAIN=${NEXUS_DOMAIN}
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
@@ -36,22 +37,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-
-      # NOTE: HTTP→HTTPS redirect is NOT needed when using Cloudflare Tunnel
-      # Cloudflare handles HTTPS at the edge and sends HTTP to the tunnel
-      # If you enable direct access (not via tunnel), uncomment these:
-      # - "traefik.http.routers.http-catchall.rule=PathPrefix(`/`)"
-      # - "traefik.http.routers.http-catchall.entrypoints=http"
-      # - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
-      # - "traefik.http.routers.http-catchall.priority=1"
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-
-      # Dashboard
+      # Dashboard - HTTPS only (Tailscale access only)
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${NEXUS_DOMAIN}`)"
-      - "traefik.http.routers.dashboard.entrypoints=http"
-      - "traefik.http.routers.dashboard.middlewares=authelia@docker,security-headers@file"
+      - "traefik.http.routers.dashboard.entrypoints=https"
+      - "traefik.http.routers.dashboard.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
       - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=certchallenge"
 
 networks:
   nexus:

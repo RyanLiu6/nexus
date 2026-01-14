@@ -41,6 +41,12 @@
   vars:
     service_compose_files: "{{ compose_files.results }}"
 
+- name: Generate Tailscale access rules
+  ansible.builtin.template:
+    src: access-rules.yml.j2
+    dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
+    mode: "0644"
+
 - name: Ensure Docker network exists
   community.docker.docker_network:
     name: proxy
@@ -63,10 +69,6 @@
     CLOUDFLARE_DNS_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
     CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"
     ACME_EMAIL: "{{ acme_email | default('') }}"
-    # Authelia
-    AUTHELIA_JWT_SECRET: "{{ authelia_jwt_secret | default('') }}"
-    AUTHELIA_SESSION_SECRET: "{{ authelia_session_secret | default('') }}"
-    AUTHELIA_STORAGE_ENCRYPTION_KEY: "{{ authelia_storage_encryption_key | default('') }}"
     # Traefik
     TRAEFIK_USER: "{{ traefik_user | default('admin') }}"
     TRAEFIK_PASSWORD_HASH: "{{ traefik_password_hash | default('') }}"
@@ -98,6 +100,9 @@
     ALERT_PROVIDER: "{{ alert_provider | default('discord') }}"
     # Backups
     BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
+    # Tailscale
+    TAILNET_NAME: "{{ tailnet_name | default('') }}"
+    TAILSCALE_ADMIN_USERS: "{{ tailscale_admin_users | default('') }}"
   register: compose_result
 
 - name: Display deployment result

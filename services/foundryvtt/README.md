@@ -83,22 +83,15 @@ Edit `${DATA_DIRECTORY}/Foundry/data/Config/options.json`:
 
 ### Public Access (Recommended for Games)
 
-Remove Authelia middleware to allow players direct access:
-```yaml
-labels:
-  # No authelia middleware
-  - "traefik.http.routers.foundryvtt.middlewares=security-headers@docker"
-```
+FoundryVTT is exposed publicly via Cloudflare Tunnel to allow players to connect without Tailscale.
+This route (`foundry.yourdomain.com`) bypasses Tailscale access controls but is protected by Foundry's built-in user authentication.
 
-Players use Foundry's built-in authentication.
+Configured via `cloudflare-proto` middleware in `docker-compose.yml`.
 
-### Protected Access
+### Private Access (Admin)
 
-Keep Authelia middleware for extra security:
-```yaml
-labels:
-  - "traefik.http.routers.foundryvtt.middlewares=authelia@docker"
-```
+Admins can access via Tailscale, which routes through the `tailscale-access` middleware for extra security.
+This route uses the same domain but requires a valid Tailscale identity.
 
 ---
 

@@ -1,6 +1,11 @@
 # Cloudflare Tunnel Configuration
 # This creates and manages a Cloudflare Tunnel for zero-port-forwarding access
 # Only created when use_tunnel = true
+#
+# SECURITY MODEL:
+# - Only FoundryVTT is publicly accessible via Cloudflare Tunnel
+# - All other services require Tailscale VPN access
+# - FoundryVTT has its own authentication system
 
 # Tunnel for the nexus homelab
 resource "cloudflare_zero_trust_tunnel_cloudflared" "nexus" {
@@ -10,32 +15,33 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "nexus" {
   secret     = base64encode(var.tunnel_secret)
 }
 
-# Tunnel configuration - routes all subdomains through the tunnel
+# Tunnel configuration - only routes FoundryVTT through the tunnel
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "nexus" {
   count      = var.use_tunnel ? 1 : 0
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id
 
   config {
-    # Wildcard route for all subdomains
+    # FoundryVTT - the only publicly accessible service
+    # Has its own authentication system for game sessions
     ingress_rule {
-      hostname = "*.${var.domain}"
+      hostname = "foundry.${var.domain}"
       service  = "http://localhost:80"
     }
 
-    # Catch-all (required by Cloudflare)
+    # Catch-all - return 403 for any other subdomain
+    # All other services require Tailscale access
     ingress_rule {
-      service = "http_status:404"
+      service = "http_status:403"
     }
   }
 }
 
-# DNS CNAME record pointing wildcard to the tunnel
-# Note: Root domain (ryanliu6.xyz) uses Cloudflare Pages, not the tunnel
-resource "cloudflare_record" "tunnel_wildcard" {
+# DNS CNAME record for FoundryVTT pointing to the tunnel
+resource "cloudflare_record" "tunnel_foundry" {
   count   = var.use_tunnel ? 1 : 0
   zone_id = var.cloudflare_zone_id
-  name    = "*"
+  name    = "foundry"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id}.cfargotunnel.com"
   type    = "CNAME"
   ttl     = 1

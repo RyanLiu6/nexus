@@ -6,7 +6,7 @@ groups:
     rules:
       # Service Down Alerts
       - alert: ServiceDown
-        expr: up{job=~"traefik|authelia|plex|jellyfin|sure|foundryvtt"} == 0
+        expr: up{job=~"traefik|plex|jellyfin|sure|foundryvtt"} == 0
         for: 5m
         labels:
           severity: critical
@@ -16,7 +16,7 @@ groups:
           description: "Service {{ $labels.instance }} has been down for more than 5 minutes"
 
       - alert: MultipleServicesDown
-        expr: count(up{job=~"traefik|authelia|plex|jellyfin|sure|foundryvtt"} == 0) > 2
+        expr: count(up{job=~"traefik|plex|jellyfin|sure|foundryvtt"} == 0) > 2
         for: 2m
         labels:
           severity: critical

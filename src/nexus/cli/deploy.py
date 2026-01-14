@@ -17,11 +17,6 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.auth import (
-    generate_authelia_config,
-    generate_traefik_config,
-    generate_traefik_middlewares,
-)
 from nexus.deploy.terraform import run_terraform
 from nexus.generate.dashboard import generate_dashboard_config
 from nexus.utils import read_vault
@@ -131,7 +126,12 @@ def _start_cloudflared(token: str) -> None:
 def _generate_configs(
     services: list[str], domain: Optional[str], dry_run: bool = False
 ) -> None:
-    logging.info("Generating configuration files...")
+    """Generate dashboard configuration.
+
+    Note: Traefik configs use runtime templating via environment variables,
+    so they are committed directly and don't need generation.
+    """
+    logging.info("Generating dashboard configuration...")
 
     dashboard_config_path = SERVICES_PATH / "dashboard" / "config" / "services.yaml"
     dashboard_config = generate_dashboard_config(
@@ -147,12 +147,6 @@ def _generate_configs(
         dashboard_config_path.parent.mkdir(parents=True, exist_ok=True)
         with dashboard_config_path.open("w") as f:
             yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
-
-    if domain:
-        generate_authelia_config(domain, dry_run)
-        generate_traefik_middlewares(domain, dry_run)
-
-    generate_traefik_config(dry_run)
 
 
 @click.command()
@@ -328,9 +322,10 @@ def main(
 
     if not yes and not dry_run:
         print("\n⚠️  Prerequisites check:")
-        print("   1. Have you run ./scripts/bootstrap?")
-        print("   2. Have you configured ansible/vars/vault.yml?")
-        print("   3. Is Docker Desktop running?")
+        print("   1. Have you configured ansible/vars/vault.yml?")
+        print("   2. Have you configured tailscale/access-rules.yml with user emails?")
+        print("   3. Have you uploaded tailscale/acl-policy.jsonc to Tailscale Admin?")
+        print("   4. Is Docker running?")
         if not click.confirm("\nProceed with deployment?", default=True):
             logging.info("Deployment cancelled.")
             sys.exit(0)
@@ -407,9 +402,13 @@ def main(
         print("\n" + "=" * 60)
         print("  ✅ Deployment Complete!")
         print("=" * 60)
-        print("\nAccess your services:")
+        print("\nAccess your services (via Tailscale):")
         print(f"  Dashboard: https://hub.{domain}")
-        print(f"  Auth:      https://auth.{domain}")
+        print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
+        print("\n⚠️  Manual steps required:")
+        print("   1. Tag server: tailscale up --advertise-tags=tag:nexus-server")
+        print("   2. Configure Split DNS in Tailscale Admin:")
+        print(f"      {domain} → <server-tailscale-ip>")
         print("\nUseful commands:")
         print("  invoke logs --service traefik  # View logs")
         print("  invoke ps                      # Show containers")

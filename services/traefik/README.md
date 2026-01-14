@@ -114,30 +114,28 @@ N/A - Traefik configuration is version controlled. Let's Encrypt certificates ar
 
 ---
 
-### Authelia Integration
+### Tailscale Access Integration
 
 #### Symptoms
-- Bypassing Authelia when not expected
-- Authelia login loop
-- 401/403 errors
+- Bypassing Auth when not expected
+- 403 Forbidden errors (Access Denied)
 
 #### Solutions
 
-1. **Check Authelia logs:**
+1. **Check tailscale-access logs:**
    ```bash
-   docker compose logs auth
+   docker logs tailscale-access
    ```
 
 2. **Verify middleware configuration** - services should have:
    ```yaml
    labels:
-     - "traefik.http.routers.service.middlewares=authelia@docker"
+     - "traefik.http.routers.service.middlewares=tailscale-access@docker"
    ```
 
-3. **Test Authelia directly:**
-   ```bash
-   curl -k https://auth.yourdomain.com/api/verify
-   ```
+3. **Check Access Rules:**
+   - Review `tailscale/access-rules.yml`
+   - Ensure your Tailscale user is in the correct group
 
 ---
 

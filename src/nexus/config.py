@@ -14,7 +14,7 @@ BACKUP_DIR = Path(
 ALL_SERVICES = sorted([d.name for d in SERVICES_PATH.iterdir() if d.is_dir()])
 
 PRESETS = {
-    "core": ["traefik", "auth", "dashboard", "monitoring"],
+    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
     "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
 }
 

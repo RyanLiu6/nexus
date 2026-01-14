@@ -22,10 +22,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.node-exporter.rule=Host(`node-exporter.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.node-exporter.loadbalancer.server.port=9100"
-      - "traefik.http.routers.node-exporter.entrypoints=http"
-      - "traefik.http.routers.node-exporter.middlewares=authelia@docker"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.node-exporter.rule=Host(`node-exporter.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.node-exporter.entrypoints=https"
+      - "traefik.http.routers.node-exporter.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.node-exporter.tls=true"
+      - "traefik.http.routers.node-exporter.tls.certresolver=certchallenge"
 
   # Prometheus
   prometheus:
@@ -51,12 +54,15 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
-      - "traefik.http.routers.prometheus.entrypoints=http"
-      - "traefik.http.routers.prometheus.middlewares=authelia@docker"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.prometheus.entrypoints=https"
+      - "traefik.http.routers.prometheus.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.tls.certresolver=certchallenge"
 
-  # Grafana
+  # Grafana - uses Header Auth via tailscale-access
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -80,24 +86,28 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.${NEXUS_DOMAIN}
-      # Auth Proxy configuration - trust Authelia headers
+      # Auth Proxy (Header Auth via tailscale-access)
       - GF_AUTH_PROXY_ENABLED=true
       - GF_AUTH_PROXY_HEADER_NAME=Remote-User
-      - GF_AUTH_PROXY_HEADER_PROPERTY=username
+      - GF_AUTH_PROXY_HEADER_PROPERTY=email
       - GF_AUTH_PROXY_AUTO_SIGN_UP=true
-      - GF_AUTH_PROXY_HEADERS=Email:Remote-Email Name:Remote-Name
+      - GF_AUTH_PROXY_HEADERS=Groups:Remote-Groups
+      # Map 'admins' group to Admin role, otherwise Viewer
+      - GF_AUTH_PROXY_ROLE_ATTRIBUTE_PATH=contains(groups[*], 'admins') && 'Admin' || 'Viewer'
+      - GF_AUTH_PROXY_ENABLE_LOGIN_TOKEN=true
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_USERS_AUTO_ASSIGN_ORG=true
-      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Admin
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
       - TZ=${TZ:-America/Vancouver}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      - "traefik.http.routers.grafana.entrypoints=http"
-      - "traefik.http.routers.grafana.middlewares=authelia@docker"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.grafana.entrypoints=https"
+      - "traefik.http.routers.grafana.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=certchallenge"
 
   # Alertmanager
   alertmanager:
@@ -126,10 +136,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
-      - "traefik.http.routers.alertmanager.entrypoints=http"
-      - "traefik.http.routers.alertmanager.middlewares=authelia@docker"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.alertmanager.entrypoints=https"
+      - "traefik.http.routers.alertmanager.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.alertmanager.tls=true"
+      - "traefik.http.routers.alertmanager.tls.certresolver=certchallenge"
 
 volumes:
   prometheus-data:

@@ -47,7 +47,7 @@ def ruff_check(c, fix=False):
     """
     print("Checking code with ruff...")
     fix_arg = "--fix --show-fixes" if fix else ""
-    c.run(f"uv run ruff check src/ {fix_arg}")
+    c.run(f"uv run ruff check src/ services/ scripts/ tasks.py {fix_arg}")
 
 
 @task
@@ -60,7 +60,7 @@ def ruff_format(c, check_only=False):
     """
     print("Formatting code with ruff...")
     check_arg = "--check" if check_only else ""
-    c.run(f"uv run ruff format src/ {check_arg}")
+    c.run(f"uv run ruff format src/ services/ scripts/ tasks.py {check_arg}")
 
 
 @task
@@ -515,5 +515,6 @@ def setup(c):
     setup_inventory(c)
     print("\n✅ Setup complete! Next steps:")
     print("   1. Edit ansible/vars/vault.yml with your secrets")
-    print("   2. Encrypt vault: ansible-vault encrypt ansible/vars/vault.yml")
-    print("   3. Deploy: invoke deploy")
+    print("   2. Configure Tailscale ACLs in admin console")
+    print("   3. Encrypt vault: ansible-vault encrypt ansible/vars/vault.yml")
+    print("   4. Deploy: invoke deploy")

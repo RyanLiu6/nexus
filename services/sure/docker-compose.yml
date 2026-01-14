@@ -39,10 +39,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.sure-web.rule=Host(`sure.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
-      - "traefik.http.routers.sure-web.entrypoints=http"
-      - "traefik.http.routers.sure-web.middlewares=authelia@docker,security-headers@file"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.sure-web.rule=Host(`sure.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.sure-web.entrypoints=https"
+      - "traefik.http.routers.sure-web.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.sure-web.tls=true"
+      - "traefik.http.routers.sure-web.tls.certresolver=certchallenge"
 
   sure-worker:
     image: ghcr.io/we-promise/sure:latest

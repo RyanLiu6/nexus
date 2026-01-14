@@ -4,8 +4,7 @@
 # Ollama for local LLM inference, providing complete privacy for AI features.
 #
 # Hardware Requirements:
-# - Minimum: 8GB VRAM (for 7B models like gemma2:7b)
-# - Recommended: 16GB VRAM (for 13B models like llama3.1:13b)
+    # - Minimum: 8GB VRAM (for 8B models like qwen3:8b)# - Recommended: 16GB VRAM (for 13B models like llama3.1:13b)
 # - Ideal: 24GB+ VRAM (for 32B+ models)
 #
 # Setup:

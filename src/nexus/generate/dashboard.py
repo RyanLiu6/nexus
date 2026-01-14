@@ -7,7 +7,6 @@ from nexus.config import SERVICES_PATH
 
 DESCRIPTIONS = {
     "traefik": "Reverse proxy and SSL management",
-    "auth": "SSO and 2FA authentication",
     "dashboard": "Homepage dashboard",
     "backups": "Automated backups",
     "plex": "Media streaming",
@@ -17,11 +16,11 @@ DESCRIPTIONS = {
     "foundryvtt": "Virtual Tabletop",
     "nextcloud": "File storage",
     "monitoring": "Metrics collection and visualization",
+    "tailscale-access": "Auth Middleware",
 }
 
 ICONS = {
     "traefik": "traefik.png",
-    "auth": "authelia.png",
     "dashboard": "homepage.png",
     "backups": "borg.png",
     "plex": "plex.png",
@@ -31,11 +30,11 @@ ICONS = {
     "foundryvtt": "foundryvtt.png",
     "nextcloud": "nextcloud.png",
     "monitoring": "prometheus.png",
+    "tailscale-access": "tailscale.png",
 }
 
 CATEGORIES = {
     "traefik": "Core",
-    "auth": "Core",
     "dashboard": "Core",
     "backups": "Utilities",
     "plex": "Media",
@@ -45,6 +44,7 @@ CATEGORIES = {
     "foundryvtt": "Gaming",
     "nextcloud": "Files",
     "monitoring": "Core",
+    "tailscale-access": "Core",
 }
 
 

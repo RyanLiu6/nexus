@@ -1,0 +1,27 @@
+services:
+  tailscale-access:
+    build: .
+    container_name: tailscale-access
+    restart: unless-stopped
+    volumes:
+      - ../../tailscale/access-rules.yml:/config/access-rules.yml:ro
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+    environment:
+      - ACCESS_RULES_PATH=/config/access-rules.yml
+      - TAILSCALE_SOCKET=/var/run/tailscale/tailscaled.sock
+      - PYTHONUNBUFFERED=1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.tailscale-access.loadbalancer.server.port=8000"
+
+      # Define the middleware here so other services can reference it as tailscale-access@docker
+      - "traefik.http.middlewares.tailscale-access.forwardauth.address=http://tailscale-access:8000/auth"
+      - "traefik.http.middlewares.tailscale-access.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.tailscale-access.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name"
+
+    networks:
+      - nexus
+
+networks:
+  nexus:
+    external: true

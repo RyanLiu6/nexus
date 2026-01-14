@@ -10,7 +10,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 MODEL_FILE="$PROJECT_DIR/Modelfile"
 MODEL_NAME="ena"
-BASE_MODEL="qwen3:7b"
+BASE_MODEL="qwen3:8b"
 
 # Colors for output
 GREEN='\033[0;32m'

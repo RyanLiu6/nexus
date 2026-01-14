@@ -17,6 +17,7 @@ services:
     environment:
       - TZ=${TZ}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+      - HOMEPAGE_ALLOWED_HOSTS=hub.${NEXUS_DOMAIN}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
@@ -26,9 +27,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+      # HTTPS only - Tailscale access only
       - "traefik.http.routers.homepage.rule=Host(`hub.${NEXUS_DOMAIN}`)"
-      - "traefik.http.routers.homepage.entrypoints=http"
-      - "traefik.http.routers.homepage.middlewares=authelia@docker,security-headers@file"
+      - "traefik.http.routers.homepage.entrypoints=https"
+      - "traefik.http.routers.homepage.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.homepage.tls=true"
+      - "traefik.http.routers.homepage.tls.certresolver=certchallenge"
 
 networks:
   nexus:

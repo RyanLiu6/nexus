@@ -13,7 +13,7 @@ from nexus.generate.dashboard import (
 class TestGetServiceDescription:
     def test_get_service_description(self) -> None:
         assert get_service_description("traefik") == "Reverse proxy and SSL management"
-        assert get_service_description("auth") == "SSO and 2FA authentication"
+        assert get_service_description("tailscale-access") == "Auth Middleware"
         assert get_service_description("dashboard") == "Homepage dashboard"
         assert get_service_description("backups") == "Automated backups"
         assert get_service_description("sure") == "Finance and budgeting"
@@ -28,7 +28,7 @@ class TestGetServiceDescription:
 class TestGetServiceIcon:
     def test_get_service_icon(self) -> None:
         assert get_service_icon("traefik") == "traefik.png"
-        assert get_service_icon("auth") == "authelia.png"
+        assert get_service_icon("tailscale-access") == "tailscale.png"
         assert get_service_icon("dashboard") == "homepage.png"
         assert get_service_icon("backups") == "borg.png"
         assert get_service_icon("sure") == "sh-sure.png"
@@ -43,7 +43,7 @@ class TestGetServiceIcon:
 class TestCategorizeService:
     def test_categorize_service(self) -> None:
         assert categorize_service("traefik") == "Core"
-        assert categorize_service("auth") == "Core"
+        assert categorize_service("tailscale-access") == "Core"
         assert categorize_service("dashboard") == "Core"
         assert categorize_service("monitoring") == "Core"
         assert categorize_service("backups") == "Utilities"

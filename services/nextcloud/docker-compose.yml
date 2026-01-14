@@ -57,10 +57,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
-      - "traefik.http.routers.nextcloud.entrypoints=http"
-      - "traefik.http.routers.nextcloud.middlewares=authelia@docker,security-headers@file"
+      # HTTPS only - Tailscale access only
+      # Note: Nextcloud has its own user auth; can add tsidp OAuth via OIDC app
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud.entrypoints=https"
+      - "traefik.http.routers.nextcloud.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=certchallenge"
 
 networks:
   nexus:

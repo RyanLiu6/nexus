@@ -86,19 +86,25 @@ tunnel_secret: "CHANGE_ME"
 
 
 # =============================================================================
-# Authelia - Authentication & SSO
+# Tailscale Configuration
 # =============================================================================
-# All secrets should be unique random values
-# Generate each with: openssl rand -hex 32
+# Your tailnet name (find in Tailscale admin console URL or settings)
+# Example: "tail1234" from "tail1234.ts.net"
+tailnet_name: "your-tailnet"
 
-# JWT token signing secret
-authelia_jwt_secret: "CHANGE_ME"
-
-# Session cookie encryption secret
-authelia_session_secret: "CHANGE_ME"
-
-# Database encryption key
-authelia_storage_encryption_key: "CHANGE_ME"
+# =============================================================================
+# Tailscale Users & Groups
+# =============================================================================
+# Define user emails here to populate access-rules.yml
+# These groups must match your Tailscale ACLs
+tailscale_users:
+  admins:
+    - "your-email@gmail.com"
+  members:
+    - "friend1@gmail.com"
+    - "friend2@gmail.com"
+  finance:
+    - "accountant@gmail.com"
 
 
 # =============================================================================
@@ -110,7 +116,7 @@ authelia_storage_encryption_key: "CHANGE_ME"
 # =============================================================================
 # Monitoring - Prometheus, Grafana, Alertmanager
 # =============================================================================
-# Grafana admin credentials (for API access only - users login via Authelia)
+# Grafana admin credentials (for API access only - users login via Tailscale Header Auth)
 grafana_admin_user: "admin"
 grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
@@ -127,8 +133,6 @@ grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 # Get webhook URL from: Discord Server Settings > Integrations > Webhooks
 
 discord_webhook_url: ""
-discord_channel_id: ""
-discord_bot_token: ""
 alert_provider: "discord"
 
 
@@ -220,7 +224,7 @@ foundry_admin_key: "CHANGE_ME"
 # =============================================================================
 # Transmission - Torrent Client (Optional)
 # =============================================================================
-# No secrets required - protected by Authelia
+# No secrets required - protected by Tailscale Access
 # Uses NEXUS_DOMAIN and TZ
 
 
@@ -255,3 +259,7 @@ foundry_admin_key: "CHANGE_ME"
 # foundry_username           -> FOUNDRY_USERNAME
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
+# tailnet_name               -> TAILNET_NAME
+# ts_authkey                 -> TS_AUTHKEY
+# tsidp_grafana_client_id    -> TSIDP_GRAFANA_CLIENT_ID
+# tsidp_grafana_client_secret -> TSIDP_GRAFANA_CLIENT_SECRET

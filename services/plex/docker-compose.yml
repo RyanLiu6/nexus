@@ -32,10 +32,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
       - "traefik.http.services.plex.loadbalancer.server.port=32400"
-      - "traefik.http.routers.plex.entrypoints=http"
-      - "traefik.http.routers.plex.middlewares=authelia@docker,security-headers@file"
+      # HTTPS only - Tailscale access only
+      # Note: Plex has its own user auth; can add tsidp OAuth via Plex SSO
+      - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.plex.entrypoints=https"
+      - "traefik.http.routers.plex.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.plex.tls=true"
+      - "traefik.http.routers.plex.tls.certresolver=certchallenge"
 
 networks:
   nexus:

@@ -7,7 +7,7 @@ from nexus.cli.deploy import _check_dependencies, _generate_configs, main
 
 
 class TestCheckDependencies:
-    def test_check_dependencies_all_present(self):
+    def test_check_dependencies(self):
         with patch("shutil.which") as mock_which:
             mock_which.return_value = "/usr/bin/tool"
             missing = _check_dependencies()
@@ -47,12 +47,10 @@ class TestCheckDependencies:
 
 class TestGenerateConfigs:
     @patch("nexus.cli.deploy.generate_dashboard_config")
-    @patch("nexus.cli.deploy.generate_authelia_config")
     @patch("nexus.cli.deploy.SERVICES_PATH")
     def test_generate_configs(
         self,
         mock_services_path: MagicMock,
-        mock_auth_config: MagicMock,
         mock_dashboard_config: MagicMock,
         tmp_path: Path,
     ) -> None:
@@ -61,10 +59,9 @@ class TestGenerateConfigs:
         dashboard_dir.mkdir(parents=True)
         mock_services_path.__truediv__.return_value = dashboard_dir.parent
 
-        _generate_configs(["traefik", "auth"], "example.com")
+        _generate_configs(["traefik", "tailscale-access"], "example.com")
 
         mock_dashboard_config.assert_called_once()
-        mock_auth_config.assert_called_once_with("example.com", False)
 
     @patch("nexus.cli.deploy.generate_dashboard_config")
     @patch("nexus.cli.deploy.SERVICES_PATH")
@@ -95,7 +92,7 @@ class TestGenerateConfigs:
 
 
 class TestMain:
-    def test_main_with_preset(self):
+    def test_main(self):
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -240,7 +237,7 @@ class TestMain:
             mock_vault.exists.return_value = True
             runner = CliRunner()
             result = runner.invoke(
-                main, ["traefik", "auth", "--domain", "example.com", "-y"]
+                main, ["traefik", "tailscale-access", "--domain", "example.com", "-y"]
             )
 
             assert result.exit_code == 0, result.output
@@ -272,7 +269,6 @@ class TestMain:
             runner = CliRunner()
             result = runner.invoke(main, ["--preset", "core", "-y"])
 
-            # Exit code 1 indicates missing tools error
             assert result.exit_code == 1
 
     def test_main_creates_network_if_missing(self):

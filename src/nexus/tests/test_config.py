@@ -8,17 +8,17 @@ class TestPresets:
         assert "core" in PRESETS
         assert "home" in PRESETS
 
-    def test_resolve_preset_core(self) -> None:
+    def test_resolve_preset(self) -> None:
         services = resolve_preset("core")
         assert "traefik" in services
-        assert "auth" in services
+        assert "tailscale-access" in services
         assert "dashboard" in services
         assert "monitoring" in services
 
     def test_resolve_preset_home_inherits_core(self) -> None:
         services = resolve_preset("home")
         assert "traefik" in services
-        assert "auth" in services
+        assert "tailscale-access" in services
         assert "dashboard" in services
         assert "monitoring" in services
 

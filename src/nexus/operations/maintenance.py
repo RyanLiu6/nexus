@@ -103,10 +103,10 @@ def verify_backups() -> bool:
 def check_service_logs() -> None:
     """Scan service logs from the last hour for error messages.
 
-    Checks traefik, authelia, plex, and jellyfin container logs
+    Checks traefik, tailscale-access, plex, and jellyfin container logs
     and logs a warning if errors are found.
     """
-    services = ["traefik", "authelia", "plex", "jellyfin"]
+    services = ["traefik", "tailscale-access", "plex", "jellyfin"]
 
     for service in services:
         result = subprocess.run(

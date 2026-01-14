@@ -5,8 +5,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 ## What It Does
 
 - **Dashboard** - Single homepage to access all services
-- **Authentication** - Authelia SSO with 2FA, user groups
-- **VPN Access** - Tailscale bypasses auth for admin
+- **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
 - **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files)
 - **Monitoring** - Prometheus + Grafana + Discord alerts
@@ -18,7 +17,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 |-----------|------------|
 | Runtime | Docker Compose |
 | Proxy | Traefik (SSL, routing) |
-| Auth | Authelia (SSO, 2FA) |
+| Auth | Tailscale + tailscale-access |
 | DNS | Terraform + Cloudflare |
 | Config | Ansible (generates docker-compose.yml) |
 | Secrets | Ansible Vault |
@@ -39,7 +38,7 @@ source .venv/bin/activate
 
 # 3. Setup and configure secrets
 invoke setup
-nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, etc.
+nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, and Tailscale users
 
 # 4. Deploy everything
 invoke deploy
@@ -67,7 +66,7 @@ invoke ops --daily               # Daily maintenance
 
 ## Services
 
-**Core:** traefik, auth, dashboard, monitoring
+**Core:** traefik, tailscale-access, dashboard, monitoring
 **Media:** jellyfin, plex, transmission
 **Apps:** foundryvtt, sure, nextcloud
 **Utils:** backups
@@ -76,9 +75,9 @@ invoke ops --daily               # Daily maintenance
 
 | Group | Access | Auth |
 |-------|--------|------|
-| admin | All services | 2FA + Tailscale bypass |
-| gaming | FoundryVTT | 1FA |
-| wife | Plex, Sure | 1FA |
+| admin | All services | Tailscale + SSH |
+| members | FoundryVTT, Homepage | Tailscale |
+| finance | Sure, Homepage | Tailscale |
 
 ## Documentation
 
@@ -86,7 +85,7 @@ invoke ops --daily               # Daily maintenance
 |-----|----------|
 | [Deployment](docs/DEPLOYMENT.md) | Step-by-step setup guide, invoke tasks, maintenance |
 | [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, monitoring & alerting |
-| [Access Control](docs/ACCESS_CONTROL.md) | Authelia, Tailscale SSH, user groups |
+| [Access Control](docs/ACCESS_CONTROL.md) | Tailscale ACLs, Gatekeeper, Header Auth |
 
 Each service also has its own README in `services/<name>/README.md`.
 

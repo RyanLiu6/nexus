@@ -79,7 +79,7 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
 1. Check Traefik labels
 2. Verify container: `docker ps | grep transmission`
 3. Check port 9091
-4. Check Authelia middleware
+4. Check Tailscale Access middleware
 
 ---
 
@@ -106,10 +106,10 @@ docker exec transmission transmission-remote -t all -r
 
 ## Security
 
-**Always use Authelia protection:**
+**Always use Tailscale protection:**
 ```yaml
 labels:
-  - "traefik.http.routers.transmission.middlewares=authelia@docker"
+  - "traefik.http.routers.transmission.middlewares=tailscale-access@docker"
 ```
 
 Transmission is a powerful tool - keep it protected!

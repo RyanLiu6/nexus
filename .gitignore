@@ -42,18 +42,12 @@ hosts.yml
 .vault_pass
 traefik.yml
 
-# Traefik certs and generated configs (sensitive)
+# Traefik certs (sensitive)
 services/traefik/letsencrypt/
-services/traefik/traefik.yml
-services/traefik/rules/middlewares.yml
 
 # Coverage reports
 .coverage
 htmlcov/
-
-# Authelia runtime configs (contain secrets)
-services/auth/users_database.yml
-services/auth/configuration.yml
 
 # Backups
 *.tar.gz
@@ -74,3 +68,5 @@ terraform/override.tf
 Thumbs.db
 
 .env
+tailscale/access-rules.yml
+tailscale/access-rules.yml
