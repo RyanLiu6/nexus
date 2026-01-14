@@ -1,4 +1,5 @@
 import http.client
+import ipaddress
 import json
 import os
 import socket
@@ -13,6 +14,31 @@ ACCESS_RULES_PATH = os.environ.get("ACCESS_RULES_PATH", "/config/access-rules.ym
 TAILSCALE_SOCKET_PATH = os.environ.get(
     "TAILSCALE_SOCKET", "/var/run/tailscale/tailscaled.sock"
 )
+
+# Local/trusted networks - these get full access (host machine, Docker networks)
+# If someone has physical access to the machine, they have access to everything anyway
+TRUSTED_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),  # Localhost
+    ipaddress.ip_network("172.16.0.0/12"),  # Docker default networks
+    ipaddress.ip_network("192.168.0.0/16"),  # Local LAN / Docker custom networks
+    ipaddress.ip_network("10.0.0.0/8"),  # Private networks
+]
+
+
+def is_trusted_ip(ip_str):
+    """Check if an IP address is from a trusted local network.
+
+    Args:
+        ip_str: The IP address as a string.
+
+    Returns:
+        bool: True if the IP is from a trusted network, False otherwise.
+    """
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return any(ip in network for network in TRUSTED_NETWORKS)
+    except ValueError:
+        return False
 
 
 def load_rules():
@@ -132,6 +158,15 @@ def auth():
 
     if not client_ip:
         return render_template("403.html", reason="No Client IP", service=service), 403
+
+    # Allow trusted local networks (host machine, Docker networks)
+    # Physical access = full access anyway
+    if is_trusted_ip(client_ip):
+        response = Response("OK", 200)
+        response.headers["Remote-User"] = "local-admin@localhost"
+        response.headers["Remote-Groups"] = "admins"
+        response.headers["Remote-Name"] = "Local Admin"
+        return response
 
     user_profile = get_tailscale_user(client_ip)
 

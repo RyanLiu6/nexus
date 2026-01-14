@@ -38,10 +38,10 @@ services:
       - "traefik.http.routers.foundryvtt.rule=Host(`foundry.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.foundryvtt.entrypoints=http"
       - "traefik.http.routers.foundryvtt.middlewares=cloudflare-proto@file,security-headers@file"
-      # HTTPS router (for direct Tailscale access)
+      # HTTPS router (PUBLIC ACCESS - FoundryVTT handles its own auth)
       - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
-      - "traefik.http.routers.foundryvtt-secure.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.foundryvtt-secure.middlewares=security-headers@file"
       - "traefik.http.routers.foundryvtt-secure.tls=true"
       - "traefik.http.routers.foundryvtt-secure.tls.certresolver=certchallenge"
 

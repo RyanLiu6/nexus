@@ -60,14 +60,25 @@ Verify: `invoke --list` should show available tasks.
 
 ## Step 4: Create Data Directories
 
+Configuration and data are stored outside the repository to persist across deployments.
+Define the `NEXUS_DATA_DIRECTORY` environment variable (e.g., in `~/.zshrc` or `.envrc`):
+
+```bash
+export NEXUS_DATA_DIRECTORY=~/Data
+```
+
+Create the directory structure:
+
 ```bash
 # macOS
-mkdir -p ~/Data/{Config,Media,Backups}
+mkdir -p ${NEXUS_DATA_DIRECTORY}/{Config,Media,Backups}
 
 # Linux
-sudo mkdir -p /data/{Config,Media,Backups}
-sudo chown -R $USER:$USER /data
+sudo mkdir -p ${NEXUS_DATA_DIRECTORY}/{Config,Media,Backups}
+sudo chown -R $USER:$USER ${NEXUS_DATA_DIRECTORY}
 ```
+
+Service configurations will be automatically generated or stored in `${NEXUS_DATA_DIRECTORY}/Config/<service_name>`.
 
 ---
 

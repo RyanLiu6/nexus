@@ -12,11 +12,12 @@ services:
     networks:
       - nexus
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/dashboard/config:/app/config
+      - ${NEXUS_DATA_DIRECTORY}/Config/homepage:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TZ=${TZ}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+      - NEXUS_DOMAIN=${NEXUS_DOMAIN}
       - HOMEPAGE_ALLOWED_HOSTS=hub.${NEXUS_DOMAIN}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]

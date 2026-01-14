@@ -1,10 +1,12 @@
 services:
   tailscale-access:
-    build: .
+    build:
+      context: ${NEXUS_ROOT_DIRECTORY}/services/tailscale-access
+      dockerfile: Dockerfile
     container_name: tailscale-access
     restart: unless-stopped
     volumes:
-      - ../../tailscale/access-rules.yml:/config/access-rules.yml:ro
+      - ${NEXUS_ROOT_DIRECTORY}/tailscale/access-rules.yml:/config/access-rules.yml:ro
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
     environment:
       - ACCESS_RULES_PATH=/config/access-rules.yml

@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -11,7 +12,6 @@ import yaml
 from nexus.config import (
     ALL_SERVICES,
     PRESETS,
-    SERVICES_PATH,
     TERRAFORM_PATH,
     VAULT_PATH,
     resolve_preset,
@@ -124,16 +124,35 @@ def _start_cloudflared(token: str) -> None:
 
 
 def _generate_configs(
-    services: list[str], domain: Optional[str], dry_run: bool = False
+    services: list[str],
+    domain: Optional[str],
+    data_dir: Optional[str] = None,
+    dry_run: bool = False,
 ) -> None:
     """Generate dashboard configuration.
 
     Note: Traefik configs use runtime templating via environment variables,
-    so they are committed directly and don't need generation.
+    so they are committed directly and don't don't need generation.
     """
     logging.info("Generating dashboard configuration...")
 
-    dashboard_config_path = SERVICES_PATH / "dashboard" / "config" / "services.yaml"
+    # Resolve data_dir: arg -> env -> vault -> default
+    if not data_dir:
+        data_dir = os.environ.get("NEXUS_DATA_DIRECTORY")
+
+    if not data_dir:
+        try:
+            vault = read_vault()
+            data_dir = vault.get("nexus_data_directory")
+        except Exception:
+            pass
+
+    if not data_dir:
+        data_dir = "~/nexus-data"
+
+    dashboard_config_path = (
+        Path(data_dir).expanduser() / "Config" / "homepage" / "services.yaml"
+    )
     dashboard_config = generate_dashboard_config(
         services, domain or "example.com", dry_run
     )
@@ -384,7 +403,7 @@ def main(
     # =========================================================================
     # Step 7: Generate configs
     # =========================================================================
-    _generate_configs(services_list, domain, dry_run)
+    _generate_configs(services_list, domain, dry_run=dry_run)
 
     # =========================================================================
     # Step 8: Deploy with Ansible

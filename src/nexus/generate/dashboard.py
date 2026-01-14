@@ -142,7 +142,7 @@ def categorize_service(service_name: str) -> str:
 
 def generate_dashboard_config(
     services: list[str], domain: str, dry_run: bool = False
-) -> dict[str, Any]:
+) -> list[dict[str, list[dict[str, Any]]]]:
     """Generate Homepage dashboard configuration for the specified services.
 
     Reads each service's docker-compose.yml to extract Traefik routing rules
@@ -155,7 +155,7 @@ def generate_dashboard_config(
         dry_run: If True, log what would be generated without side effects.
 
     Returns:
-        Dictionary mapping category names to lists of service configurations,
+        List of dictionaries mapping category names to lists of service configurations,
         formatted for Homepage's services.yaml file.
     """
     dashboard_config: dict[str, list[dict[str, Any]]] = {}
@@ -190,10 +190,15 @@ def generate_dashboard_config(
             }
         )
 
+    # Convert to list format expected by Homepage
+    final_config = []
+    for category, items in dashboard_config.items():
+        final_config.append({category: items})
+
     if dry_run:
         logging.info("[DRY RUN] Would write dashboard config:")
         logging.info(f"[DRY RUN] Services: {services}")
         logging.info(f"[DRY RUN] Domain: {domain}")
-        return dashboard_config
+        return final_config
 
-    return dashboard_config
+    return final_config
