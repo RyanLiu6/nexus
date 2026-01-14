@@ -43,7 +43,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/Data/nextcloud:/var/www/html
+      - ${NEXUS_DATA_DIRECTORY}/Config/nextcloud:/var/www/html
     environment:
       - PUID=1000
       - PGID=1000

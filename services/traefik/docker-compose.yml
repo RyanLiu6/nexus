@@ -3,6 +3,9 @@ services:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
+    command:
+      - "--configfile=/traefik.yml"
+      - "--certificatesresolvers.certchallenge.acme.email=${ACME_EMAIL}"
     security_opt:
       - no-new-privileges:true
     deploy:
@@ -22,7 +25,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${NEXUS_ROOT_DIRECTORY}/services/traefik/traefik.yml:/traefik.yml:ro
       - ${NEXUS_ROOT_DIRECTORY}/services/traefik/rules:/rules:ro
-      - ${NEXUS_DATA_DIRECTORY}/traefik/letsencrypt:/letsencrypt
+      - ${NEXUS_DATA_DIRECTORY}/Config/traefik/letsencrypt:/letsencrypt
     environment:
       - ACME_EMAIL=${ACME_EMAIL}
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}

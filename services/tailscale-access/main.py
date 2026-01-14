@@ -1,11 +1,15 @@
 import http.client
 import ipaddress
 import json
+import logging
 import os
 import socket
 
 import yaml
 from flask import Flask, Response, render_template, request
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -52,7 +56,7 @@ def load_rules():
         with open(ACCESS_RULES_PATH) as f:
             return yaml.safe_load(f)
     except Exception as e:
-        print(f"Error loading rules: {e}")
+        logger.error(f"Error loading rules: {e}")
         return {}
 
 
@@ -102,7 +106,7 @@ def get_tailscale_user(ip):
         resp = conn.getresponse()
 
         if resp.status != 200:
-            print(f"Tailscale API error: {resp.status} {resp.reason}")
+            logger.warning(f"Tailscale API error: {resp.status} {resp.reason}")
             return None
 
         data = json.loads(resp.read().decode())
@@ -114,7 +118,7 @@ def get_tailscale_user(ip):
         # }
         return data.get("UserProfile")
     except Exception as e:
-        print(f"Error querying Tailscale: {e}")
+        logger.error(f"Error querying Tailscale: {e}")
         return None
 
 
@@ -156,12 +160,15 @@ def auth():
     # The real client IP is usually the first one if there's a list.
     client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
 
+    logger.debug(f"Auth request - IP: {client_ip}, Service: {service}, Host: {host}")
+
     if not client_ip:
         return render_template("403.html", reason="No Client IP", service=service), 403
 
     # Allow trusted local networks (host machine, Docker networks)
     # Physical access = full access anyway
     if is_trusted_ip(client_ip):
+        logger.debug(f"Trusted IP {client_ip}")
         response = Response("OK", 200)
         response.headers["Remote-User"] = "local-admin@localhost"
         response.headers["Remote-Groups"] = "admins"
@@ -169,6 +176,7 @@ def auth():
         return response
 
     user_profile = get_tailscale_user(client_ip)
+    logger.debug(f"Tailscale user lookup for {client_ip}: {user_profile}")
 
     if not user_profile:
         # If we can't identify the user via Tailscale, deny access

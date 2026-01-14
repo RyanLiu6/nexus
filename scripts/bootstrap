@@ -66,6 +66,12 @@ source .venv/bin/activate
 echo "Installing pre-commit hooks..."
 pre-commit install
 
+echo "📂 Setting up data directories..."
+DATA_DIR="${NEXUS_DATA_DIRECTORY:-$HOME/Data}"
+echo "   Target: $DATA_DIR"
+mkdir -p "$DATA_DIR"/{Config,Media,Backups}
+echo "   ✅ Created Config, Media, Backups"
+
 echo ""
 echo "✅ Bootstrap complete!"
 echo ""

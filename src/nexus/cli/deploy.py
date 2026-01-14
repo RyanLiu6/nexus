@@ -18,7 +18,12 @@ from nexus.config import (
 )
 from nexus.deploy.ansible import run_ansible
 from nexus.deploy.terraform import run_terraform
-from nexus.generate.dashboard import generate_dashboard_config
+from nexus.generate.dashboard import (
+    generate_bookmarks_config,
+    generate_dashboard_config,
+    generate_settings_config,
+    generate_widgets_config,
+)
 from nexus.utils import read_vault
 
 
@@ -129,11 +134,6 @@ def _generate_configs(
     data_dir: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
-    """Generate dashboard configuration.
-
-    Note: Traefik configs use runtime templating via environment variables,
-    so they are committed directly and don't don't need generation.
-    """
     logging.info("Generating dashboard configuration...")
 
     # Resolve data_dir: arg -> env -> vault -> default
@@ -150,22 +150,44 @@ def _generate_configs(
     if not data_dir:
         data_dir = "~/nexus-data"
 
-    dashboard_config_path = (
-        Path(data_dir).expanduser() / "Config" / "homepage" / "services.yaml"
-    )
+    homepage_dir = Path(data_dir).expanduser() / "Config" / "homepage"
+    dashboard_config_path = homepage_dir / "services.yaml"
+    settings_path = homepage_dir / "settings.yaml"
+    bookmarks_path = homepage_dir / "bookmarks.yaml"
+    widgets_path = homepage_dir / "widgets.yaml"
+
     dashboard_config = generate_dashboard_config(
         services, domain or "example.com", dry_run
     )
+    settings_config = generate_settings_config()
+    bookmarks_config = generate_bookmarks_config()
+    widgets_config = generate_widgets_config()
 
     if dry_run:
         logging.info(
             f"[DRY RUN] Would write dashboard config to {dashboard_config_path}"
         )
+        logging.info(f"[DRY RUN] Would write settings to {settings_path}")
+        logging.info(f"[DRY RUN] Would write bookmarks to {bookmarks_path}")
+        logging.info(f"[DRY RUN] Would write widgets to {widgets_path}")
     else:
+        homepage_dir.mkdir(parents=True, exist_ok=True)
+
         logging.info(f"Writing dashboard config to {dashboard_config_path}")
-        dashboard_config_path.parent.mkdir(parents=True, exist_ok=True)
         with dashboard_config_path.open("w") as f:
             yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
+
+        logging.info(f"Writing settings to {settings_path}")
+        with settings_path.open("w") as f:
+            yaml.dump(settings_config, f, default_flow_style=False, sort_keys=False)
+
+        logging.info(f"Writing bookmarks to {bookmarks_path}")
+        with bookmarks_path.open("w") as f:
+            yaml.dump(bookmarks_config, f, default_flow_style=False, sort_keys=False)
+
+        logging.info(f"Writing widgets to {widgets_path}")
+        with widgets_path.open("w") as f:
+            yaml.dump(widgets_config, f, default_flow_style=False, sort_keys=False)
 
 
 @click.command()

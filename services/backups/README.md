@@ -24,7 +24,7 @@ Automated backups using [Borgmatic](https://torsion.org/borgmatic/), a wrapper f
 |------|---------|
 | `config/config.yml` | Borgmatic configuration (sources, schedule, retention) |
 | `config/exclude.txt` | Files/directories to exclude |
-| `$NEXUS_BACKUP_DIRECTORY` | Backup repository location |
+| `$NEXUS_DATA_DIRECTORY/Backups` | Backup repository location |
 
 ---
 
@@ -106,8 +106,8 @@ docker exec -it borgmatic borgmatic create --verbosity 2
 1. Check SSH keys are mounted correctly
 2. Verify backup directory permissions:
    ```bash
-   chmod 700 $NEXUS_BACKUP_DIRECTORY
-   chown $USER:$USER $NEXUS_BACKUP_DIRECTORY
+   chmod 700 $NEXUS_DATA_DIRECTORY/Backups
+   chown $USER:$USER $NEXUS_DATA_DIRECTORY/Backups
    ```
 
 ### Repository Corrupted

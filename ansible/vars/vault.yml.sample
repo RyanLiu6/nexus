@@ -35,14 +35,13 @@
 # Where nexus is cloned (e.g., /home/user/dev/nexus or ~/dev/nexus)
 nexus_root_directory: "/path/to/nexus"
 
-# Backup storage location
-# macOS: ~/Data/Backups or /Volumes/ExternalDrive/Backups
-# Linux: /data/Backups or /mnt/backups
-nexus_backup_directory: "/path/to/backups"
-
-# Data directory for service volumes (media, configs, databases)
+# Data directory for service volumes (configs, backups, media)
 # macOS: ~/Data or /Volumes/Data
 # Linux: /data
+# Structure:
+#   - ${nexus_data_directory}/Config/   - container settings and data
+#   - ${nexus_data_directory}/Backups/  - backup storage
+#   - ${nexus_data_directory}/Media/    - media files for Plex/Jellyfin
 nexus_data_directory: "/path/to/data"
 
 # Your domain (e.g., example.com)
@@ -167,7 +166,7 @@ sure_port: "5006"
 # Then: cd services/sure && ollama create ena -f Modelfile
 sure_openai_access_token: "ollama-local"
 sure_openai_uri_base: "http://host.docker.internal:11434/v1"
-sure_openai_model: "ena"
+sure_openai_model: "ryanliu6/ena:latest"
 
 # Option 2: OpenAI
 # sure_openai_access_token: "<openai_api_key_here>"
@@ -237,7 +236,6 @@ foundry_admin_key: "CHANGE_ME"
 # Variable Name in Vault     -> Docker Env Variable
 # -------------------------  -> --------------------
 # nexus_root_directory       -> NEXUS_ROOT_DIRECTORY
-# nexus_backup_directory     -> NEXUS_BACKUP_DIRECTORY
 # nexus_data_directory       -> NEXUS_DATA_DIRECTORY
 # nexus_domain               -> NEXUS_DOMAIN
 # tz                         -> TZ

@@ -15,7 +15,7 @@ services:
       - 8096:8096
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/jellyfin:/config
-      - ${NEXUS_DATA_DIRECTORY}/Media/movies:/data/movies
+      - ${NEXUS_DATA_DIRECTORY}/Media:/data/media
     environment:
       - PUID=1000
       - PGID=1000

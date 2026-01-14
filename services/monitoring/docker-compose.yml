@@ -50,6 +50,7 @@ services:
       retries: 3
     volumes:
       - ${NEXUS_ROOT_DIRECTORY}/services/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${NEXUS_ROOT_DIRECTORY}/services/monitoring/alerts.yml:/etc/prometheus/alerts.yml
       - prometheus-data:/prometheus
     labels:
       - "traefik.enable=true"
@@ -82,6 +83,8 @@ services:
       retries: 3
     volumes:
       - grafana-data:/var/lib/grafana
+      - ${NEXUS_ROOT_DIRECTORY}/services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${NEXUS_ROOT_DIRECTORY}/services/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}

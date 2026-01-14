@@ -7,9 +7,9 @@ SERVICES_PATH = ROOT_PATH / "services"
 TERRAFORM_PATH = ROOT_PATH / "terraform"
 ANSIBLE_PATH = ROOT_PATH / "ansible"
 VAULT_PATH = ANSIBLE_PATH / "vars" / "vault.yml"
-BACKUP_DIR = Path(
-    os.environ.get("NEXUS_BACKUP_DIRECTORY", "~/nexus-backups")
-).expanduser()
+BACKUP_DIR = (
+    Path(os.environ.get("NEXUS_DATA_DIRECTORY", "~/Data")).expanduser() / "Backups"
+)
 
 ALL_SERVICES = sorted([d.name for d in SERVICES_PATH.iterdir() if d.is_dir()])
 

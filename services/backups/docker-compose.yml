@@ -15,7 +15,7 @@ services:
       - TZ=${TZ}
       - BORG_PASSPHRASE=${BORG_PASSPHRASE}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
-      - NEXUS_BACKUP_DIRECTORY=${NEXUS_BACKUP_DIRECTORY}
+      - NEXUS_BACKUP_DIRECTORY=${NEXUS_DATA_DIRECTORY}/Backups
     healthcheck:
       test: ["CMD", "borgmatic", "--version"]
       interval: 60s
@@ -25,7 +25,7 @@ services:
     volumes:
       - ${NEXUS_ROOT_DIRECTORY}/services/backups/config:/root/.config/borgmatic.d
       - ${NEXUS_ROOT_DIRECTORY}:/mnt/source:ro
-      - ${NEXUS_BACKUP_DIRECTORY}:/mnt/repo
+      - ${NEXUS_DATA_DIRECTORY}/Backups:/mnt/repo
       - ~/.ssh:/root/.ssh:ro
     labels:
       # Borgmatic has no web UI - disable Traefik

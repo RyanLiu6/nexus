@@ -25,4 +25,4 @@ Each service has its own README in `services/<name>/README.md`:
 
 ## Troubleshooting
 
-Check service READMEs or `docs/runbooks/` for known issues.
+Check service READMEs in `services/<name>/README.md` for troubleshooting guides.

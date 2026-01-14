@@ -60,25 +60,15 @@ Verify: `invoke --list` should show available tasks.
 
 ## Step 4: Create Data Directories
 
-Configuration and data are stored outside the repository to persist across deployments.
-Define the `NEXUS_DATA_DIRECTORY` environment variable (e.g., in `~/.zshrc` or `.envrc`):
+The `bootstrap` script automatically creates `~/Data/{Config,Media,Backups}`.
+
+If you want to use a different location, define `NEXUS_DATA_DIRECTORY` **before** running bootstrap or deployment:
 
 ```bash
-export NEXUS_DATA_DIRECTORY=~/Data
+export NEXUS_DATA_DIRECTORY="/path/to/custom/data"
 ```
 
-Create the directory structure:
-
-```bash
-# macOS
-mkdir -p ${NEXUS_DATA_DIRECTORY}/{Config,Media,Backups}
-
-# Linux
-sudo mkdir -p ${NEXUS_DATA_DIRECTORY}/{Config,Media,Backups}
-sudo chown -R $USER:$USER ${NEXUS_DATA_DIRECTORY}
-```
-
-Service configurations will be automatically generated or stored in `${NEXUS_DATA_DIRECTORY}/Config/<service_name>`.
+Ensure this variable is persistent (add to `.zshrc` or `.envrc`).
 
 ---
 
@@ -103,7 +93,6 @@ nano ansible/vars/vault.yml
 **Required:**
 ```yaml
 nexus_root_directory: "/Users/yourname/dev/nexus"
-nexus_backup_directory: "/Users/yourname/Data/Backups"
 nexus_data_directory: "/Users/yourname/Data"
 nexus_domain: "yourdomain.com"
 tz: "America/Vancouver"

@@ -19,7 +19,7 @@ Follow instructions at [ollama.com](https://ollama.com).
 
 ## 2. Create Your Custom Model
 
-We will create a custom model named `ena`. This model embeds your specific categories and rules directly into the AI, ensuring consistent categorization.
+We will create a custom model named `ryanliu6/ena:latest`. This model embeds your specific categories and rules directly into the AI, ensuring consistent categorization.
 
 1. **Locate the Modelfile**:
    A file named `Modelfile` is located in the `sure/` directory of this project.
@@ -35,7 +35,7 @@ We will create a custom model named `ena`. This model embeds your specific categ
    ollama pull qwen3:8b
 
    # Create your custom model
-   ollama create ena -f Modelfile
+   ollama create ryanliu6/ena:latest -f Modelfile
    ```
 
    *Success! You now have a specialized financial AI model running locally.*
@@ -47,7 +47,7 @@ Before connecting Sure, verify your model understands your categories.
 Run this command in your terminal:
 
 ```bash
-ollama run ena "Categorize this transaction: 'TST* SQ *THE COFFEE BEAN' for $14.50"
+ollama run ryanliu6/ena:latest "Categorize this transaction: 'TST* SQ *THE COFFEE BEAN' for $14.50"
 ```
 
 **Expected Output:**
@@ -68,10 +68,10 @@ Now tell Sure to use your new custom model.
    Update the AI configuration section in `sure/.env`:
 
    ```ini
-   # Use 'ena' model we just created
+   # Use 'ryanliu6/ena:latest' model we just created
    SURE_OPENAI_ACCESS_TOKEN=ollama-local
    SURE_OPENAI_URI_BASE=http://host.docker.internal:11434/v1
-   SURE_OPENAI_MODEL=ena
+   SURE_OPENAI_MODEL=ryanliu6/ena:latest
    ```
 
    *Note: `host.docker.internal` allows the Docker container to talk to the Ollama app running natively on your Mac.*
@@ -104,4 +104,4 @@ Sure supports multiple ways to get transactions in:
   If needed, run: `launchctl setenv OLLAMA_HOST "0.0.0.0"` to make Ollama listen on all interfaces.
 
 - **Model not found?**
-  Run `ollama list` to verify `ena` exists.
+  Run `ollama list` to verify `ryanliu6/ena:latest` exists.

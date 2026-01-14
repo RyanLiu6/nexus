@@ -71,7 +71,7 @@ def mypy(c):
         c: Invoke context.
     """
     print("Type checking with mypy...")
-    c.run("uv run mypy src/")
+    c.run("uv run mypy src/ services/ tasks.py")
 
 
 @task

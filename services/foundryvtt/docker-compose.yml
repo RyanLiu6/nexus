@@ -12,7 +12,7 @@ services:
     networks:
       - nexus
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Foundry/data:/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/foundryvtt/data:/data
     environment:
       - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
       - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}

@@ -76,7 +76,7 @@ Sure supports multiple AI providers for automatic transaction categorization and
 # vault.yml
 sure_openai_access_token: "ollama-local"
 sure_openai_uri_base: "http://host.docker.internal:11434/v1"
-sure_openai_model: "ena"
+sure_openai_model: "ryanliu6/ena:latest"
 ```
 
 **Option 2: Cloud AI (OpenRouter/OpenAI/Claude)**
@@ -86,6 +86,72 @@ sure_openai_access_token: "<api_key>"
 sure_openai_uri_base: "https://openrouter.ai/api/v1" # Optional
 sure_openai_model: "anthropic/claude-3-sonnet"
 ```
+
+---
+
+## Using Sure Effectively
+
+### Getting Started
+
+1. **Create your first account**: Add your bank accounts, credit cards, and investment accounts
+2. **Import transactions**: Use Plaid for automatic sync or import CSV files manually
+3. **Set up categories**: Sure has default categories, but customize them to match your spending habits
+4. **Create budgets**: Set monthly limits for categories you want to track
+
+### Recommended Workflow
+
+**Daily (2 min):**
+- Review new transactions and fix any miscategorized ones
+- The AI learns from your corrections
+
+**Weekly (10 min):**
+- Check budget progress in the dashboard
+- Review spending by category
+- Ask AI: "What unusual transactions happened this week?"
+
+**Monthly (30 min):**
+- Review month-over-month spending trends
+- Adjust budgets based on actual spending
+- Ask AI: "Compare my spending this month vs last month"
+- Export data if needed for tax purposes
+
+### Leveraging AI Features
+
+Sure's AI can help you understand your finances better. Try these queries:
+
+**Spending Analysis:**
+```
+"How much did I spend on groceries last month?"
+"What are my top 5 spending categories this year?"
+"Show me my Amazon spending over the last 6 months"
+```
+
+**Budget Tracking:**
+```
+"Am I on track with my food budget?"
+"Which categories am I overspending in?"
+"How much can I still spend on entertainment this month?"
+```
+
+**Insights:**
+```
+"What subscriptions am I paying for?"
+"Find duplicate or recurring charges"
+"What's my average monthly spending?"
+```
+
+### Tips for Better Categorization
+
+1. **Be consistent**: Always categorize similar transactions the same way
+2. **Use rules**: Set up auto-categorization rules for merchants you use often
+3. **Review AI suggestions**: The AI learns from your corrections, so fix mistakes early
+4. **Split transactions**: Use split transactions for purchases that span categories (e.g., Costco groceries + gas)
+
+### Data Privacy
+
+- **Local AI (Ollama)**: Your transaction data never leaves your server
+- **Cloud AI**: Transaction descriptions are sent to the AI provider, but not account numbers or balances
+- **No external sync**: Sure doesn't share data with third parties (except Plaid for bank sync)
 
 ---
 

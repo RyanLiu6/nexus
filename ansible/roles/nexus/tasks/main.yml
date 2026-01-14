@@ -52,16 +52,26 @@
     name: proxy
     state: present
 
-- name: Start services using docker compose
+- name: Stop and remove existing containers
+  ansible.builtin.shell: |
+    # Stop via compose (handles both default and explicit project names)
+    docker compose down --remove-orphans 2>/dev/null || true
+    docker compose -p nexus down --remove-orphans 2>/dev/null || true
+    # Force remove any remaining containers from this project by label
+    docker ps -aq --filter "label=com.docker.compose.project=nexus" | xargs -r docker rm -f 2>/dev/null || true
+  args:
+    chdir: "{{ nexus_root_directory }}"
+  changed_when: true
+
+- name: Deploy services using docker compose
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_root_directory }}"
     project_name: nexus
     state: present
-    pull: policy
+    pull: always
   environment:
     # Nexus Configuration
     NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
-    NEXUS_BACKUP_DIRECTORY: "{{ nexus_backup_directory }}"
     NEXUS_DATA_DIRECTORY: "{{ nexus_data_directory | default('/Volumes/Data') }}"
     NEXUS_DOMAIN: "{{ nexus_domain }}"
     TZ: "{{ tz | default('America/Vancouver') }}"

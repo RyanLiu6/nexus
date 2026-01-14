@@ -1,78 +1,286 @@
 # Prometheus alert rules for Nexus
 
 groups:
-  - name: nexus_alerts
+  - name: node_alerts
     interval: 30s
     rules:
-      # Service Down Alerts
-      - alert: ServiceDown
-        expr: up{job=~"traefik|plex|jellyfin|sure|foundryvtt"} == 0
-        for: 5m
-        labels:
-          severity: critical
-          team: ops
-        annotations:
-          summary: "Service {{ $labels.instance }} is down"
-          description: "Service {{ $labels.instance }} has been down for more than 5 minutes"
-
-      - alert: MultipleServicesDown
-        expr: count(up{job=~"traefik|plex|jellyfin|sure|foundryvtt"} == 0) > 2
-        for: 2m
-        labels:
-          severity: critical
-          team: ops
-        annotations:
-          summary: "Multiple services are down"
-          description: "{{ $value }} services are down"
-
-      # High Resource Usage Alerts
+      # =========================================================================
+      # CPU Alerts
+      # =========================================================================
       - alert: HighCPUUsage
-        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode!="idle"}[5m])) * 100) > 80
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
         for: 10m
         labels:
           severity: warning
-          team: ops
         annotations:
           summary: "High CPU usage on {{ $labels.instance }}"
-          description: "CPU usage is above 80% for 10 minutes"
+          description: "CPU usage is {{ printf \"%.1f\" $value }}% (threshold: 80%)"
 
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ printf \"%.1f\" $value }}% (threshold: 95%)"
+
+      - alert: HighLoadAverage
+        expr: node_load15 / count without(cpu, mode) (node_cpu_seconds_total{mode="idle"}) > 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High load average on {{ $labels.instance }}"
+          description: "15-minute load average is {{ printf \"%.2f\" $value }} per CPU core"
+
+      # =========================================================================
+      # Memory Alerts
+      # =========================================================================
       - alert: HighMemoryUsage
         expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
         for: 10m
         labels:
           severity: warning
-          team: ops
         annotations:
           summary: "High memory usage on {{ $labels.instance }}"
-          description: "Memory usage is above 80% for 10 minutes"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 80%)"
 
-      - alert: LowDiskSpace
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
         for: 5m
         labels:
           severity: critical
-          team: ops
         annotations:
-          summary: "Low disk space on {{ $labels.instance }}"
-          description: "Disk space is below 10%"
+          summary: "Critical memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 95%)"
 
-      - alert: DiskSpaceWarning
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+      - alert: HighSwapUsage
+        expr: (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) * 100 > 50
         for: 10m
         labels:
           severity: warning
-          team: ops
         annotations:
-          summary: "Disk space is low on {{ $labels.instance }}"
-          description: "Disk space is below 20%"
+          summary: "High swap usage on {{ $labels.instance }}"
+          description: "Swap usage is {{ printf \"%.1f\" $value }}%"
 
+      # =========================================================================
+      # Disk Alerts
+      # =========================================================================
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes) * 100 < 20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk {{ $labels.mountpoint }} has {{ printf \"%.1f\" $value }}% free"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk {{ $labels.mountpoint }} has only {{ printf \"%.1f\" $value }}% free"
+
+      - alert: DiskWillFillIn24Hours
+        expr: predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}[6h], 24*60*60) < 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} will fill within 24 hours"
+          description: "Based on current usage trend, disk will be full soon"
+
+      - alert: HighDiskIOUtilization
+        expr: rate(node_disk_io_time_seconds_total[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk I/O on {{ $labels.instance }}"
+          description: "Disk {{ $labels.device }} I/O utilization is {{ printf \"%.1f\" $value }}%"
+
+      # =========================================================================
+      # Network Alerts
+      # =========================================================================
+      - alert: HighNetworkTraffic
+        expr: rate(node_network_receive_bytes_total{device!~"lo|docker.*|br-.*|veth.*"}[5m]) * 8 / 1024 / 1024 > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High network receive traffic on {{ $labels.instance }}"
+          description: "Receiving {{ printf \"%.1f\" $value }} Mbps on {{ $labels.device }}"
+
+      - alert: NetworkInterfaceDown
+        expr: node_network_up{device!~"lo|docker.*|br-.*|veth.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Network interface {{ $labels.device }} is down"
+          description: "Interface has been down for more than 2 minutes"
+
+      # =========================================================================
+      # System Alerts
+      # =========================================================================
+      - alert: NodeExporterDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Cannot collect system metrics - node exporter unreachable"
+
+      - alert: SystemRebootRequired
+        expr: node_reboot_required == 1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "System reboot required on {{ $labels.instance }}"
+          description: "System updates require a reboot"
+
+      - alert: ClockSkew
+        expr: abs(node_timex_offset_seconds) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Clock skew detected on {{ $labels.instance }}"
+          description: "Clock is {{ printf \"%.2f\" $value }} seconds off"
+
+  - name: service_alerts
+    interval: 30s
+    rules:
+      # =========================================================================
+      # Service Health Alerts
+      # =========================================================================
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been unreachable for 2+ minutes"
+
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} is missing"
+          description: "Target {{ $labels.instance }} has been down for 5+ minutes"
+
+      # =========================================================================
       # Backup Alerts
-      - alert: BackupFailed
+      # =========================================================================
+      - alert: BackupServiceDown
         expr: up{job="borgmatic"} == 0
         for: 15m
         labels:
           severity: critical
-          team: ops
         annotations:
-          summary: "Backup job failed"
-          description: "Borgmatic container has been down for more than 15 minutes"
+          summary: "Backup service is down"
+          description: "Borgmatic has been unreachable for 15+ minutes"
+
+  - name: traefik_alerts
+    interval: 30s
+    rules:
+      # =========================================================================
+      # Traefik Alerts
+      # =========================================================================
+      - alert: TraefikDown
+        expr: up{job="traefik"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Traefik is down"
+          description: "Reverse proxy is unreachable - all services affected"
+
+      - alert: TraefikHighErrorRate
+        expr: |
+          sum(rate(traefik_entrypoint_requests_total{code=~"5.."}[5m]))
+          / sum(rate(traefik_entrypoint_requests_total[5m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in Traefik"
+          description: "{{ printf \"%.1f\" $value }}% of requests are returning 5xx errors"
+
+      - alert: TraefikCertificateExpiring
+        expr: (traefik_tls_certs_not_after - time()) / 86400 < 14
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS certificate expiring soon"
+          description: "Certificate for {{ $labels.cn }} expires in {{ printf \"%.0f\" $value }} days"
+
+      - alert: TraefikCertificateExpired
+        expr: (traefik_tls_certs_not_after - time()) < 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TLS certificate has expired"
+          description: "Certificate for {{ $labels.cn }} has expired"
+
+      - alert: TraefikServiceDown
+        expr: traefik_service_server_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Traefik backend service is down"
+          description: "Service {{ $labels.service }} backend is unreachable"
+
+  - name: prometheus_alerts
+    interval: 30s
+    rules:
+      # =========================================================================
+      # Prometheus Self-Monitoring
+      # =========================================================================
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus config reload failed"
+          description: "Check prometheus configuration for errors"
+
+      - alert: PrometheusNotificationsDropped
+        expr: increase(prometheus_notifications_dropped_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus is dropping notifications"
+          description: "{{ $value }} notifications dropped in last 5 minutes"
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alert notifications will not be sent"
+
+      - alert: AlertmanagerFailedToSendAlerts
+        expr: increase(alertmanager_notifications_failed_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alertmanager failing to send notifications"
+          description: "{{ $value }} notifications failed in last 5 minutes"

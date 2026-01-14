@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # setup_model.sh
-# Automates the creation/updating of the 'ena' Ollama model.
+# Automates the creation/updating of the 'ryanliu6/ena:latest' Ollama model.
 
 set -e
 
@@ -9,7 +9,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 MODEL_FILE="$PROJECT_DIR/Modelfile"
-MODEL_NAME="ena"
+MODEL_NAME="ryanliu6/ena:latest"
 BASE_MODEL="qwen3:8b"
 
 # Colors for output
