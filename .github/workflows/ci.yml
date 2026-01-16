@@ -19,7 +19,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv pip install -e ".[dev]"
+        run: uv sync --all-extras --dev
 
       - name: Check with ruff
         run: uv run ruff check src/ scripts/
@@ -42,7 +42,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv pip install -e ".[dev]"
+        run: uv sync --all-extras --dev
 
       - name: Run tests with coverage
         run: |
@@ -70,11 +70,8 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Install ansible-lint
-        run: uv pip install ansible-lint
-
       - name: Run ansible-lint
-        run: uv run ansible-lint ansible/
+        run: uvx ansible-lint ansible/
 
   docker-compose-validate:
     runs-on: ubuntu-latest
@@ -82,6 +79,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate Docker Compose files
+        env:
+          NEXUS_ROOT_DIRECTORY: /tmp/nexus
+          NEXUS_DATA_DIRECTORY: /tmp/nexus/data
+          TZ: UTC
+          BORG_PASSPHRASE: dummy
         run: |
           for file in services/*/docker-compose.yml; do
             echo "Validating $file..."
