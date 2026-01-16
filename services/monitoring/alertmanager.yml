@@ -13,10 +13,10 @@ route:
   repeat_interval: 12h
 
 receivers:
-  # Discord webhook receiver
+  # Discord webhook receiver (via alert-bot container)
   - name: 'discord-webhook'
     webhook_configs:
-      - url: 'http://localhost:8080/webhook'
+      - url: 'http://alert-bot:8080/webhook'
         send_resolved: true
 
   # Optional: Email receiver (for fallback)

@@ -70,6 +70,11 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
+      - name: Install Ansible collections
+        run: |
+          uvx ansible-galaxy collection install community.general
+          uvx ansible-galaxy collection install community.docker
+
       - name: Run ansible-lint
         run: uvx ansible-lint ansible/
 

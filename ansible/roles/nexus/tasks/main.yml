@@ -7,30 +7,30 @@
 
 - name: Check if services list is "all"
   ansible.builtin.set_fact:
-    deploy_all_services: "{{ nexus_services == 'all' }}"
+    nexus_deploy_all_services: "{{ nexus_services == 'all' }}"
 
 - name: Get all available services
   ansible.builtin.find:
     paths: "{{ nexus_root_directory }}/services"
     file_type: directory
-  register: service_directories
+  register: nexus_service_directories
 
 - name: Set service list
   ansible.builtin.set_fact:
-    final_services: >-
-      {{ service_directories.files | map(attribute='path') | map('basename') | list
-         if deploy_all_services else nexus_services.split(',') }}
+    nexus_final_services: >-
+      {{ nexus_service_directories.files | map(attribute='path') | map('basename') | list
+         if nexus_deploy_all_services else nexus_services.split(',') }}
 
 - name: Display final service list
   ansible.builtin.debug:
-    msg: "Final services to deploy: {{ final_services }}"
+    msg: "Final services to deploy: {{ nexus_final_services }}"
 
 # Generate combined docker-compose.yml from individual service files
 - name: Read service docker-compose files
   ansible.builtin.slurp:
     src: "{{ nexus_root_directory }}/services/{{ item }}/docker-compose.yml"
-  loop: "{{ final_services }}"
-  register: compose_files
+  loop: "{{ nexus_final_services }}"
+  register: nexus_compose_files
   failed_when: false
 
 - name: Generate combined docker-compose.yml
@@ -39,7 +39,7 @@
     dest: "{{ nexus_root_directory }}/docker-compose.yml"
     mode: "0644"
   vars:
-    service_compose_files: "{{ compose_files.results }}"
+    service_nexus_compose_files: "{{ nexus_compose_files.results }}"
 
 - name: Generate Tailscale access rules
   ansible.builtin.template:
@@ -54,6 +54,7 @@
 
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
+    set -o pipefail
     # Stop via compose (handles both default and explicit project names)
     docker compose down --remove-orphans 2>/dev/null || true
     docker compose -p nexus down --remove-orphans 2>/dev/null || true
@@ -61,6 +62,7 @@
     docker ps -aq --filter "label=com.docker.compose.project=nexus" | xargs -r docker rm -f 2>/dev/null || true
   args:
     chdir: "{{ nexus_root_directory }}"
+    executable: /bin/bash
   changed_when: true
 
 - name: Deploy services using docker compose
@@ -113,26 +115,26 @@
     # Tailscale
     TAILNET_NAME: "{{ tailnet_name | default('') }}"
     TAILSCALE_ADMIN_USERS: "{{ tailscale_admin_users | default('') }}"
-  register: compose_result
+  register: nexus_compose_result
 
 - name: Display deployment result
   ansible.builtin.debug:
-    msg: "Docker Compose {{ 'updated' if compose_result.changed else 'unchanged' }}"
+    msg: "Docker Compose {{ 'updated' if nexus_compose_result.changed else 'unchanged' }}"
 
-- name: Wait for services to be healthy
+- name: Wait for services to be healthy  # noqa: no-handler
   ansible.builtin.pause:
     seconds: 15
-  when: compose_result.changed
+  when: nexus_compose_result.changed
 
 - name: Check container status
   community.docker.docker_container_info:
     name: "{{ item }}"
-  loop: "{{ final_services }}"
-  register: container_status
+  loop: "{{ nexus_final_services }}"
+  register: nexus_container_status
   failed_when: false
 
 - name: Display container status
   ansible.builtin.debug:
     msg: "{{ item.container.Name | default(item.item) }}: {{ item.container.State.Status | default('not found') }}"
-  loop: "{{ container_status.results }}"
+  loop: "{{ nexus_container_status.results }}"
   when: item.exists | default(false)

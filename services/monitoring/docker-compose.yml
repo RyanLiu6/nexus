@@ -136,6 +136,8 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
+    depends_on:
+      - alert-bot
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
@@ -146,6 +148,26 @@ services:
       - "traefik.http.routers.alertmanager.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
       - "traefik.http.routers.alertmanager.tls=true"
       - "traefik.http.routers.alertmanager.tls.certresolver=certchallenge"
+
+  # Alert Bot - Alertmanager to Discord bridge
+  alert-bot:
+    build:
+      context: ${NEXUS_ROOT_DIRECTORY}/services/monitoring/alert-bot
+      dockerfile: Dockerfile
+    container_name: alert-bot
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - nexus
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    labels:
+      - "traefik.enable=false"
 
 volumes:
   prometheus-data:

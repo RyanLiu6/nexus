@@ -1,9 +1,17 @@
 # Example inventory file
 # Copy this to hosts.yml and modify as needed
-
-[localhost]
-127.0.0.1 ansible_connection=local ansible_python_interpreter={{ ansible_playbook_python }}
-
-[remote_servers]
-# Add remote servers here if deploying to remote machines
-# nexus-server ansible_host=your-server-ip ansible_user=ubuntu
+---
+all:
+  children:
+    localhost:
+      hosts:
+        127.0.0.1:
+          ansible_connection: local
+          ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    remote_servers:
+      hosts: {}
+      # Add remote servers here if deploying to remote machines
+      # Example:
+      # nexus-server:
+      #   ansible_host: your-server-ip
+      #   ansible_user: ubuntu

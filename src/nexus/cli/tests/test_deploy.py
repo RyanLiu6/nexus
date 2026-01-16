@@ -47,48 +47,67 @@ class TestCheckDependencies:
 
 class TestGenerateConfigs:
     @patch("nexus.cli.deploy.generate_dashboard_config")
-    @patch("nexus.cli.deploy.SERVICES_PATH")
+    @patch("nexus.cli.deploy.generate_settings_config")
+    @patch("nexus.cli.deploy.generate_bookmarks_config")
+    @patch("nexus.cli.deploy.generate_widgets_config")
     def test_generate_configs(
         self,
-        mock_services_path: MagicMock,
+        mock_widgets_config: MagicMock,
+        mock_bookmarks_config: MagicMock,
+        mock_settings_config: MagicMock,
         mock_dashboard_config: MagicMock,
         tmp_path: Path,
     ) -> None:
         mock_dashboard_config.return_value = {"services": []}
-        dashboard_dir = tmp_path / "dashboard" / "config"
-        dashboard_dir.mkdir(parents=True)
-        mock_services_path.__truediv__.return_value = dashboard_dir.parent
+        mock_settings_config.return_value = {}
+        mock_bookmarks_config.return_value = {}
+        mock_widgets_config.return_value = {}
 
-        _generate_configs(["traefik", "tailscale-access"], "example.com")
+        _generate_configs(
+            ["traefik", "tailscale-access"], "example.com", data_dir=str(tmp_path)
+        )
 
         mock_dashboard_config.assert_called_once()
 
     @patch("nexus.cli.deploy.generate_dashboard_config")
-    @patch("nexus.cli.deploy.SERVICES_PATH")
+    @patch("nexus.cli.deploy.generate_settings_config")
+    @patch("nexus.cli.deploy.generate_bookmarks_config")
+    @patch("nexus.cli.deploy.generate_widgets_config")
     def test_generate_configs_dry_run(
         self,
-        mock_services_path: MagicMock,
+        mock_widgets_config: MagicMock,
+        mock_bookmarks_config: MagicMock,
+        mock_settings_config: MagicMock,
         mock_dashboard_config: MagicMock,
         tmp_path: Path,
     ) -> None:
         mock_dashboard_config.return_value = {"services": []}
+        mock_settings_config.return_value = {}
+        mock_bookmarks_config.return_value = {}
+        mock_widgets_config.return_value = {}
 
-        _generate_configs(["traefik"], "example.com", dry_run=True)
+        _generate_configs(
+            ["traefik"], "example.com", data_dir=str(tmp_path), dry_run=True
+        )
 
     @patch("nexus.cli.deploy.generate_dashboard_config")
-    @patch("nexus.cli.deploy.SERVICES_PATH")
+    @patch("nexus.cli.deploy.generate_settings_config")
+    @patch("nexus.cli.deploy.generate_bookmarks_config")
+    @patch("nexus.cli.deploy.generate_widgets_config")
     def test_generate_configs_no_domain(
         self,
-        mock_services_path: MagicMock,
+        mock_widgets_config: MagicMock,
+        mock_bookmarks_config: MagicMock,
+        mock_settings_config: MagicMock,
         mock_dashboard_config: MagicMock,
         tmp_path: Path,
     ) -> None:
         mock_dashboard_config.return_value = {"services": []}
-        dashboard_dir = tmp_path / "dashboard" / "config"
-        dashboard_dir.mkdir(parents=True)
-        mock_services_path.__truediv__.return_value = dashboard_dir.parent
+        mock_settings_config.return_value = {}
+        mock_bookmarks_config.return_value = {}
+        mock_widgets_config.return_value = {}
 
-        _generate_configs(["traefik"], None)
+        _generate_configs(["traefik"], None, data_dir=str(tmp_path))
 
 
 class TestMain:

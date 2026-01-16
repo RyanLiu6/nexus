@@ -8,6 +8,7 @@
   failed_when: false
 
 - name: Install Docker if not present
+  when: docker_check.rc != 0
   block:
     - name: Install Docker (Ubuntu/Debian)
       ansible.builtin.apt:
@@ -16,7 +17,7 @@
           - docker-compose
           - python3-docker
         state: present
-        update_cache: yes
+        update_cache: true
       when: ansible_os_family == "Debian"
 
     - name: Install Docker (macOS)
@@ -29,22 +30,21 @@
       ansible.builtin.user:
         name: "{{ ansible_env.USER }}"
         groups: docker
-        append: yes
-      become: yes
+        append: true
+      become: true
 
     - name: Start Docker service
       ansible.builtin.systemd:
         name: docker
         state: started
-        enabled: yes
+        enabled: true
       when: ansible_os_family == "Debian"
-  when: docker_check.rc != 0
 
 - name: Create Docker network
   community.docker.docker_network:
     name: proxy
     state: present
-  ignore_errors: yes
+  failed_when: false
 
 - name: Ensure Docker services directory exists
   ansible.builtin.file:
