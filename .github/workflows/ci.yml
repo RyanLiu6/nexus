@@ -76,6 +76,9 @@ jobs:
       - name: Install Ansible collections
         run: uv run ansible-galaxy collection install community.general community.docker
 
+      - name: Create dummy vault password file
+        run: echo "dummy-vault-pass" > .vault_pass
+
       - name: Run ansible-lint
         run: uv run ansible-lint ansible/
 

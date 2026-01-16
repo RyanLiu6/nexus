@@ -27,7 +27,7 @@
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_root_directory }}/services/monitoring"
     state: present
-    pull: true
+    pull: always
   environment:
     NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
     NEXUS_DOMAIN: "{{ nexus_domain }}"
