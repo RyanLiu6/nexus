@@ -67,16 +67,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python
-        run: uv python install 3.12
-
-      - name: Install Ansible and collections
+      - name: Set up Python and venv
         run: |
-          uv pip install --system ansible-core
-          ansible-galaxy collection install community.general community.docker
+          uv python install 3.12
+          uv venv
+          uv pip install ansible-lint ansible-core
+
+      - name: Install Ansible collections
+        run: uv run ansible-galaxy collection install community.general community.docker
 
       - name: Run ansible-lint
-        run: uvx ansible-lint ansible/
+        run: uv run ansible-lint ansible/
 
   docker-compose-validate:
     runs-on: ubuntu-latest
