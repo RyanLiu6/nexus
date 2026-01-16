@@ -1,0 +1,231 @@
+# Sure <img src="https://github.com/we-promise/sure/raw/main/app/assets/images/logo.svg" width="24">
+
+[Sure](https://github.com/we-promise/sure) is a self-hosted personal finance and budgeting application. It's a community fork of the archived Maybe Finance project.
+
+Docker Image is from GitHub Container Registry, found [here](https://github.com/we-promise/sure/pkgs/container/sure).
+
+## Architecture
+
+Sure consists of four services:
+- **sure-web**: Main web application (Rails)
+- **sure-worker**: Background job processor (Sidekiq)
+- **sure-db**: PostgreSQL database
+- **sure-redis**: Redis cache for sessions and job queues
+
+## Setup
+
+1. **Create an `.env` file:**
+   ```ini
+   SURE_DOMAIN=sure.yourdomain.com
+   SURE_PORT=3001
+   SURE_DATA_DIR=${DATA_DIRECTORY}/sure
+   SURE_POSTGRES_USER=sure_user
+   SURE_POSTGRES_PASSWORD=<generate secure password>
+   SURE_POSTGRES_DB=sure_production
+   SURE_SECRET_KEY_BASE=<generate using: openssl rand -hex 64>
+   ```
+
+2. **Generate secure credentials:**
+   ```bash
+   # Generate SECRET_KEY_BASE
+   openssl rand -hex 64
+
+   # Generate a strong database password
+   openssl rand -base64 32
+   ```
+
+3. **Run it:**
+   ```bash
+   docker compose up -d
+   ```
+
+4. Access Sure at `https://${SURE_DOMAIN}`
+
+## Backups
+
+Sure stores data in three locations:
+- **Database**: PostgreSQL data at `${SURE_DATA_DIR}/postgres`
+- **Storage**: File uploads at `${SURE_DATA_DIR}/storage`
+- **Redis**: Cache data (can be regenerated)
+
+```bash
+# Backup database
+docker exec sure-db pg_dump -U ${SURE_POSTGRES_USER} ${SURE_POSTGRES_DB} > sure-backup.sql
+
+# Backup storage
+tar -czf sure-storage.tar.gz -C ${SURE_DATA_DIR} storage
+
+# Restore database
+cat sure-backup.sql | docker exec -i sure-db psql -U ${SURE_POSTGRES_USER} -d ${SURE_POSTGRES_DB}
+```
+
+---
+
+## AI Integration
+
+Sure supports multiple AI providers for automatic transaction categorization and financial insights.
+
+### 📚 Documentation
+- **[Cloud AI Setup](docs/ai-integration.md)**: OpenAI, Claude, Gemini, DeepSeek (Easiest)
+- **[Local AI Setup](docs/ollama-setup.md)**: Privacy-focused setup with Ollama (Recommended for privacy)
+
+### Quick Config Options
+
+**Option 1: Local AI (Privacy Recommended)**
+```yaml
+# vault.yml
+sure_openai_access_token: "ollama-local"
+sure_openai_uri_base: "http://host.docker.internal:11434/v1"
+sure_openai_model: "ryanliu6/ena:latest"
+```
+
+**Option 2: Cloud AI (OpenRouter/OpenAI/Claude)**
+```yaml
+# vault.yml
+sure_openai_access_token: "<api_key>"
+sure_openai_uri_base: "https://openrouter.ai/api/v1" # Optional
+sure_openai_model: "anthropic/claude-3-sonnet"
+```
+
+---
+
+## Using Sure Effectively
+
+### Getting Started
+
+1. **Create your first account**: Add your bank accounts, credit cards, and investment accounts
+2. **Import transactions**: Use Plaid for automatic sync or import CSV files manually
+3. **Set up categories**: Sure has default categories, but customize them to match your spending habits
+4. **Create budgets**: Set monthly limits for categories you want to track
+
+### Recommended Workflow
+
+**Daily (2 min):**
+- Review new transactions and fix any miscategorized ones
+- The AI learns from your corrections
+
+**Weekly (10 min):**
+- Check budget progress in the dashboard
+- Review spending by category
+- Ask AI: "What unusual transactions happened this week?"
+
+**Monthly (30 min):**
+- Review month-over-month spending trends
+- Adjust budgets based on actual spending
+- Ask AI: "Compare my spending this month vs last month"
+- Export data if needed for tax purposes
+
+### Leveraging AI Features
+
+Sure's AI can help you understand your finances better. Try these queries:
+
+**Spending Analysis:**
+```
+"How much did I spend on groceries last month?"
+"What are my top 5 spending categories this year?"
+"Show me my Amazon spending over the last 6 months"
+```
+
+**Budget Tracking:**
+```
+"Am I on track with my food budget?"
+"Which categories am I overspending in?"
+"How much can I still spend on entertainment this month?"
+```
+
+**Insights:**
+```
+"What subscriptions am I paying for?"
+"Find duplicate or recurring charges"
+"What's my average monthly spending?"
+```
+
+### Tips for Better Categorization
+
+1. **Be consistent**: Always categorize similar transactions the same way
+2. **Use rules**: Set up auto-categorization rules for merchants you use often
+3. **Review AI suggestions**: The AI learns from your corrections, so fix mistakes early
+4. **Split transactions**: Use split transactions for purchases that span categories (e.g., Costco groceries + gas)
+
+### Data Privacy
+
+- **Local AI (Ollama)**: Your transaction data never leaves your server
+- **Cloud AI**: Transaction descriptions are sent to the AI provider, but not account numbers or balances
+- **No external sync**: Sure doesn't share data with third parties (except Plaid for bank sync)
+
+---
+
+## Troubleshooting
+
+### Sure Not Starting
+
+**Symptoms:** Container exits immediately
+
+**Solutions:**
+1. Check logs: `docker logs sure-web -f`
+2. Verify database is healthy: `docker ps | grep sure-db`
+3. Check Redis is running: `docker ps | grep sure-redis`
+4. Verify database credentials in `.env`
+
+### Database Connection Failed
+
+**Symptoms:** "Connection refused" or database errors
+
+**Solutions:**
+1. Check database logs: `docker logs sure-db`
+2. Verify credentials match in `.env`
+3. Check database is ready: `docker exec sure-db pg_isready`
+4. On first run, wait for migrations to complete
+
+### AI Not Working
+
+**Symptoms:** Transactions not auto-categorizing
+
+**Solutions:**
+1. Verify API key in vault.yml
+2. Check API key validity with provider
+3. Review Sure logs: `docker logs sure-web | grep -i openai`
+4. For Ollama: ensure `ollama serve` is running
+
+### Migration Failed
+
+```bash
+# Run migrations manually
+docker exec -it sure-web bundle exec rails db:migrate
+
+# If database is corrupted, reset (LOSES DATA!)
+docker volume rm nexus_sure_postgres
+docker compose up -d
+```
+
+---
+
+## Useful Commands
+
+```bash
+# View logs
+docker logs sure-web -f
+docker logs sure-worker -f
+docker logs sure-db -f
+
+# Restart Sure
+docker restart sure-web sure-worker
+
+# Access database shell
+docker exec -it sure-db psql -U sure_user -d sure_production
+
+# Run Rails console
+docker exec -it sure-web bundle exec rails console
+
+# Check database tables
+docker exec -it sure-db psql -U sure_user -d sure_production -c "\dt"
+```
+
+---
+
+## Notes
+
+- **AI Costs**: Set appropriate spend limits on your AI provider account
+- **Privacy**: Local AI (Ollama) keeps your data on your server; cloud AI sends transaction data to providers
+- **First Run**: On first startup, Sure will automatically run database migrations (may take a few minutes)
+- **Troubleshooting**: If database issues occur on initial setup, try removing the database volume: `docker volume rm nexus_sure_postgres`

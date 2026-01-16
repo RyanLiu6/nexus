@@ -1,0 +1,177 @@
+# Optional: Docker Compose configuration with local AI (Ollama)
+#
+# This is an alternative to the standard docker-compose.yml that includes
+# Ollama for local LLM inference, providing complete privacy for AI features.
+#
+# Hardware Requirements:
+    # - Minimum: 8GB VRAM (for 8B models like qwen3:8b)# - Recommended: 16GB VRAM (for 13B models like llama3.1:13b)
+# - Ideal: 24GB+ VRAM (for 32B+ models)
+#
+# Setup:
+# 1. Copy this file to docker-compose.yml (backup original first)
+# 2. Update .env file with Ollama settings:
+#    SURE_OPENAI_ACCESS_TOKEN=ollama-local
+#    SURE_OPENAI_URI_BASE=http://sure-ollama:11434/v1
+#    SURE_OPENAI_MODEL=llama3.1:13b
+# 3. Start services: docker compose up -d
+# 4. Pull a model: docker exec sure-ollama ollama pull llama3.1:13b
+#
+# For more information, see docs/ai-integration.md
+
+services:
+  sure-web:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-web
+    restart: unless-stopped
+    networks:
+      - nexus
+      - sure
+    ports:
+      - ${SURE_PORT}:3000
+    volumes:
+      - ${SURE_DATA_DIR}/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      # Local AI configuration
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN:-ollama-local}
+      OPENAI_URI_BASE: ${SURE_OPENAI_URI_BASE:-http://sure-ollama:11434/v1}
+      OPENAI_MODEL: ${SURE_OPENAI_MODEL:-llama3.1:13b}
+      AI_DEBUG_MODE: ${SURE_AI_DEBUG_MODE:-false}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+      sure-ollama:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.routers.sure-web.rule=Host(`${SURE_DOMAIN}`)"
+      - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
+      - "traefik.http.routers.sure-web.entrypoints=http"
+
+  sure-worker:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-worker
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      # Local AI configuration
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN:-ollama-local}
+      OPENAI_URI_BASE: ${SURE_OPENAI_URI_BASE:-http://sure-ollama:11434/v1}
+      OPENAI_MODEL: ${SURE_OPENAI_MODEL:-llama3.1:13b}
+      AI_DEBUG_MODE: ${SURE_AI_DEBUG_MODE:-false}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+      sure-ollama:
+        condition: service_started
+    labels:
+
+  sure-db:
+    image: postgres:16
+    container_name: sure-db
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sure-redis:
+    image: redis:latest
+    container_name: sure-redis
+    restart: unless-stopped
+    networks:
+      - sure
+    volumes:
+      - ${SURE_DATA_DIR}/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sure-ollama:
+    image: ollama/ollama:latest
+    container_name: sure-ollama
+    restart: unless-stopped
+    networks:
+      - sure
+    ports:
+      - "${SURE_OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ${SURE_DATA_DIR}/ollama:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: ${SURE_OLLAMA_KEEP_ALIVE:-1h}
+    # Uncomment below to enable NVIDIA GPU support
+    # Requires: nvidia-docker runtime installed
+    # Test with: docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+    #
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Optional: Ollama WebUI for model management
+  # Access at http://localhost:${SURE_OLLAMA_WEBUI_PORT:-8080}
+  # Uncomment to enable
+  #
+  # sure-ollama-webui:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   container_name: sure-ollama-webui
+  #   restart: unless-stopped
+  #   networks:
+  #     - sure
+  #   ports:
+  #     - "${SURE_OLLAMA_WEBUI_PORT:-8080}:8080"
+  #   volumes:
+  #     - ${SURE_DATA_DIR}/ollama-webui:/app/backend/data
+  #   environment:
+  #     OLLAMA_BASE_URL: http://sure-ollama:11434
+  #   depends_on:
+  #     - sure-ollama
+
+networks:
+  nexus:
+    external: true
+  sure:
+    name: nexus_sure
+    driver: bridge

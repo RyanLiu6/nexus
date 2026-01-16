@@ -1,0 +1,40 @@
+services:
+  borgmatic:
+    image: b3vis/borgmatic:latest
+    container_name: borgmatic
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - nexus
+    environment:
+      - TZ=${TZ}
+      - BORG_PASSPHRASE=${BORG_PASSPHRASE}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+      - NEXUS_BACKUP_DIRECTORY=${NEXUS_DATA_DIRECTORY}/Backups
+    healthcheck:
+      test: ["CMD", "borgmatic", "--version"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/services/backups/config:/root/.config/borgmatic.d
+      - ${NEXUS_ROOT_DIRECTORY}:/mnt/source:ro
+      - ${NEXUS_DATA_DIRECTORY}/Backups:/mnt/repo
+      - ~/.ssh:/root/.ssh:ro
+    labels:
+      # Borgmatic has no web UI - disable Traefik
+      - "traefik.enable=false"
+
+# Note: This container runs on a cron schedule inside the image.
+# You need to configure the crontab in your borgmatic config.
+# See docs/runbooks/backups.md for instructions.
+
+networks:
+  nexus:
+    external: true

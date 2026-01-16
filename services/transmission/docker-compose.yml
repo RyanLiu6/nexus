@@ -1,0 +1,48 @@
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - nexus
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/transmission:/config
+      - ${NEXUS_DATA_DIRECTORY}/Media:/downloads
+      - ${NEXUS_DATA_DIRECTORY}/Media/queue:/watch
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      # No USER/PASS - authentication handled by Tailscale
+      - DOCKER_MODS=linuxserver/mods:transmission-floodui
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/transmission/web/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.transmission.entrypoints=https"
+      - "traefik.http.routers.transmission.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true

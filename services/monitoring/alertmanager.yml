@@ -1,0 +1,29 @@
+# Alertmanager configuration for Nexus
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertmanager@nexus.local'
+
+# Route alerts to Discord bot
+route:
+  receiver: 'discord-webhook'
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+
+receivers:
+  # Discord webhook receiver (via alert-bot container)
+  - name: 'discord-webhook'
+    webhook_configs:
+      - url: 'http://alert-bot:8080/webhook'
+        send_resolved: true
+
+  # Optional: Email receiver (for fallback)
+  # - name: 'email'
+  #   email_configs:
+  #     - to: 'your-email@example.com'
+  #       from: 'nexus@yourdomain.com'
+  #       smarthost: 'smtp.gmail.com'
+  #       auth_username: 'your-email@example.com'
+  #       auth_password: '<app_password_here>'

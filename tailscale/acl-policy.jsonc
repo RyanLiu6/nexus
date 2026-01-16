@@ -1,0 +1,83 @@
+// Tailscale ACL Policy Template for Nexus
+//
+// Instructions:
+// 1. Replace email addresses in the "groups" section with your actual users
+// 2. Copy this entire file to Tailscale Admin Console → Access Controls
+// 3. Save and apply
+//
+// Documentation: https://tailscale.com/kb/1018/acls
+{
+  // ==========================================================================
+  // GROUPS - Define your user groups here
+  // ==========================================================================
+  // Replace these email addresses with your actual users
+  "groups": {
+    // Full access to everything - server admins
+    "group:admins": [
+      "your-email@gmail.com"
+    ],
+
+    // Limited access - can only access FoundryVTT and Homepage
+    "group:members": [
+      "friend1@gmail.com",
+      "friend2@gmail.com"
+    ],
+
+    // Finance access - can access Sure + Homepage
+    "group:finance": [
+      "accountant@gmail.com"
+    ]
+  },
+
+  // ==========================================================================
+  // TAG OWNERS - Who can assign tags to devices
+  // ==========================================================================
+  "tagOwners": {
+    // Only admins can tag the nexus server
+    "tag:nexus-server": ["group:admins"]
+  },
+
+  // ==========================================================================
+  // ACCESS CONTROL LISTS - Network-level access rules
+  // ==========================================================================
+  // Note: Per-service access control (which services each group can access)
+  // is handled by the tailscale-access middleware, not these ACLs.
+  // These ACLs just control who can reach the server at the network level.
+  "acls": [
+    // Admins can access everything on the server
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:nexus-server:*"]
+    },
+
+    // Members can reach web ports (middleware handles per-service access)
+    {
+      "action": "accept",
+      "src": ["group:members"],
+      "dst": ["tag:nexus-server:80", "tag:nexus-server:443"]
+    },
+
+    // Finance can reach web ports (middleware handles per-service access)
+    {
+      "action": "accept",
+      "src": ["group:finance"],
+      "dst": ["tag:nexus-server:80", "tag:nexus-server:443"]
+    }
+
+    // Default: deny all other access (implicit)
+  ],
+
+  // ==========================================================================
+  // SSH ACCESS - Who can SSH into the server
+  // ==========================================================================
+  "ssh": [
+    // Only admins can SSH
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:nexus-server"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ]
+}

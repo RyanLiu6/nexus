@@ -1,0 +1,263 @@
+---
+# =============================================================================
+# Nexus Encrypted Secrets
+# =============================================================================
+#
+# Copy to vault.yml and encrypt:
+#   cp ansible/vars/vault.yml.sample ansible/vars/vault.yml
+#   ansible-vault encrypt ansible/vars/vault.yml
+#
+# Edit encrypted vault:
+#   ansible-vault edit ansible/vars/vault.yml
+#
+# Password Generation Commands:
+#   - Passwords:    openssl rand -base64 24
+#   - Long secrets: openssl rand -base64 32
+#   - Hex secrets:  openssl rand -hex 32
+#   - Long hex:     openssl rand -hex 64
+#
+# Instructions:
+#   1. Configure the "Core Configuration" section (required for all deployments)
+#   2. Configure secrets for services you plan to use
+#   3. Leave unused service secrets as "CHANGE_ME" - they won't be used
+#
+# =============================================================================
+
+
+# #############################################################################
+#                           CORE CONFIGURATION
+#                    (Required for all deployments)
+# #############################################################################
+
+# =============================================================================
+# Nexus Paths and Settings
+# =============================================================================
+# Where nexus is cloned (e.g., /home/user/dev/nexus or ~/dev/nexus)
+nexus_root_directory: "/path/to/nexus"
+
+# Data directory for service volumes (configs, backups, media)
+# macOS: ~/Data or /Volumes/Data
+# Linux: /data
+# Structure:
+#   - ${nexus_data_directory}/Config/   - container settings and data
+#   - ${nexus_data_directory}/Backups/  - backup storage
+#   - ${nexus_data_directory}/Media/    - media files for Plex/Jellyfin
+nexus_data_directory: "/path/to/data"
+
+# Your domain (e.g., example.com)
+nexus_domain: "example.com"
+
+# Timezone (find yours: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+tz: "America/Vancouver"
+
+
+# =============================================================================
+# Cloudflare - DNS and Tunnel Management
+# =============================================================================
+# Get API token from: https://dash.cloudflare.com/profile/api-tokens
+# Required permissions: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
+cloudflare_api_token: "CHANGE_ME"
+
+# Find Zone ID on your domain's Overview page in Cloudflare dashboard
+cloudflare_zone_id: "CHANGE_ME"
+
+# Find Account ID in URL: dash.cloudflare.com/<account-id>/... or Account Settings
+cloudflare_account_id: "CHANGE_ME"
+
+# Email for Let's Encrypt SSL certificates
+acme_email: "your-email@example.com"
+
+# Cloudflare Tunnel secret (no port forwarding needed!)
+# Generate with: openssl rand -hex 32
+tunnel_secret: "CHANGE_ME"
+
+
+# #############################################################################
+#                           CORE SERVICES
+#                    (traefik, auth, dashboard, monitoring)
+# #############################################################################
+
+# =============================================================================
+# Traefik - Reverse Proxy
+# =============================================================================
+# Uses cloudflare_api_token for DNS challenge SSL certificates
+# No additional secrets required - uses ACME_EMAIL and CLOUDFLARE_DNS_API_TOKEN
+
+
+# =============================================================================
+# Tailscale Configuration
+# =============================================================================
+# Your tailnet name (find in Tailscale admin console URL or settings)
+# Example: "tail1234" from "tail1234.ts.net"
+tailnet_name: "your-tailnet"
+
+# =============================================================================
+# Tailscale Users & Groups
+# =============================================================================
+# Define user emails here to populate access-rules.yml
+# These groups must match your Tailscale ACLs
+tailscale_users:
+  admins:
+    - "your-email@gmail.com"
+  members:
+    - "friend1@gmail.com"
+    - "friend2@gmail.com"
+  finance:
+    - "accountant@gmail.com"
+
+
+# =============================================================================
+# Dashboard (Homepage)
+# =============================================================================
+# No secrets required - uses NEXUS_DOMAIN and TZ
+
+
+# =============================================================================
+# Monitoring - Prometheus, Grafana, Alertmanager
+# =============================================================================
+# Grafana admin credentials (for API access only - users login via Tailscale Header Auth)
+grafana_admin_user: "admin"
+grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
+
+
+# #############################################################################
+#                           OPTIONAL SERVICES
+#                     (Configure only what you use)
+# #############################################################################
+
+# =============================================================================
+# Discord Alerting (Optional)
+# =============================================================================
+# Leave empty to disable Discord alerts
+# Get webhook URL from: Discord Server Settings > Integrations > Webhooks
+
+discord_webhook_url: ""
+alert_provider: "discord"
+
+
+# =============================================================================
+# Backups - Borgmatic (Optional but recommended)
+# =============================================================================
+# Borg repository encryption passphrase
+# IMPORTANT: Store this securely! Without it, backups are unrecoverable
+# Generate with: openssl rand -base64 32
+borg_passphrase: "CHANGE_ME"
+
+
+# =============================================================================
+# Sure - Personal Finance (Optional)
+# =============================================================================
+# PostgreSQL database credentials
+sure_postgres_user: "sure_user"
+sure_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
+sure_postgres_db: "sure_production"
+
+# Rails secret key base
+# Generate with: openssl rand -hex 64
+sure_secret_key_base: "CHANGE_ME"
+
+# Internal port (usually don't need to change)
+sure_port: "5006"
+
+# AI Configuration - Choose ONE option:
+
+# Option 1: Local AI with Ollama (RECOMMENDED for privacy)
+# Setup: brew install ollama && ollama pull qwen2.5:7b
+# Then: cd services/sure && ollama create ena -f Modelfile
+sure_openai_access_token: "ollama-local"
+sure_openai_uri_base: "http://host.docker.internal:11434/v1"
+sure_openai_model: "ryanliu6/ena:latest"
+
+# Option 2: OpenAI
+# sure_openai_access_token: "<openai_api_key_here>"
+# sure_openai_uri_base: ""
+# sure_openai_model: "gpt-4o"
+
+# Option 3: Claude (via Anthropic API)
+# sure_openai_access_token: "<anthropic_api_key_here>"
+# sure_openai_uri_base: "https://api.anthropic.com/v1"
+# sure_openai_model: "claude-sonnet-4-20250514"
+
+# Option 4: OpenRouter (access multiple providers)
+# sure_openai_access_token: "<openrouter_api_key_here>"
+# sure_openai_uri_base: "https://openrouter.ai/api/v1"
+# sure_openai_model: "deepseek/deepseek-chat"
+
+
+# =============================================================================
+# Nextcloud - File Storage (Optional)
+# =============================================================================
+# MariaDB (MySQL) database credentials
+mysql_user: "nextcloud"
+mysql_password: "CHANGE_ME"  # openssl rand -base64 32
+mysql_database: "nextcloud"
+mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
+
+
+# =============================================================================
+# FoundryVTT - Virtual Tabletop (Optional)
+# =============================================================================
+# Your foundryvtt.com account credentials (for license validation)
+foundry_username: "your-foundryvtt-username"
+foundry_password: "CHANGE_ME"
+
+# Admin key for Foundry setup page
+# Generate with: openssl rand -base64 24
+foundry_admin_key: "CHANGE_ME"
+
+
+# =============================================================================
+# Jellyfin - Media Server (Optional)
+# =============================================================================
+# No secrets required - uses NEXUS_DOMAIN and TZ
+# Media paths configured via data_directory
+
+
+# =============================================================================
+# Plex - Media Server (Optional)
+# =============================================================================
+# No secrets required - uses NEXUS_DOMAIN and TZ
+# Claim token obtained via plex.tv/claim during setup
+
+
+# =============================================================================
+# Transmission - Torrent Client (Optional)
+# =============================================================================
+# No secrets required - protected by Tailscale Access
+# Uses NEXUS_DOMAIN and TZ
+
+
+# #############################################################################
+#                           ENVIRONMENT VARIABLE MAPPING
+# #############################################################################
+# This section maps vault variables to the environment variables used by
+# docker-compose files. The Ansible playbook handles this mapping.
+#
+# Variable Name in Vault     -> Docker Env Variable
+# -------------------------  -> --------------------
+# nexus_root_directory       -> NEXUS_ROOT_DIRECTORY
+# nexus_data_directory       -> NEXUS_DATA_DIRECTORY
+# nexus_domain               -> NEXUS_DOMAIN
+# tz                         -> TZ
+# cloudflare_api_token       -> CLOUDFLARE_DNS_API_TOKEN
+# acme_email                 -> ACME_EMAIL
+# grafana_admin_password     -> GRAFANA_ADMIN_PASSWORD
+# borg_passphrase            -> BORG_PASSPHRASE
+# sure_postgres_user         -> SURE_POSTGRES_USER
+# sure_postgres_password     -> SURE_POSTGRES_PASSWORD
+# sure_postgres_db           -> SURE_POSTGRES_DB
+# sure_secret_key_base       -> SURE_SECRET_KEY_BASE
+# sure_openai_access_token   -> SURE_OPENAI_ACCESS_TOKEN
+# sure_openai_uri_base       -> SURE_OPENAI_URI_BASE (if set)
+# sure_openai_model          -> SURE_OPENAI_MODEL (if set)
+# mysql_user                 -> MYSQL_USER
+# mysql_password             -> MYSQL_PASSWORD
+# mysql_database             -> MYSQL_DATABASE
+# mysql_root_password        -> MYSQL_ROOT_PASSWORD
+# foundry_username           -> FOUNDRY_USERNAME
+# foundry_password           -> FOUNDRY_PASSWORD
+# foundry_admin_key          -> FOUNDRY_ADMIN_KEY
+# tailnet_name               -> TAILNET_NAME
+# ts_authkey                 -> TS_AUTHKEY
+# tsidp_grafana_client_id    -> TSIDP_GRAFANA_CLIENT_ID
+# tsidp_grafana_client_secret -> TSIDP_GRAFANA_CLIENT_SECRET

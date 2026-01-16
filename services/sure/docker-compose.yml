@@ -1,0 +1,136 @@
+services:
+  sure-web:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-web
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - nexus
+      - sure
+    ports:
+      - ${SURE_PORT:-5006}:3000
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/sure/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN:-}
+      OPENAI_API_BASE: ${SURE_OPENAI_URI_BASE:-}
+      OPENAI_MODEL: ${SURE_OPENAI_MODEL:-}
+      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.sure-web.loadbalancer.server.port=3000"
+      # HTTPS only - Tailscale access only
+      - "traefik.http.routers.sure-web.rule=Host(`sure.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.sure-web.entrypoints=https"
+      - "traefik.http.routers.sure-web.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.sure-web.tls=true"
+      - "traefik.http.routers.sure-web.tls.certresolver=certchallenge"
+
+  sure-worker:
+    image: ghcr.io/we-promise/sure:latest
+    container_name: sure-worker
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - sure
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/sure/storage:/rails/storage
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      SECRET_KEY_BASE: ${SURE_SECRET_KEY_BASE}
+      SELF_HOSTED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      DB_HOST: sure-db
+      DB_PORT: 5432
+      REDIS_URL: redis://sure-redis:6379/1
+      OPENAI_ACCESS_TOKEN: ${SURE_OPENAI_ACCESS_TOKEN:-}
+      OPENAI_API_BASE: ${SURE_OPENAI_URI_BASE:-}
+      OPENAI_MODEL: ${SURE_OPENAI_MODEL:-}
+      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
+    depends_on:
+      sure-db:
+        condition: service_healthy
+      sure-redis:
+        condition: service_healthy
+
+  sure-db:
+    image: postgres:16
+    container_name: sure-db
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - sure
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/sure/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${SURE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SURE_POSTGRES_DB}
+      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sure-redis:
+    image: redis:latest
+    container_name: sure-redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - sure
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/sure/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  nexus:
+    external: true
+  sure:
+    name: nexus_sure
+    driver: bridge

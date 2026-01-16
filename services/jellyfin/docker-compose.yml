@@ -1,0 +1,45 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    networks:
+      - nexus
+    ports:
+      - 8096:8096
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/jellyfin:/config
+      - ${NEXUS_DATA_DIRECTORY}/Media:/data/media
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=https://jellyfin.${NEXUS_DOMAIN}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      # HTTPS only - Tailscale access only
+      # Note: Jellyfin has its own user auth; can add tsidp OAuth via SSO plugin
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.jellyfin.entrypoints=https"
+      - "traefik.http.routers.jellyfin.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.jellyfin.tls=true"
+      - "traefik.http.routers.jellyfin.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true

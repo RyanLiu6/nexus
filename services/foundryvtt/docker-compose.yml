@@ -1,0 +1,50 @@
+services:
+  foundryvtt:
+    image: felddy/foundryvtt:release
+    container_name: foundryvtt
+    restart: "unless-stopped"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - nexus
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/foundryvtt/data:/data
+    environment:
+      - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
+      - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY}
+      - FOUNDRY_AWS_CONFIG=/data/Config/s3.json
+      - FOUNDRY_PROXY_PORT=30000
+      - FOUNDRY_PROXY_SSL=true
+      - TIMEZONE=${TZ}
+      - CONTAINER_PATCH_URLS=https://gist.githubusercontent.com/yddlef/df54ee1bbca93095a71d75cd15e216eb/raw/plutonium.sh
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.foundryvtt.loadbalancer.server.port=30000"
+      # HTTP router (for Cloudflare Tunnel - PUBLIC ACCESS)
+      # FoundryVTT has its own authentication system
+      - "traefik.http.routers.foundryvtt.rule=Host(`foundry.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.foundryvtt.entrypoints=http"
+      - "traefik.http.routers.foundryvtt.middlewares=cloudflare-proto@file,security-headers@file"
+      # HTTPS router (PUBLIC ACCESS - FoundryVTT handles its own auth)
+      - "traefik.http.routers.foundryvtt-secure.rule=Host(`foundry.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.foundryvtt-secure.entrypoints=https"
+      - "traefik.http.routers.foundryvtt-secure.middlewares=security-headers@file"
+      - "traefik.http.routers.foundryvtt-secure.tls=true"
+      - "traefik.http.routers.foundryvtt-secure.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true

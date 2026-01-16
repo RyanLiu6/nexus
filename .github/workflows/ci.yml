@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Check with ruff
+        run: uv run ruff check src/ scripts/
+
+      - name: Check formatting with ruff
+        run: uv run ruff format --check src/ scripts/
+
+      - name: Type check with mypy
+        run: uv run mypy src/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest \
+            --cov=src/nexus \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=90 \
+            --junitxml=test-results.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python and venv
+        run: |
+          uv python install 3.12
+          uv venv
+          uv pip install ansible-lint ansible-core
+
+      - name: Install Ansible collections
+        run: uv run ansible-galaxy collection install community.general community.docker
+
+      - name: Create dummy vault password file
+        run: echo "dummy-vault-pass" > .vault_pass
+
+      - name: Run ansible-lint
+        run: uv run ansible-lint ansible/
+
+  docker-compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose files
+        env:
+          NEXUS_ROOT_DIRECTORY: /tmp/nexus
+          NEXUS_DATA_DIRECTORY: /tmp/nexus/data
+          TZ: UTC
+          BORG_PASSPHRASE: dummy
+        run: |
+          for file in services/*/docker-compose.yml; do
+            echo "Validating $file..."
+            docker compose -f "$file" config --quiet
+          done
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform -chdir=terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform -chdir=terraform validate

@@ -1,0 +1,16 @@
+# Settings Configuration
+# https://gethomepage.dev/latest/configs/settings/
+
+title: Nexus Dashboard
+background:
+  image: https://images.unsplash.com/photo-1506318137071-a8bcbf6d919d?auto=format&fit=crop&w=1920&q=80
+  opacity: 0.5
+theme: dark
+color: slate
+layout:
+  Core:
+    style: row
+    columns: 2
+  Media:
+    style: row
+    columns: 2

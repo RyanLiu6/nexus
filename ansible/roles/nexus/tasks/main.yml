@@ -1,0 +1,140 @@
+---
+# Nexus services deployment tasks
+
+- name: Display services to deploy
+  ansible.builtin.debug:
+    msg: "Deploying services: {{ nexus_services }}"
+
+- name: Check if services list is "all"
+  ansible.builtin.set_fact:
+    nexus_deploy_all_services: "{{ nexus_services == 'all' }}"
+
+- name: Get all available services
+  ansible.builtin.find:
+    paths: "{{ nexus_root_directory }}/services"
+    file_type: directory
+  register: nexus_service_directories
+
+- name: Set service list
+  ansible.builtin.set_fact:
+    nexus_final_services: >-
+      {{ nexus_service_directories.files | map(attribute='path') | map('basename') | list
+         if nexus_deploy_all_services else nexus_services.split(',') }}
+
+- name: Display final service list
+  ansible.builtin.debug:
+    msg: "Final services to deploy: {{ nexus_final_services }}"
+
+# Generate combined docker-compose.yml from individual service files
+- name: Read service docker-compose files
+  ansible.builtin.slurp:
+    src: "{{ nexus_root_directory }}/services/{{ item }}/docker-compose.yml"
+  loop: "{{ nexus_final_services }}"
+  register: nexus_compose_files
+  failed_when: false
+
+- name: Generate combined docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ nexus_root_directory }}/docker-compose.yml"
+    mode: "0644"
+  vars:
+    service_nexus_compose_files: "{{ nexus_compose_files.results }}"
+
+- name: Generate Tailscale access rules
+  ansible.builtin.template:
+    src: access-rules.yml.j2
+    dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
+    mode: "0644"
+
+- name: Ensure Docker network exists
+  community.docker.docker_network:
+    name: proxy
+    state: present
+
+- name: Stop and remove existing containers
+  ansible.builtin.shell: |
+    set -o pipefail
+    # Stop via compose (handles both default and explicit project names)
+    docker compose down --remove-orphans 2>/dev/null || true
+    docker compose -p nexus down --remove-orphans 2>/dev/null || true
+    # Force remove any remaining containers from this project by label
+    docker ps -aq --filter "label=com.docker.compose.project=nexus" | xargs -r docker rm -f 2>/dev/null || true
+  args:
+    chdir: "{{ nexus_root_directory }}"
+    executable: /bin/bash
+  changed_when: true
+
+- name: Deploy services using docker compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ nexus_root_directory }}"
+    project_name: nexus
+    state: present
+    pull: always
+  environment:
+    # Nexus Configuration
+    NEXUS_ROOT_DIRECTORY: "{{ nexus_root_directory }}"
+    NEXUS_DATA_DIRECTORY: "{{ nexus_data_directory | default('/Volumes/Data') }}"
+    NEXUS_DOMAIN: "{{ nexus_domain }}"
+    TZ: "{{ tz | default('America/Vancouver') }}"
+    # Cloudflare
+    CLOUDFLARE_DNS_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
+    CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"
+    ACME_EMAIL: "{{ acme_email | default('') }}"
+    # Traefik
+    TRAEFIK_USER: "{{ traefik_user | default('admin') }}"
+    TRAEFIK_PASSWORD_HASH: "{{ traefik_password_hash | default('') }}"
+    # FoundryVTT
+    FOUNDRY_USERNAME: "{{ foundry_username | default('admin') }}"
+    FOUNDRY_PASSWORD: "{{ foundry_password | default('') }}"
+    FOUNDRY_ADMIN_KEY: "{{ foundry_admin_key | default('') }}"
+    # Sure
+    SURE_POSTGRES_USER: "{{ sure_postgres_user | default('sure_user') }}"
+    SURE_POSTGRES_PASSWORD: "{{ sure_postgres_password | default('') }}"
+    SURE_POSTGRES_DB: "{{ sure_postgres_db | default('sure_production') }}"
+    SURE_SECRET_KEY_BASE: "{{ sure_secret_key_base | default('') }}"
+    SURE_OPENAI_ACCESS_TOKEN: "{{ sure_openai_access_token | default('') }}"
+    SURE_OPENAI_URI_BASE: "{{ sure_openai_uri_base | default('') }}"
+    SURE_OPENAI_MODEL: "{{ sure_openai_model | default('') }}"
+    SURE_PORT: "{{ sure_port | default('5006') }}"
+    # Nextcloud
+    MYSQL_USER: "{{ mysql_user | default('nextcloud') }}"
+    MYSQL_PASSWORD: "{{ mysql_password | default('') }}"
+    MYSQL_DATABASE: "{{ mysql_database | default('nextcloud') }}"
+    MYSQL_ROOT_PASSWORD: "{{ mysql_root_password | default('') }}"
+    # Monitoring
+    GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
+    GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"
+    # Alerting
+    DISCORD_BOT_TOKEN: "{{ discord_bot_token | default('') }}"
+    DISCORD_CHANNEL_ID: "{{ discord_channel_id | default('') }}"
+    DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
+    ALERT_PROVIDER: "{{ alert_provider | default('discord') }}"
+    # Backups
+    BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
+    # Tailscale
+    TAILNET_NAME: "{{ tailnet_name | default('') }}"
+    TAILSCALE_ADMIN_USERS: "{{ tailscale_admin_users | default('') }}"
+  register: nexus_compose_result
+
+- name: Display deployment result
+  ansible.builtin.debug:
+    msg: "Docker Compose {{ 'updated' if nexus_compose_result.changed else 'unchanged' }}"
+
+- name: Wait for services to be healthy  # noqa: no-handler
+  ansible.builtin.pause:
+    seconds: 15
+  when: nexus_compose_result.changed
+
+- name: Check container status
+  community.docker.docker_container_info:
+    name: "{{ item }}"
+  loop: "{{ nexus_final_services }}"
+  register: nexus_container_status
+  failed_when: false
+
+- name: Display container status
+  ansible.builtin.debug:
+    msg: "{{ item.container.Name | default(item.item) }}: {{ item.container.State.Status | default('not found') }}"
+  loop: "{{ nexus_container_status.results }}"
+  when: item.exists | default(false)

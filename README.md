@@ -1,59 +1,108 @@
-# Focus
+# Nexus
 
-Collection of self-hosted services for my personal multi-media home server.
+Self-hosted homelab for personal services, media streaming, and productivity tools.
 
-Full credits to [this](https://github.com/BaptisteBdn/docker-selfhosted-apps) repo for introducing watchtower and overall better documentation.
+## What It Does
+
+- **Dashboard** - Single homepage to access all services
+- **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
+- **Media** - Jellyfin/Plex streaming, Transmission downloads
+- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files)
+- **Monitoring** - Prometheus + Grafana + Discord alerts
+- **Backups** - Automated with Borgmatic
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Runtime | Docker Compose |
+| Proxy | Traefik (SSL, routing) |
+| Auth | Tailscale + tailscale-access |
+| DNS | Terraform + Cloudflare |
+| Config | Ansible (generates docker-compose.yml) |
+| Secrets | Ansible Vault |
+| CLI | Python + Invoke |
+
+## Quick Start
+
+```bash
+# 1. Clone and bootstrap
+git clone <repo-url> ~/dev/nexus && cd ~/dev/nexus
+./scripts/bootstrap
+
+# 2. Activate virtual environment
+# Option A: Using direnv (recommended) - auto-activates on cd
+echo "layout uv" > .envrc && direnv allow
+# Option B: Manual activation
+source .venv/bin/activate
+
+# 3. Setup and configure secrets
+invoke setup
+nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, and Tailscale users
+
+# 4. Deploy everything
+invoke deploy
+```
+
+The deploy command handles vault encryption, Terraform, cloudflared, and Ansible automatically.
+
+> **Tip:** For a complete shell setup with direnv + uv integration, see [RyanLiu6/setup](https://github.com/RyanLiu6/setup).
+
+## Invoke Commands
+
+```bash
+invoke --list                    # Show all tasks
+
+invoke deploy --preset home      # Deploy services
+invoke up / down / restart       # Container lifecycle
+invoke logs --service traefik    # View logs
+
+invoke lint                      # Run linters
+invoke test                      # Run tests
+
+invoke health --domain example.com
+invoke ops --daily               # Daily maintenance
+```
 
 ## Services
-### Core
-* [traefik](traefik/) - reverse proxy and cert manager
-* [watchtower](watchtower/) - automatic docker images update
 
-### Content
-* [plex](plex/) - media system
-* [jellyfin](jellyfin/) - media system
-* [nextcloud](nextcloud/) - file storage
-* [transmission](transmission/) - torrent client
+**Core:** traefik, tailscale-access, dashboard, monitoring
+**Media:** jellyfin, plex, transmission
+**Apps:** foundryvtt, sure, nextcloud
+**Utils:** backups
 
-### Games
-* [foundryvtt](foundryvtt/) - [FoundryVTT](https://foundryvtt.com/), a Virtual Table Top for games
+## Access Control
 
-### Finance
-* [actual](actual/) - local-first personal budgeting tool
-* [split-pro](split-pro/) - open-source expense sharing application
+| Group | Access | Auth |
+|-------|--------|------|
+| admin | All services | Tailscale + SSH |
+| members | FoundryVTT, Homepage | Tailscale |
+| finance | Sure, Homepage | Tailscale |
 
-### Misc
-* [homebridge](homebridge/) - (WIP) SmartHome integration with Apple's HomeKit
+## Documentation
 
-## Usage
-Each folder has description and usage for individual services, should you wish only do so. Otherwise, an aggregated, "centralized" docker-compose.yml file can be generated via the provided `generate_compose.py` file. Please look at the [Docker](#Docker) section for further details.
+| Doc | Contents |
+|-----|----------|
+| [Deployment](docs/DEPLOYMENT.md) | Step-by-step setup guide, invoke tasks, maintenance |
+| [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, monitoring & alerting |
+| [Access Control](docs/ACCESS_CONTROL.md) | Tailscale ACLs, Gatekeeper, Header Auth |
 
-If the aggregated approach is taken, we will need to create the proxy network that other containers use first. This can be done with
-```bash
-docker network create proxy
+Each service also has its own README in `services/<name>/README.md`.
+
+## Project Structure
+
+```
+nexus/
+├── ansible/            # Playbooks, roles, vault.yml
+├── docs/               # Documentation
+├── scripts/            # Bootstrap script
+├── services/           # Docker Compose per service
+├── src/nexus/          # Python library
+├── terraform/          # Cloudflare DNS
+├── tasks.py            # Invoke tasks
+└── pyproject.toml      # Python config
 ```
 
-## Docker
-Some basic knowledge of Docker and Docker Compose would be good, but not required, as it is fairly easy to pick up and learn. For Docker, please refer to [this](https://docs.docker.com/get-started/overview/) document, and [this](https://docs.docker.com/compose/gettingstarted/) for Docker Compose.
+## License
 
-> [!NOTE]
-> This guide and individual READMEs assume that your user has been added to the docker group so that all `docker` commands can be ran without the need to use `sudo`. The guide to so can be found [here](https://docs.docker.com/engine/install/linux-postinstall/).
-
-### Compose
-The provided `generate_compose.py` script uses my custom Python Library, [Vigor](https://www.github.com/ryanliu6/vigor) to interface with the CLI to generate an aggregated compose file with the correct values from related `.env` files. This is done so that each individual service is self-contained within their own subdirectories and can be run independently of each other. But, the intended usage is to pick and choose which services to run for your servers and only generate a compose file for what is needed.
-
-To be specific, Traefik will always be included in the generated compose file as the absolute core, since its needed to serve traffic. The other core services of Borg and Watchtower are optional and can be included manually.
-
-There's a flag to include everything, `--all`, which will generate a compose file that includes all possible services. Further extension of this flag to generate specific subsets of services is something that can be considered, but with how many services are in consideration now, it is not of much help for the average user.
-
-### Examples
-To generate and run for just Plex, Transmission and Nextcloud:
-```bash
-./generate_compose plex transmission nextcloud
-docker compose run -d
-```
-
-### Notes
-My personal preference is to use images from folks at [linuxserver](https://www.linuxserver.io/). Feel free to change these Docker images to official or any other 3rd party images.
-
-For my own setup, media lives on a separate drive, so I've set the `$DATA_DIRECTORY` environment variable in both `/etc/environment` and `.zshrc`, as this makes the environment variable accessible to both interactive shells and cronjobs. Please take note of this when setting up your own environments!
+MIT

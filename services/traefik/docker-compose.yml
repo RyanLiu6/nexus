@@ -1,0 +1,53 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--configfile=/traefik.yml"
+      - "--certificatesresolvers.certchallenge.acme.email=${ACME_EMAIL}"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - nexus
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${NEXUS_ROOT_DIRECTORY}/services/traefik/traefik.yml:/traefik.yml:ro
+      - ${NEXUS_ROOT_DIRECTORY}/services/traefik/rules:/rules:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config/traefik/letsencrypt:/letsencrypt
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL}
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
+      - NEXUS_DOMAIN=${NEXUS_DOMAIN}
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      # Dashboard - HTTPS only (Tailscale access only)
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.dashboard.entrypoints=https"
+      - "traefik.http.routers.dashboard.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true
