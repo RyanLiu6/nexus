@@ -17,7 +17,27 @@ Using a native installation allows Ollama to directly access your hardware (Appl
 ### Linux / Windows
 Follow instructions at [ollama.com](https://ollama.com).
 
-## 2. Create Your Custom Model
+## 2. Quick Setup (Recommended)
+
+A setup script automates model creation, base model pulling, and memory configuration:
+
+```bash
+cd services/sure
+./scripts/setup_model.sh
+```
+
+The script will:
+1. Check that Ollama is installed and running (starts it if needed)
+2. Configure `OLLAMA_KEEP_ALIVE=-1` so the model stays loaded in memory
+3. Pull the base model (`qwen3:8b`)
+4. Create the custom model `ryanliu6/ena:latest` from the `Modelfile`
+5. Verify the model with a test categorization
+
+After the script completes, skip to [Section 5: Configure Sure](#5-configure-sure).
+
+## 3. Manual Model Creation
+
+If you prefer manual setup or the script doesn't work for your environment, follow these steps.
 
 We will create a custom model named `ryanliu6/ena:latest`. This model embeds your specific categories and rules directly into the AI, ensuring consistent categorization.
 
@@ -40,7 +60,7 @@ We will create a custom model named `ryanliu6/ena:latest`. This model embeds you
 
    *Success! You now have a specialized financial AI model running locally.*
 
-## 3. Test Your Model
+## 4. Test Your Model
 
 Before connecting Sure, verify your model understands your categories.
 
@@ -60,7 +80,7 @@ ollama run ryanliu6/ena:latest "Categorize this transaction: 'TST* SQ *THE COFFE
 }
 ```
 
-## 4. Configure Sure
+## 5. Configure Sure
 
 Now tell Sure to use your new custom model.
 
@@ -85,16 +105,90 @@ Now tell Sure to use your new custom model.
    - Go to **Settings > Self-Hosting > AI Provider**.
    - Click **Save/Enable**.
 
-## 5. Inputting Transactions
+## 6. Inputting Transactions
 
 Sure supports multiple ways to get transactions in:
 
-1. **Bank Sync**: via Plaid or GoCardless (requires API keys).
-2. **File Import**: Upload CSV/OFX/QIF files from your bank.
-3. **Manual Entry**:
-   - Go to **Transactions**.
-   - Click **+ New Transaction**.
-   - Enter details manually. The AI will still attempt to categorize these based on the Merchant Name you type!
+1. **Bank Sync**: via SimpleFIN, Plaid, or GoCardless
+2. **File Import**: Upload CSV/OFX/QIF files from your bank
+3. **Manual Entry**: Go to **Transactions** → **+ New Transaction**
+
+**Note:** Transactions are NOT automatically categorized on import. To use AI categorization, create a Rule with the **Auto Categorize** action (see [AI Integration](ai-integration.md#1-automatic-transaction-categorization)).
+
+## 7. Memory Management (KEEP_ALIVE)
+
+By default, Ollama unloads models from memory after 5 minutes of inactivity. For fast AI responses when running categorization Rules, the `setup_model.sh` script configures `OLLAMA_KEEP_ALIVE=-1` which keeps the model permanently loaded.
+
+### Memory Impact
+
+| Setting | Behavior | RAM Usage | Best For |
+|---------|----------|-----------|----------|
+| `5m` (default) | Unload after 5 minutes idle | ~0GB when idle | Occasional use |
+| `1h` | Unload after 1 hour idle | ~6GB for up to 1 hour | Moderate use |
+| `2h` | Unload after 2 hours idle | ~6GB for up to 2 hours | Frequent use |
+| `-1` (configured) | Never unload | ~6GB always | Always-on server |
+
+**Mac Mini M4 (16GB RAM) with KEEP_ALIVE=-1:**
+```
+├── Ollama model (ena):  ~6GB
+├── Sure + services:     ~2-3GB
+├── macOS + apps:        ~3-4GB
+└── Available:           ~4-5GB (70-75% usage)
+```
+
+### Monitoring Alerts
+
+The monitoring stack has alerts configured for memory usage:
+- **Warning**: >75% memory usage for 10 minutes
+- **Critical**: >95% memory usage for 5 minutes
+
+With the model always loaded, typical memory sits around 70-75%, leaving headroom before alerts fire.
+
+### Verifying Model State
+
+Check if the model is loaded in memory:
+```bash
+curl -s http://localhost:11434/api/ps | jq
+```
+
+Output when loaded:
+```json
+{
+  "models": [{
+    "name": "ryanliu6/ena:latest",
+    "size": 5537000000
+  }]
+}
+```
+
+### Manual KEEP_ALIVE Configuration
+
+If you need to change the setting manually:
+
+**Set to a specific value (e.g., 1h, 2h, -1):**
+```bash
+# Edit the plist file
+nano ~/Library/LaunchAgents/environment.ollama.plist
+# Change the value in <string>-1</string> to your preferred setting (e.g., "1h", "2h")
+
+# Reload and restart
+launchctl unload ~/Library/LaunchAgents/environment.ollama.plist
+launchctl load ~/Library/LaunchAgents/environment.ollama.plist
+pkill -f "Ollama" && open -a Ollama
+```
+
+**Quick set for current session only:**
+```bash
+launchctl setenv OLLAMA_KEEP_ALIVE "1h"  # or "2h", "-1", "5m"
+pkill -f "Ollama" && open -a Ollama
+```
+
+**Revert to default (5 minutes):**
+```bash
+launchctl unload ~/Library/LaunchAgents/environment.ollama.plist
+rm ~/Library/LaunchAgents/environment.ollama.plist
+pkill -f "Ollama" && open -a Ollama
+```
 
 ## Troubleshooting
 

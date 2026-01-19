@@ -541,7 +541,7 @@ If you want to use external tools (Excel, Google Sheets, Python):
 ### 2. Meaningful Merchants
 
 - **Consolidate merchant names** (e.g., "Amazon.com", "AMZN", "Amazon Prime" → "Amazon")
-- **Use AI enhancement** to auto-detect and fix merchant names
+- **Use AI enhancement** via Rules with "Auto Detect Merchants" action (see [AI Integration](ai-integration.md#2-merchant-enhancement-auto-detect-merchants))
 - **Be specific** where it matters (different restaurants, not just "Restaurant")
 
 ### 3. Detailed Notes

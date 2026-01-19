@@ -87,10 +87,15 @@ Welcome to the Sure finance app documentation! This directory contains comprehen
 
 ### "How do I get Sure to automatically categorize transactions?"
 
-See the [AI Integration guide](ai-integration.md):
-- **Quick Start** section for cloud AI (OpenAI)
-- **Local AI with Ollama** section for privacy-focused setup
-- **Automatic Transaction Categorization** section for configuration
+Auto-categorization is done through the **Rules system** with AI actions:
+
+1. Configure an AI provider (see [AI Integration - Quick Start](ai-integration.md#quick-start))
+2. Go to **Settings → Transactions → Rules**
+3. Create a new rule with the **Auto Categorize** action
+4. Optionally add conditions like "Category is empty" to only categorize uncategorized transactions
+5. Run the rule
+
+See [AI Integration - Automatic Transaction Categorization](ai-integration.md#1-automatic-transaction-categorization) for details.
 
 ### "How can I understand my spending habits better?"
 

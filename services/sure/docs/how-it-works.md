@@ -131,9 +131,13 @@ Rules are automated conditions that perform actions on your transactions, saving
 **Rule Actions:**
 - Set category
 - Set merchant
-- Add/update notes
+- Set transaction name
 - Add tags
 - Exclude from reports/budgets
+- **Auto Categorize** (AI) - Uses LLM to assign categories automatically
+- **Auto Detect Merchants** (AI) - Uses LLM to clean up merchant names
+
+**Note:** AI actions are only available when an AI provider is configured (see [AI Integration](ai-integration.md)).
 
 **Rule Features:**
 - Import/Export rules for backup or sharing

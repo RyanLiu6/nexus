@@ -623,13 +623,13 @@ SURE_OPENAI_MODEL=qwen3:14b
 ### 1. Automatic Transaction Categorization
 
 **What it does:**
-Analyzes transaction details (merchant, amount, description) and suggests appropriate categories.
+Analyzes transaction details (merchant, amount, description) and suggests appropriate categories using AI.
 
 **How it works:**
-1. New transaction created (from bank sync or manual entry)
-2. Background job sends transaction data to LLM
-3. LLM analyzes and suggests category + merchant
-4. Suggestion displayed in UI for approval or auto-applied (if enabled)
+1. You create a Rule with the "Auto Categorize" action
+2. When the rule runs, matching transactions are queued for AI categorization (batches of 20)
+3. Background job sends transaction data to your configured LLM
+4. LLM analyzes and assigns categories to transactions
 
 **What the AI sees:**
 ```json
@@ -652,17 +652,27 @@ Analyzes transaction details (merchant, amount, description) and suggests approp
 }
 ```
 
-**Configuration:**
+**Configuration (via Rules):**
 
-Enable auto-categorization:
-- Settings → Transactions → Auto-categorize transactions
-- Choose: "Always", "Suggestions Only", or "Disabled"
+Auto-categorization is triggered through the Rules system:
+
+1. Go to **Settings → Transactions → Rules**
+2. Click **New Rule**
+3. Set conditions (optional) to match specific transactions, e.g.:
+   - "Category is empty" - only categorize uncategorized transactions
+   - "Account is X" - only categorize from specific accounts
+4. Add the **Auto Categorize** action
+5. Save and run the rule
+
+**Note:** The "Auto Categorize" action only appears if you have an AI provider configured (via environment variables or Settings → Self-Hosting → AI Provider).
+
+**Cost Estimate:** The rule creation UI shows estimated LLM costs (~$X.XX per 20 transactions).
 
 **Best Practices:**
-- **Review suggestions** before trusting fully (especially early on)
-- **Provide feedback** by correcting wrong categories (AI learns from existing data)
+- **Start with uncategorized transactions** - Create a rule with condition "Category is empty"
+- **Run manually first** - Review results before setting up automatic rules
+- **Combine with manual rules** - Create deterministic rules for known merchants (e.g., "Netflix" → Entertainment), use AI for the rest
 - **Use notes** for ambiguous transactions (AI uses notes for context)
-- **Create rules** for recurring transactions (faster and free)
 
 **Example Use Cases:**
 - Monthly paycheck → "Income: Salary"
@@ -670,10 +680,10 @@ Enable auto-categorization:
 - "Chevron Gas" → "Transportation: Fuel"
 - "Netflix.com" → "Entertainment: Streaming"
 
-### 2. Merchant Enhancement
+### 2. Merchant Enhancement (Auto-Detect Merchants)
 
 **What it does:**
-Cleans up messy merchant names from bank data.
+Cleans up messy merchant names from bank data using AI.
 
 **Examples:**
 - `WHOLEFDS LAX 10488` → `Whole Foods`
@@ -682,30 +692,29 @@ Cleans up messy merchant names from bank data.
 - `TST* RESTAURANT NAME` → `Restaurant Name`
 
 **How it works:**
-1. Bank provides raw merchant name (often abbreviated/coded)
-2. AI analyzes and suggests clean merchant name
-3. Sure displays both "provider merchant" (raw) and "family merchant" (cleaned)
-4. You can accept AI suggestion or set manually
+1. You create a Rule with the "Auto Detect Merchants" action
+2. When the rule runs, transactions without merchants are queued for AI detection (batches of 20)
+3. AI analyzes raw transaction names and identifies the actual merchant
+4. Merchants are assigned to transactions
 
-**Configuration:**
-- Settings → Transactions → Merchant Enhancement
-- Enable "Auto-enhance merchants"
+**Configuration (via Rules):**
+
+Merchant detection is triggered through the Rules system:
+
+1. Go to **Settings → Transactions → Rules**
+2. Click **New Rule**
+3. Set conditions (optional), e.g.:
+   - "Merchant is empty" - only detect for transactions without merchants
+4. Add the **Auto Detect Merchants** action
+5. Save and run the rule
+
+**Note:** The "Auto Detect Merchants" action only appears if you have an AI provider configured.
 
 **Benefits:**
 - Better transaction search (search for "Amazon" finds all Amazon transactions)
 - Cleaner merchant reports
 - Easier manual categorization
-
-**LLM Prompt Example:**
-```
-Given the transaction name "WHOLEFDS LAX 10488", extract the actual merchant name.
-Return only the merchant name, cleaned and normalized.
-```
-
-**AI Response:**
-```
-Whole Foods
-```
+- Works well combined with Auto Categorize
 
 ### 3. AI Chat Assistant
 

@@ -40,7 +40,6 @@ vault.yml
 hosts.yml
 *.vault
 .vault_pass
-traefik.yml
 
 # Traefik certs (sensitive)
 services/traefik/letsencrypt/
