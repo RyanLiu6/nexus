@@ -8,6 +8,7 @@
 
 - **[Architecture](ARCHITECTURE.md)** - System design and tech stack
 - **[Access Control](ACCESS_CONTROL.md)** - Tailscale, SSH
+- **[DNS Filtering](DNS_FILTERING.md)** - Ad-blocking and malware protection via Cloudflare Gateway
 
 ## Service Documentation
 

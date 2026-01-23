@@ -159,7 +159,7 @@ nexus/
 │   ├── ARCHITECTURE.md       # This file
 │   ├── DEPLOYMENT.md         # Setup instructions
 │   ├── ACCESS_CONTROL.md     # Auth, Tailscale, SSH
-│   └── runbooks/             # Troubleshooting guides
+│   └── DNS_FILTERING.md      # Cloudflare Gateway setup
 │
 ├── scripts/
 │   └── bootstrap             # Initial setup script
@@ -184,9 +184,10 @@ nexus/
 │   ├── alerts/               # Discord alert bot
 │   └── restore/              # Backup restoration
 │
-├── terraform/                # DNS management
+├── terraform/                # DNS and Cloudflare management
 │   ├── main.tf
-│   └── cloudflare_dns.tf
+│   ├── cloudflare_dns.tf
+│   └── cloudflare_gateway.tf # Zero Trust Gateway policies
 │
 ├── tasks.py                  # Invoke task definitions
 └── pyproject.toml            # Python project config

@@ -42,12 +42,26 @@ variable "gateway_block_adult_content" {
 # Creates a DNS Location that provides unique DNS endpoints
 # These endpoints are configured in Tailscale as global nameservers
 resource "cloudflare_zero_trust_dns_location" "tailscale" {
-  count      = var.enable_gateway ? 1 : 0
-  account_id = var.cloudflare_account_id
-  name       = "Tailscale Network"
+  count          = var.enable_gateway ? 1 : 0
+  account_id     = var.cloudflare_account_id
+  name           = "Tailscale Network"
+  client_default = true
+  ecs_support    = false
 
-  # Networks are optional - we identify traffic by the DNS endpoints used
-  # rather than source IP (since Tailscale IPs are dynamic)
+  endpoints {
+    doh {
+      enabled = true
+    }
+    dot {
+      enabled = true
+    }
+    ipv4 {
+      enabled = false
+    }
+    ipv6 {
+      enabled = false
+    }
+  }
 }
 
 # =============================================================================

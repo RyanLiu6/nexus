@@ -67,9 +67,7 @@ cat sure-backup.sql | docker exec -i sure-db psql -U ${SURE_POSTGRES_USER} -d ${
 
 Sure supports multiple AI providers for automatic transaction categorization.
 
-**📚 Detailed Guides:**
-- **[Local AI Setup](docs/ollama-setup.md)**: Privacy-focused setup with Ollama (Recommended)
-- **[Cloud AI Setup](docs/ai-integration.md)**: OpenAI, Claude, Gemini, DeepSeek
+**📚 Detailed Guide:** [AI Integration](docs/ai-integration.md) (Local Ollama or Cloud)
 
 **Quick Config - Local AI (Recommended):**
 
