@@ -52,10 +52,14 @@ tz: "America/Vancouver"
 
 
 # =============================================================================
-# Cloudflare - DNS and Tunnel Management
+# Cloudflare - DNS, Tunnel, and Gateway (Zero Trust)
 # =============================================================================
 # Get API token from: https://dash.cloudflare.com/profile/api-tokens
-# Required permissions: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
+# Required permissions:
+#   - Zone:DNS:Edit
+#   - Zone:Zone:Read
+#   - Account:Cloudflare Tunnel:Edit
+#   - Account:Zero Trust:Edit (for Gateway DNS filtering)
 cloudflare_api_token: "CHANGE_ME"
 
 # Find Zone ID on your domain's Overview page in Cloudflare dashboard

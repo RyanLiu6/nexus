@@ -132,6 +132,10 @@ tailnet_name: "your-tailnet"
    - Go to [Tailscale DNS Settings](https://login.tailscale.com/admin/dns)
    - Add split DNS: `yourdomain.com` → Your server's Tailscale IP (100.x.x.x)
 
+4. **(Optional) Configure DNS Filtering:**
+   - Set up Cloudflare Zero Trust for ad-blocking and malware protection
+   - See [DNS Filtering Guide](DNS_FILTERING.md) for full setup instructions
+
 ---
 
 ## Step 8: Deploy
@@ -211,4 +215,5 @@ sure_openai_model: "ena"
 
 - [Architecture](ARCHITECTURE.md) - System design
 - [Access Control](ACCESS_CONTROL.md) - Tailscale & SSH
+- [DNS Filtering](DNS_FILTERING.md) - Cloudflare Zero Trust ad-blocking & malware protection
 - Service READMEs in `services/*/README.md`
