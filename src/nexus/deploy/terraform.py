@@ -107,10 +107,39 @@ def run_terraform(
     env = os.environ.copy()
     env.update(tf_env_vars)
 
+    # Get optional tailscale_server_ip from vault for split DNS
+    tailscale_ip = ""
+    try:
+        vault = read_vault()
+        tailscale_ip = vault.get("tailscale_server_ip", "")
+    except Exception:
+        pass
+
     # Build non-sensitive tfvars
+    # Calculate subdomains from services
+    subdomains = []
+    # Explicit mapping of service names to subdomains
+    service_map = {
+        "dashboard": ["hub"],
+        "monitoring": ["grafana", "prometheus", "alertmanager"],
+        "foundryvtt": [],  # Handled by tunnel CNAME
+        "tailscale-access": [],  # Internal only
+    }
+
+    for svc in services:
+        if svc in service_map:
+            subdomains.extend(service_map[svc])
+        else:
+            subdomains.append(svc)
+
+    # Remove duplicates
+    subdomains = sorted(list(set(subdomains)))
+
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "use_tunnel": use_tunnel,
+        "tailscale_server_ip": tailscale_ip,
+        "subdomains": subdomains,
     }
 
     # Legacy mode needs public IP and subdomains
@@ -118,7 +147,6 @@ def run_terraform(
         public_ip = _get_public_ip()
         logging.info(f"Detected Public IP: {public_ip}")
         tf_vars["public_ip"] = public_ip
-        tf_vars["subdomains"] = services
         tf_vars["proxied"] = True
 
     tf_vars_path = TERRAFORM_PATH / "terraform.tfvars.json"
@@ -153,11 +181,9 @@ def run_terraform(
         _run_terraform_cmd(["terraform", "apply", "-auto-approve"], env)
 
         if use_tunnel:
-            logging.info("\n✅ Tunnel created! Next steps:")
-            logging.info("   1. Get token: terraform output -raw tunnel_token")
-            logging.info("   2. Run: cloudflared tunnel run --token <token>")
+            logging.info("✅ Tunnel configured!")
         else:
-            logging.info("✅ DNS records updated successfully!")
+            logging.info("✅ DNS records updated!")
     except subprocess.CalledProcessError:
         logging.error("Terraform failed. Check configuration.")
         raise
@@ -177,6 +203,30 @@ def _run_terraform_cmd(
         text=True,
         check=True,
     )
+
+
+def get_gateway_dns_ips() -> tuple[str, str]:
+    """Get Cloudflare Gateway DNS IPv4 addresses from terraform state.
+
+    Returns:
+        Tuple of (primary_ip, backup_ip). Empty strings if not available.
+    """
+    try:
+        result = subprocess.run(
+            ["terraform", "output", "-json"],
+            cwd=TERRAFORM_PATH,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        outputs = json.loads(result.stdout)
+
+        ipv4_primary = outputs.get("gateway_ipv4_primary", {}).get("value", "")
+        ipv4_backup = outputs.get("gateway_ipv4_backup", {}).get("value", "")
+
+        return (ipv4_primary, ipv4_backup)
+    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+        return ("", "")
 
 
 def apply_tunnel(dry_run: bool = False) -> None:

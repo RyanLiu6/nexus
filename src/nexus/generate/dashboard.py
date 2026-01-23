@@ -62,6 +62,15 @@ CATEGORIES = {
     "tailscale-access": "Core",
 }
 
+EXCLUDED_SERVICES = [
+    "node-exporter",
+    "tailscale-access",
+    "alert-bot",
+    "sure-db",
+    "sure-redis",
+    "sure-worker",
+]
+
 
 def get_service_config(service_name: str) -> list[dict[str, Any]]:
     """Parse a service's docker-compose.yml to extract Traefik routing info.
@@ -187,6 +196,10 @@ def generate_dashboard_config(
         service_configs = get_service_config(service_dir)
         for service_info in service_configs:
             svc_name = service_info["name"]
+
+            if svc_name in EXCLUDED_SERVICES:
+                continue
+
             rule = service_info.get("rule", "")
 
             if "Host(`" in rule:
@@ -281,6 +294,14 @@ def generate_bookmarks_config() -> list[dict[str, Any]]:
                         {
                             "icon": "si-cloudflare",
                             "href": "https://dash.cloudflare.com/",
+                        }
+                    ]
+                },
+                {
+                    "Tailscale": [
+                        {
+                            "icon": "si-tailscale",
+                            "href": "https://login.tailscale.com/admin/machines",
                         }
                     ]
                 },

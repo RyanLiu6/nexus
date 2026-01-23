@@ -1,15 +1,26 @@
 # DNS Filtering with Cloudflare Zero Trust
 
-DNS-level ad-blocking, malware protection, and content filtering using Cloudflare Gateway.
+DNS-level ad-blocking, malware protection, and split DNS using Cloudflare Gateway.
 
 ## How It Works
 
-| Component | Purpose |
-|-----------|---------|
-| **Cloudflare Gateway** | DNS filtering (ads, malware, phishing, content categories) |
-| **Tailscale Split DNS** | Routes `yourdomain.com` to your server |
+```
+DNS Query → Cloudflare Gateway
+                 │
+    ┌────────────┴────────────┐
+    │                         │
+*.yourdomain.com          Everything else
+    │                         │
+    ▼                         ▼
+Resolve to Tailscale IP   Filter (ads/malware)
+(split DNS override)      then resolve normally
+```
 
-Gateway filters general DNS queries. Tailscale handles your domain's split DNS. They work independently.
+Gateway handles both:
+1. **Split DNS** - Resolves `*.yourdomain.com` to your Tailscale server IP
+2. **Content filtering** - Blocks ads, malware, adult content
+
+The apex domain (`yourdomain.com`) is NOT overridden, so Cloudflare Pages still works.
 
 ---
 
@@ -23,23 +34,17 @@ Update your Cloudflare API token permissions:
 
 ---
 
-## Deploy
+## Configuration
 
-```bash
-cd terraform
-terraform plan    # Preview changes
-terraform apply   # Create Gateway resources
+Add your server's Tailscale IP to `ansible/vars/vault.yml`:
+
+```yaml
+tailscale_server_ip: "100.x.x.x"
 ```
 
-This creates:
-- **DNS Location**: `Tailscale Network` with DoH/DoT endpoints
-- **Policy 1**: Block Security Threats (malware, phishing, botnets)
-- **Policy 2**: Block Ads & Trackers
-- **Policy 3**: Block Adult & Inappropriate Content
+Find it with: `tailscale ip -4`
 
-### Configuration Variables
-
-Override defaults in `terraform/terraform.tfvars.json`:
+Optionally, override Gateway defaults in `terraform/terraform.tfvars.json`:
 
 ```json
 {
@@ -52,42 +57,57 @@ Override defaults in `terraform/terraform.tfvars.json`:
 
 ---
 
-## Configure Tailscale DNS
-
-After `terraform apply`, get your DoH endpoint:
+## Deploy
 
 ```bash
-terraform output gateway_doh_endpoint
-# Returns: https://<location-id>.cloudflare-gateway.com/dns-query
+inv deploy
+# Or just terraform:
+cd terraform && terraform apply
 ```
 
-You can also find this in the Zero Trust dashboard: **Networks → Resolvers & Proxies** → click your location → DNS over HTTPS.
+This creates:
+- **DNS Location**: Provides IPv4/DoH endpoints for Tailscale
+- **Split DNS Policy**: Resolves `*.yourdomain.com` → your Tailscale IP
+- **Block Policies**: Security threats, ads, adult content
 
-Then configure Tailscale:
+---
+
+## Configure Tailscale
+
+After deploy, the summary shows your Gateway DNS IPs:
+
+```
+📡 Cloudflare Gateway DNS (optional ad-blocking):
+   Add to Tailscale DNS → Global Nameservers:
+     Primary: 172.64.36.1
+     Backup:  172.64.36.2
+```
+
+Configure in Tailscale:
 
 1. Go to [Tailscale DNS Settings](https://login.tailscale.com/admin/dns)
-2. Under **Global Nameservers**, click **Add nameserver** → **Custom**
-3. Paste your DoH endpoint URL
+2. Under **Nameservers**, click **Add nameserver**
+3. Enter both Gateway IPv4 addresses
 4. Enable **Override Local DNS**
-5. Verify split DNS for your domain is still configured
+
+No separate split DNS config needed - Gateway handles it.
 
 ---
 
 ## Verify
 
-From a device connected to Tailscale:
-
 ```bash
+# Test split DNS (should return your Tailscale IP)
+nslookup grafana.yourdomain.com
+# Expected: 100.x.x.x
+
 # Test ad-blocking (should return 0.0.0.0 or NXDOMAIN)
 nslookup ads.google.com
-nslookup doubleclick.net
 
-# Test your domain still resolves via Tailscale split DNS
-dig grafana.yourdomain.com
-# Should return your server's Tailscale IP (100.x.x.x)
+# Test apex domain still works (should return Cloudflare Pages IP)
+nslookup yourdomain.com
+# Expected: NOT your Tailscale IP
 ```
-
-View blocked queries in [Zero Trust Dashboard → Logs → Gateway activity logs](https://one.dash.cloudflare.com/).
 
 ---
 
@@ -95,18 +115,8 @@ View blocked queries in [Zero Trust Dashboard → Logs → Gateway activity logs
 
 | Problem | Solution |
 |---------|----------|
-| Split DNS not working | Check Tailscale DNS settings, ensure split DNS entry exists |
-| Ads still showing | Verify Gateway policies are active in Zero Trust dashboard |
-| Legitimate site blocked | Add to allowlist: Gateway → Lists → Create list → Reference in Allow policy |
-| Queries not in logs | Verify DoH endpoint is correctly configured in Tailscale |
+| Subdomains not resolving | Check `tailscale_server_ip` in tfvars, run `terraform apply` |
+| Ads still showing | Verify Gateway policies are enabled in Zero Trust dashboard |
+| Apex domain broken | Ensure policy only matches `*.domain`, not `domain` itself |
 
-### Debug Commands
-
-```bash
-# Check Tailscale DNS config
-tailscale status --json | jq '.Self'
-
-# Test specific domain
-dig @1.1.1.1 ads.example.com  # Compare with
-dig ads.example.com            # Your configured DNS
-```
+View logs: [Zero Trust → Logs → Gateway activity logs](https://one.dash.cloudflare.com/)

@@ -75,6 +75,11 @@ acme_email: "your-email@example.com"
 # Generate with: openssl rand -hex 32
 tunnel_secret: "CHANGE_ME"
 
+# Tailscale server IP for Gateway split DNS (resolves *.domain to this IP)
+# Find with: tailscale ip -4
+# Leave empty to skip split DNS (only use Gateway for ad-blocking)
+tailscale_server_ip: ""
+
 
 # #############################################################################
 #                           CORE SERVICES

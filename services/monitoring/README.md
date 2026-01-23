@@ -10,12 +10,13 @@ Services → Prometheus (scrape) → Grafana (visualize)
 
 ## Components
 
-| Component | Purpose | Port |
-|-----------|---------|------|
-| Prometheus | Metrics collection | 9090 |
-| Grafana | Dashboards | 3000 |
-| Alertmanager | Alert routing | 9093 |
-| Node Exporter | System metrics | 9100 |
+| Component | Purpose | Port | Details |
+|-----------|---------|------|---------|
+| **Prometheus** | Metrics collection | 9090 | The "brain" of monitoring. It scrapes metrics from services at regular intervals and stores them in a time-series database. |
+| **Grafana** | Dashboards | 3000 | The "face" of monitoring. Connects to Prometheus to visualize data in beautiful, customizable dashboards. |
+| **Alertmanager** | Alert routing | 9093 | Receives alerts from Prometheus (e.g., "CPU > 90%"), groups them, silences them if needed, and routes them to receivers (like Discord). |
+| **Node Exporter** | System metrics | 9100 | **Background Worker (No UI).** Runs on the host machine to expose hardware metrics (CPU, RAM, Disk I/O) for Prometheus to scrape. |
+| **Alert Bot** | Discord Bridge | 8080 | **Background Worker.** A custom Python service that translates Alertmanager's raw JSON webhooks into formatted Discord messages. |
 
 ## Setup
 
