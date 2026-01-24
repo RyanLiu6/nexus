@@ -160,31 +160,6 @@ New transactions will now be automatically imported via SimpleFIN and categorize
 - Ask AI: "Compare my spending this month vs last month"
 - Export data if needed for tax purposes
 
-### Leveraging AI Features
-
-Sure's AI can help you understand your finances better. Try these queries:
-
-**Spending Analysis:**
-```
-"How much did I spend on groceries last month?"
-"What are my top 5 spending categories this year?"
-"Show me my Amazon spending over the last 6 months"
-```
-
-**Budget Tracking:**
-```
-"Am I on track with my food budget?"
-"Which categories am I overspending in?"
-"How much can I still spend on entertainment this month?"
-```
-
-**Insights:**
-```
-"What subscriptions am I paying for?"
-"Find duplicate or recurring charges"
-"What's my average monthly spending?"
-```
-
 ### Tips for Better Categorization
 
 1. **Be consistent**: Always categorize similar transactions the same way

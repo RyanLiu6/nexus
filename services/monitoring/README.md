@@ -47,7 +47,7 @@ Defined in `alerts.yml`, automatically loaded by Prometheus.
 
 **Included alerts:**
 - `HighCPUUsage` / `CriticalCPUUsage` - CPU > 80% / 95%
-- `HighMemoryUsage` / `CriticalMemoryUsage` - Memory > 80% / 95%
+- `HighMemoryUsage` / `CriticalMemoryUsage` - Memory > 75% / 95%
 - `DiskSpaceWarning` / `DiskSpaceCritical` - Disk < 20% / 10% free
 - `ServiceDown` - Any monitored service unreachable
 - `TraefikDown` - Reverse proxy down
