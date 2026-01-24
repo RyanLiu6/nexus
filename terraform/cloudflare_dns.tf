@@ -35,3 +35,19 @@ resource "cloudflare_record" "subdomains" {
   ttl      = 1
   proxied  = var.proxied
 }
+
+# =============================================================================
+# DNS Records for Tailscale-Only Services (Tunnel Mode)
+# These point directly to the Tailscale IP, not proxied through Cloudflare
+# Only devices on Tailscale can reach these services
+# =============================================================================
+
+resource "cloudflare_record" "tailscale_subdomains" {
+  for_each = var.use_tunnel && var.tailscale_server_ip != "" ? var.subdomains : toset([])
+  zone_id  = var.cloudflare_zone_id
+  name     = each.key
+  content  = var.tailscale_server_ip
+  type     = "A"
+  ttl      = 1
+  proxied  = false  # Cannot proxy to private Tailscale IP
+}

@@ -52,10 +52,14 @@ tz: "America/Vancouver"
 
 
 # =============================================================================
-# Cloudflare - DNS and Tunnel Management
+# Cloudflare - DNS, Tunnel, and Gateway (Zero Trust)
 # =============================================================================
 # Get API token from: https://dash.cloudflare.com/profile/api-tokens
-# Required permissions: Zone:DNS:Edit, Zone:Zone:Read, Account:Cloudflare Tunnel:Edit
+# Required permissions:
+#   - Zone:DNS:Edit
+#   - Zone:Zone:Read
+#   - Account:Cloudflare Tunnel:Edit
+#   - Account:Zero Trust:Edit (for Gateway DNS filtering)
 cloudflare_api_token: "CHANGE_ME"
 
 # Find Zone ID on your domain's Overview page in Cloudflare dashboard
@@ -70,6 +74,11 @@ acme_email: "your-email@example.com"
 # Cloudflare Tunnel secret (no port forwarding needed!)
 # Generate with: openssl rand -hex 32
 tunnel_secret: "CHANGE_ME"
+
+# Tailscale server IP for Gateway split DNS (resolves *.domain to this IP)
+# Find with: tailscale ip -4
+# Leave empty to skip split DNS (only use Gateway for ad-blocking)
+tailscale_server_ip: ""
 
 
 # #############################################################################

@@ -1,0 +1,56 @@
+# Traefik Configuration
+# Uses environment variable substitution for ACME_EMAIL.
+
+log:
+  level: INFO
+
+metrics:
+  prometheus:
+    entryPoint: traefik
+
+api:
+  dashboard: true
+  insecure: true  # Set to false in production, enables dashboard on :8080
+
+ping:
+  entryPoint: "traefik"
+
+entryPoints:
+  traefik:
+    address: ":8080"
+  http:
+    address: ":80"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "::1/128"
+        - "172.16.0.0/12"  # Docker networks
+        - "100.64.0.0/10"  # Tailscale VPN
+  https:
+    address: ":443"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "::1/128"
+        - "172.16.0.0/12"  # Docker networks
+        - "100.64.0.0/10"  # Tailscale VPN
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: nexus
+  file:
+    directory: /rules
+    watch: true
+
+certificatesResolvers:
+  certchallenge:
+    acme:
+      # Email is passed via CLI: --certificatesresolvers.certchallenge.acme.email
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"

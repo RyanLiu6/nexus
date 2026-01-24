@@ -10,7 +10,7 @@ route:
   group_by: ['alertname', 'severity']
   group_wait: 10s
   group_interval: 10s
-  repeat_interval: 12h
+  repeat_interval: 1h
 
 receivers:
   # Discord webhook receiver (via alert-bot container)

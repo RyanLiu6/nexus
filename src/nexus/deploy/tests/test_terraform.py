@@ -162,9 +162,9 @@ class TestRunTerraform:
 
         assert config["domain"] == "example.com"
         assert config["use_tunnel"] is True
-        # Tunnel mode should not have public_ip or subdomains
+        # Tunnel mode should not have public_ip (but does have subdomains for Gateway)
         assert "public_ip" not in config
-        assert "subdomains" not in config
+        assert "subdomains" in config
 
     @patch("nexus.deploy.terraform.TERRAFORM_PATH")
     def test_run_terraform_no_config(self, mock_tf_path: MagicMock) -> None:

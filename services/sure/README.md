@@ -61,31 +61,76 @@ cat sure-backup.sql | docker exec -i sure-db psql -U ${SURE_POSTGRES_USER} -d ${
 
 ---
 
-## AI Integration
+## Complete Configuration
 
-Sure supports multiple AI providers for automatic transaction categorization and financial insights.
+### 1. AI Integration (Auto-Categorization)
 
-### 📚 Documentation
-- **[Cloud AI Setup](docs/ai-integration.md)**: OpenAI, Claude, Gemini, DeepSeek (Easiest)
-- **[Local AI Setup](docs/ollama-setup.md)**: Privacy-focused setup with Ollama (Recommended for privacy)
+Sure supports multiple AI providers for automatic transaction categorization.
 
-### Quick Config Options
+**📚 Detailed Guide:** [AI Integration](docs/ai-integration.md) (Local Ollama or Cloud)
 
-**Option 1: Local AI (Privacy Recommended)**
-```yaml
-# vault.yml
-sure_openai_access_token: "ollama-local"
-sure_openai_uri_base: "http://host.docker.internal:11434/v1"
-sure_openai_model: "ryanliu6/ena:latest"
+**Quick Config - Local AI (Recommended):**
+
+1. Run the setup script to configure Ollama:
+   ```bash
+   cd services/sure
+   ./scripts/setup_model.sh
+   ```
+
+2. Add to your `.env`:
+   ```ini
+   SURE_OPENAI_ACCESS_TOKEN=ollama-local
+   SURE_OPENAI_URI_BASE=http://host.docker.internal:11434/v1
+   SURE_OPENAI_MODEL=ryanliu6/ena:latest
+   ```
+
+3. Restart Sure and enable in UI:
+   ```bash
+   docker compose restart sure-web sure-worker
+   ```
+   Then go to **Settings → Self-Hosting → AI Provider → Enable**
+
+**Quick Config - Cloud AI:**
+```ini
+# OpenRouter (access to Claude, GPT-4, Gemini, etc.)
+SURE_OPENAI_ACCESS_TOKEN=sk-or-v1-your-key
+SURE_OPENAI_URI_BASE=https://openrouter.ai/api/v1
+SURE_OPENAI_MODEL=anthropic/claude-sonnet-4.5
 ```
 
-**Option 2: Cloud AI (OpenRouter/OpenAI/Claude)**
-```yaml
-# vault.yml
-sure_openai_access_token: "<api_key>"
-sure_openai_uri_base: "https://openrouter.ai/api/v1" # Optional
-sure_openai_model: "anthropic/claude-3-sonnet"
-```
+### 2. SimpleFIN Integration (Auto-Import Transactions)
+
+SimpleFIN provides read-only bank syncing for $15/year.
+
+**Setup Steps:**
+
+1. **Create SimpleFIN account**: [beta-bridge.simplefin.org](https://beta-bridge.simplefin.org/)
+   - Sign up ($15/year)
+   - Add your financial institutions (chequing, credit cards, savings)
+   - Generate a **Setup Token** (one-time use)
+
+2. **Connect in Sure**:
+   - Go to **Settings → Connections** (or **Accounts → Link Account**)
+   - Select **SimpleFIN** as provider
+   - Paste your Setup Token
+   - Select accounts to sync
+
+3. **Map accounts**: For each discovered account, create or link to a Sure account
+
+**Limitations:**
+- Max 90 days historical data
+- Syncs once daily (time varies by bank)
+- Read-only (cannot initiate transactions)
+
+### 3. Enable Auto-Categorization
+
+After AI and SimpleFIN are configured:
+
+1. Go to **Settings → Transactions**
+2. Set **Auto-categorize transactions** to "Always" or "Suggestions Only"
+3. Enable **Merchant Enhancement** for cleaner merchant names
+
+New transactions will now be automatically imported via SimpleFIN and categorized by AI.
 
 ---
 
@@ -114,31 +159,6 @@ sure_openai_model: "anthropic/claude-3-sonnet"
 - Adjust budgets based on actual spending
 - Ask AI: "Compare my spending this month vs last month"
 - Export data if needed for tax purposes
-
-### Leveraging AI Features
-
-Sure's AI can help you understand your finances better. Try these queries:
-
-**Spending Analysis:**
-```
-"How much did I spend on groceries last month?"
-"What are my top 5 spending categories this year?"
-"Show me my Amazon spending over the last 6 months"
-```
-
-**Budget Tracking:**
-```
-"Am I on track with my food budget?"
-"Which categories am I overspending in?"
-"How much can I still spend on entertainment this month?"
-```
-
-**Insights:**
-```
-"What subscriptions am I paying for?"
-"Find duplicate or recurring charges"
-"What's my average monthly spending?"
-```
 
 ### Tips for Better Categorization
 
@@ -219,6 +239,30 @@ docker exec -it sure-web bundle exec rails console
 
 # Check database tables
 docker exec -it sure-db psql -U sure_user -d sure_production -c "\dt"
+```
+
+### Delete Transactions by Date (Rails Console)
+
+To delete all transactions before a certain date (e.g., starting fresh in 2026):
+
+```bash
+docker exec -it sure-web bundle exec rails console
+```
+
+```ruby
+# Preview entries before 2026
+old_entries = Entry.where("date < ?", Date.new(2026, 1, 1))
+puts "Found #{old_entries.count} entries before 2026"
+
+# Delete them
+old_entries.destroy_all
+```
+
+Or via SQL for faster bulk deletion:
+
+```bash
+docker exec -it sure-db psql -U sure_user -d sure_production -c \
+  "DELETE FROM entries WHERE date < '2026-01-01';"
 ```
 
 ---

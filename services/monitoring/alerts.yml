@@ -38,13 +38,15 @@ groups:
       # Memory Alerts
       # =========================================================================
       - alert: HighMemoryUsage
-        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        # Threshold lowered to 75% to account for Ollama model (~6GB) always loaded in memory
+        # with KEEP_ALIVE=-1 setting. On 16GB Mac Mini, this catches issues before critical.
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 75
         for: 10m
         labels:
           severity: warning
         annotations:
           summary: "High memory usage on {{ $labels.instance }}"
-          description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 80%)"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 75%)"
 
       - alert: CriticalMemoryUsage
         expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
@@ -116,7 +118,7 @@ groups:
           description: "Receiving {{ printf \"%.1f\" $value }} Mbps on {{ $labels.device }}"
 
       - alert: NetworkInterfaceDown
-        expr: node_network_up{device!~"lo|docker.*|br-.*|veth.*"} == 0
+        expr: node_network_up{device!~"lo|docker.*|br-.*|veth.*|tunl0|sit0|ip6tnl0|ip6gre0|gre0|erspan0|.*orb.*"} == 0
         for: 2m
         labels:
           severity: critical
@@ -161,22 +163,13 @@ groups:
       # Service Health Alerts
       # =========================================================================
       - alert: ServiceDown
-        expr: up == 0
+        expr: up{job!~"traefik|node|borgmatic|alertmanager"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "Service {{ $labels.job }} is down"
           description: "{{ $labels.instance }} has been unreachable for 2+ minutes"
-
-      - alert: PrometheusTargetMissing
-        expr: up == 0
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Prometheus target {{ $labels.job }} is missing"
-          description: "Target {{ $labels.instance }} has been down for 5+ minutes"
 
       # =========================================================================
       # Backup Alerts

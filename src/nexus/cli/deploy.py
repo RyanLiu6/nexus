@@ -17,7 +17,7 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.terraform import run_terraform
+from nexus.deploy.terraform import get_gateway_dns_ips, run_terraform
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
     generate_dashboard_config,
@@ -440,16 +440,25 @@ def main(
     if dry_run:
         logging.info("\n[Dry Run Complete] No changes were made.")
     else:
+        # Get Gateway DNS IPs for the summary
+        gateway_primary, gateway_backup = get_gateway_dns_ips()
+
         print("\n" + "=" * 60)
         print("  ✅ Deployment Complete!")
         print("=" * 60)
         print("\nAccess your services (via Tailscale):")
         print(f"  Dashboard: https://hub.{domain}")
         print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
-        print("\n⚠️  Manual steps required:")
-        print("   1. Tag server: tailscale up --advertise-tags=tag:nexus-server")
-        print("   2. Configure Split DNS in Tailscale Admin:")
-        print(f"      {domain} → <server-tailscale-ip>")
+        print("\n⚠️  Manual step required:")
+        print("   Tag server: tailscale up --advertise-tags=tag:nexus-server")
+        if gateway_primary:
+            print("\n📡 Cloudflare Gateway DNS:")
+            print("   Add to Tailscale Admin → DNS → Nameservers:")
+            print(f"     Primary: {gateway_primary}")
+            if gateway_backup:
+                print(f"     Backup:  {gateway_backup}")
+            print("   Enable 'Override Local DNS'")
+            print("   (Handles split DNS + ad-blocking)")
         print("\nUseful commands:")
         print("  invoke logs --service traefik  # View logs")
         print("  invoke ps                      # Show containers")

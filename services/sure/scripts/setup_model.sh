@@ -48,11 +48,60 @@ else
     echo -e "${GREEN}Ollama is already running.${NC}"
 fi
 
-# 3. Pull the base model
+# 3. Configure KEEP_ALIVE=-1 for always-on model
+echo -e "${YELLOW}Configuring OLLAMA_KEEP_ALIVE=-1 (model stays in memory permanently)...${NC}"
+PLIST_FILE="$HOME/Library/LaunchAgents/environment.ollama.plist"
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Create the LaunchAgent plist for persistent KEEP_ALIVE
+    mkdir -p "$HOME/Library/LaunchAgents"
+    cat > "$PLIST_FILE" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>environment.ollama</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/launchctl</string>
+        <string>setenv</string>
+        <string>OLLAMA_KEEP_ALIVE</string>
+        <string>-1</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+    # Load the new configuration
+    launchctl unload "$PLIST_FILE" 2>/dev/null || true
+    launchctl load "$PLIST_FILE"
+
+    # Set it immediately for the current session
+    launchctl setenv OLLAMA_KEEP_ALIVE "-1"
+
+    # Restart Ollama to pick up the new setting
+    echo -e "${YELLOW}Restarting Ollama to apply KEEP_ALIVE setting...${NC}"
+    pkill -f "Ollama" 2>/dev/null || true
+    sleep 2
+    open -a Ollama
+
+    # Wait for it to be ready
+    while ! curl -s http://localhost:11434/api/tags > /dev/null; do
+        sleep 1
+    done
+    echo -e "${GREEN}Ollama configured with KEEP_ALIVE=-1 (model will stay in memory).${NC}"
+else
+    echo -e "${YELLOW}Note: On Linux, set OLLAMA_KEEP_ALIVE=-1 in your environment or systemd service.${NC}"
+fi
+
+# 4. Pull the base model
 echo -e "${YELLOW}Pulling base model ($BASE_MODEL)...${NC}"
 ollama pull "$BASE_MODEL"
 
-# 4. Create/Update the custom model
+# 5. Create/Update the custom model
 echo -e "${YELLOW}Creating/Updating '$MODEL_NAME' from Modelfile...${NC}"
 if [ -f "$MODEL_FILE" ]; then
     ollama create "$MODEL_NAME" -f "$MODEL_FILE"
@@ -62,7 +111,7 @@ else
     exit 1
 fi
 
-# 5. Quick Verification
+# 6. Quick Verification
 echo -e "${YELLOW}Verifying model...${NC}"
 RESPONSE=$(ollama run "$MODEL_NAME" "Categorize: Starbucks coffee $5.50" 2>/dev/null)
 

@@ -11,6 +11,12 @@ http:
         customRequestHeaders:
           X-Forwarded-Proto: "https"
 
+    # Standard HTTP to HTTPS redirect
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
     # IP whitelist for direct HTTPS access (Tailscale + local networks only)
     # Blocks any direct HTTPS access from the public internet
     tailscale-only:

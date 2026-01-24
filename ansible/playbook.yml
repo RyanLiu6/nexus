@@ -14,7 +14,7 @@
         msg:
           - "Services to deploy: {{ services | default('all') }}"
           - "Domain: {{ domain | default('not set') }}"
-          - "Nexus Root: {{ nexus_root_directory | default(ansible_env.HOME + '/dev/nexus') }}"
+          - "Nexus Root: {{ nexus_root_directory | default(ansible_facts['env']['HOME'] + '/dev/nexus') }}"
 
   roles:
     - role: docker

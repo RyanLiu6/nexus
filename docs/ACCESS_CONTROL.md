@@ -205,6 +205,7 @@ Only `admins` group has SSH access (configured in ACL policy).
 |---------|----------|
 | Can't access any service | Check `tailscale status`, verify you're connected |
 | DNS not resolving | Check split DNS in Tailscale admin |
+| Legitimate site blocked | Check Cloudflare Gateway allowlist (see [DNS Filtering](DNS_FILTERING.md)) |
 | 403 Forbidden | Check your group has access in `access-rules.yml` |
 | SSH denied | Verify you're in `admins` group |
 

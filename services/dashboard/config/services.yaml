@@ -1,8 +1,4 @@
 Core:
-- monitoring:
-    href: https://node-exporter.${NEXUS_DOMAIN}
-    description: Metrics collection and visualization
-    icon: prometheus.png
 - traefik:
     href: https://traefik.${NEXUS_DOMAIN}
     description: Reverse proxy and SSL management
