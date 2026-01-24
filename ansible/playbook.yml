@@ -24,11 +24,3 @@
       tags: ['nexus', 'deploy']
       vars:
         nexus_services: "{{ services | default('all') }}"
-
-    - role: monitoring
-      tags: ['monitoring']
-      when: enable_monitoring | default(false)
-
-    - role: alerting
-      tags: ['alerting']
-      when: enable_alerting | default(false)

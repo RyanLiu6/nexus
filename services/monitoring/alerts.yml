@@ -277,3 +277,44 @@ groups:
         annotations:
           summary: "Alertmanager failing to send notifications"
           description: "{{ $value }} notifications failed in last 5 minutes"
+
+  - name: tailscale_alerts
+    rules:
+      # =========================================================================
+      # Tailscale API Key Expiration Alerts
+      # =========================================================================
+      - alert: TailscaleAPIKeyExpiringSoon
+        expr: tailscale_api_key_expiry_seconds > 0 and tailscale_api_key_expiry_seconds < 14 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tailscale API key expiring soon"
+          description: "API key expires in {{ printf \"%.0f\" (divf $value 86400) }} days. Rotate at https://login.tailscale.com/admin/settings/keys"
+
+      - alert: TailscaleAPIKeyExpiringSoonCritical
+        expr: tailscale_api_key_expiry_seconds > 0 and tailscale_api_key_expiry_seconds < 7 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tailscale API key expiring very soon"
+          description: "API key expires in {{ printf \"%.0f\" (divf $value 86400) }} days! Rotate immediately at https://login.tailscale.com/admin/settings/keys"
+
+      - alert: TailscaleAPIKeyExpired
+        expr: tailscale_api_key_expiry_seconds < 0 and tailscale_api_key_expiry_seconds != -1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tailscale API key has expired"
+          description: "API key has expired! Terraform cannot manage Tailscale. Rotate at https://login.tailscale.com/admin/settings/keys"
+
+      - alert: TailscaleExporterError
+        expr: tailscale_api_key_expiry_seconds == -1
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cannot determine Tailscale API key expiration"
+          description: "Tailscale exporter cannot query key expiration. Check TAILSCALE_API_KEY and TAILNET_NAME configuration."

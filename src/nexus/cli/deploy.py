@@ -218,11 +218,6 @@ def _generate_configs(
     help="Skip starting cloudflared.",
 )
 @click.option(
-    "--use-tunnel/--no-tunnel",
-    default=True,
-    help="Use Cloudflare Tunnel (default) or legacy A records.",
-)
-@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -244,7 +239,6 @@ def main(
     skip_dns: bool,
     skip_ansible: bool,
     skip_cloudflared: bool,
-    use_tunnel: bool,
     dry_run: bool,
     yes: bool,
 ) -> None:
@@ -263,7 +257,6 @@ def main(
         skip_dns: Skip Terraform DNS/tunnel provisioning.
         skip_ansible: Skip Ansible deployment phase.
         skip_cloudflared: Skip starting the cloudflared tunnel connector.
-        use_tunnel: Use Cloudflare Tunnel (True) or legacy A records (False).
         dry_run: Preview changes without applying them.
         yes: Skip all confirmation prompts.
 
@@ -349,13 +342,11 @@ def main(
         sys.exit(1)
 
     # Show deployment plan
-    dns_mode = "Tunnel" if use_tunnel else "A Records"
     vault_status = "Encrypted" if _is_vault_encrypted() else "⚠️  NOT ENCRYPTED"
     network_status = "Exists" if _check_docker_network() else "Will create"
 
     print(f"\nServices: {', '.join(services_list)}")
     print(f"Domain: {domain}")
-    print(f"DNS Mode: {dns_mode}")
     print(f"Vault: {vault_status}")
     print(f"Docker Network: {network_status}")
     print(f"Dry Run: {'Yes' if dry_run else 'No'}")
@@ -399,7 +390,7 @@ def main(
     if not skip_dns:
         logging.info("\n🌐 Setting up Cloudflare Tunnel...")
         try:
-            run_terraform(services_list, domain, dry_run, use_tunnel)
+            run_terraform(services_list, domain, dry_run)
         except ValueError as e:
             logging.error(f"Terraform error: {e}")
             logging.info("Fix vault.yml configuration and retry, or use --skip-dns")
@@ -408,7 +399,7 @@ def main(
     # =========================================================================
     # Step 6: Start cloudflared
     # =========================================================================
-    if use_tunnel and not skip_cloudflared and not skip_dns:
+    if not skip_cloudflared and not skip_dns:
         if _is_cloudflared_running():
             logging.info("✅ Cloudflared already running")
         else:

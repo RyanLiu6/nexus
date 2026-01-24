@@ -17,8 +17,8 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Config/plex:/config
       - ${NEXUS_DATA_DIRECTORY}/Media:/media
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
       - VERSION=docker
       - DOCKER_MODS=linuxserver/mods:plex-absolute-hama
       - TZ=${TZ}
@@ -37,7 +37,7 @@ services:
       # Note: Plex has its own user auth; can add tsidp OAuth via Plex SSO
       - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.plex.entrypoints=https"
-      - "traefik.http.routers.plex.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.plex.middlewares=tailscale-chain@file"
       - "traefik.http.routers.plex.tls=true"
       - "traefik.http.routers.plex.tls.certresolver=certchallenge"
 

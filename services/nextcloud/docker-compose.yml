@@ -45,8 +45,8 @@ services:
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/nextcloud:/var/www/html
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
       - VIRTUAL_HOST=nextcloud.${NEXUS_DOMAIN}
       - NEXTCLOUD_HOSTNAME=nextcloud.${NEXUS_DOMAIN}
       - OVERWRITEHOST=nextcloud.${NEXUS_DOMAIN}
@@ -62,7 +62,7 @@ services:
       # Note: Nextcloud has its own user auth; can add tsidp OAuth via OIDC app
       - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.nextcloud.entrypoints=https"
-      - "traefik.http.routers.nextcloud.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.nextcloud.middlewares=tailscale-chain@file"
       - "traefik.http.routers.nextcloud.tls=true"
       - "traefik.http.routers.nextcloud.tls.certresolver=certchallenge"
 

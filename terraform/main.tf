@@ -50,43 +50,14 @@ variable "domain" {
 }
 
 # =============================================================================
-# Cloudflare Tunnel Configuration (Recommended)
+# Cloudflare Tunnel Configuration
 # =============================================================================
-
-variable "use_tunnel" {
-  description = "Use Cloudflare Tunnel instead of port forwarding (recommended)"
-  type        = bool
-  default     = true
-}
 
 variable "tunnel_secret" {
   description = "Secret for the Cloudflare Tunnel (generate with: openssl rand -hex 32)"
   type        = string
   sensitive   = true
   default     = ""
-}
-
-# =============================================================================
-# Port Forwarding Configuration (Legacy)
-# Only used when use_tunnel = false
-# =============================================================================
-
-variable "public_ip" {
-  description = "Public IP address for DNS A records (only if not using tunnel)"
-  type        = string
-  default     = ""
-}
-
-variable "subdomains" {
-  description = "List of subdomains to create A records for (only if not using tunnel)"
-  type        = set(string)
-  default     = []
-}
-
-variable "proxied" {
-  description = "Whether to proxy through Cloudflare (Orange Cloud)"
-  type        = bool
-  default     = true
 }
 
 # =============================================================================

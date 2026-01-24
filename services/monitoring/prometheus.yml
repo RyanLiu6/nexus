@@ -28,6 +28,11 @@ scrape_configs:
       - targets: ['traefik:8080']
     metrics_path: '/metrics'
 
+  # Tailscale API key expiration (exporter queries API daily, caches result)
+  - job_name: 'tailscale'
+    static_configs:
+      - targets: ['tailscale-exporter:9199']
+
   # Docker containers (via cAdvisor - optional)
   # - job_name: 'docker'
   #   static_configs:

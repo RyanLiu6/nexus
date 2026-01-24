@@ -17,8 +17,8 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Config/jellyfin:/config
       - ${NEXUS_DATA_DIRECTORY}/Media:/data/media
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
       - TZ=${TZ}
       - JELLYFIN_PublishedServerUrl=https://jellyfin.${NEXUS_DOMAIN}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
@@ -36,7 +36,7 @@ services:
       # Note: Jellyfin has its own user auth; can add tsidp OAuth via SSO plugin
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.jellyfin.entrypoints=https"
-      - "traefik.http.routers.jellyfin.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.jellyfin.middlewares=tailscale-chain@file"
       - "traefik.http.routers.jellyfin.tls=true"
       - "traefik.http.routers.jellyfin.tls.certresolver=certchallenge"
 
