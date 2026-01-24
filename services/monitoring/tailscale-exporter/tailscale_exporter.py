@@ -45,18 +45,18 @@ class TailscaleExporter:
         self.scrape_interval = scrape_interval
         self.port = port
         self.running = True
-        self.known_key_labels: set[tuple[str, str, str]] = set()
+        self.known_key_labels: set[tuple[str, str]] = set()
 
         # Metrics
         self.key_expiry_timestamp = Gauge(
             "tailscale_key_expiry_timestamp",
             "Unix timestamp when the Tailscale API key expires",
-            ["key_id", "description", "user_login"],
+            ["key_id", "description"],
         )
         self.key_days_remaining = Gauge(
             "tailscale_key_days_remaining",
             "Days remaining until the Tailscale API key expires",
-            ["key_id", "description", "user_login"],
+            ["key_id", "description"],
         )
         self.exporter_up = Gauge(
             "tailscale_exporter_up",
@@ -102,7 +102,7 @@ class TailscaleExporter:
         """Update Prometheus metrics with current key status."""
         keys, success = self.get_keys()
         self.exporter_up.set(1 if success else 0)
-        current_labels: set[tuple[str, str, str]] = set()
+        current_labels: set[tuple[str, str]] = set()
 
         for key in keys:
             key_id = key.get("id", "unknown")
@@ -112,7 +112,6 @@ class TailscaleExporter:
                 continue
 
             description = key.get("description", "")
-            user_login = "unknown"
 
             expires_str = key.get("expires")
             if not expires_str:
@@ -126,14 +125,14 @@ class TailscaleExporter:
                 seconds_remaining = (expires - now).total_seconds()
                 days_remaining = seconds_remaining / 86400
 
-                labels = (key_id, description, user_login)
+                labels = (key_id, description)
 
                 self.key_expiry_timestamp.labels(
-                    key_id=key_id, description=description, user_login=user_login
+                    key_id=key_id, description=description
                 ).set(expires.timestamp())
 
                 self.key_days_remaining.labels(
-                    key_id=key_id, description=description, user_login=user_login
+                    key_id=key_id, description=description
                 ).set(days_remaining)
 
                 current_labels.add(labels)
@@ -149,14 +148,10 @@ class TailscaleExporter:
 
         # Remove metrics for keys that are no longer present
         for labels in self.known_key_labels - current_labels:
-            key_id, description, user_login = labels
+            key_id, description = labels
             try:
-                self.key_expiry_timestamp.remove(
-                    key_id=key_id, description=description, user_login=user_login
-                )
-                self.key_days_remaining.remove(
-                    key_id=key_id, description=description, user_login=user_login
-                )
+                self.key_expiry_timestamp.remove(key_id=key_id, description=description)
+                self.key_days_remaining.remove(key_id=key_id, description=description)
                 logger.info(f"Removed metrics for revoked/deleted key {key_id}")
             except KeyError:
                 pass

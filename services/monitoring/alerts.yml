@@ -279,6 +279,7 @@ groups:
           description: "{{ $value }} notifications failed in last 5 minutes"
 
   - name: tailscale_alerts
+    interval: 30s
     rules:
       - alert: TailscaleExporterDown
         expr: tailscale_exporter_up == 0
