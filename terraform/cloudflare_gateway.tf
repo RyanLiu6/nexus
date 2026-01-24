@@ -167,20 +167,20 @@ resource "cloudflare_zero_trust_gateway_policy" "block_adult_content" {
 
 output "gateway_location_id" {
   description = "DNS Location ID for Cloudflare Gateway"
-  value       = var.enable_gateway ? cloudflare_zero_trust_dns_location.tailscale[0].id : ""
+  value       = join("", cloudflare_zero_trust_dns_location.tailscale[*].id)
 }
 
 output "gateway_doh_endpoint" {
   description = "DNS over HTTPS endpoint for this location"
-  value       = var.enable_gateway ? "https://${cloudflare_zero_trust_dns_location.tailscale[0].doh_subdomain}.cloudflare-gateway.com/dns-query" : ""
+  value       = var.enable_gateway ? "https://${join("", cloudflare_zero_trust_dns_location.tailscale[*].doh_subdomain)}.cloudflare-gateway.com/dns-query" : ""
 }
 
 output "gateway_ipv4_primary" {
   description = "Primary IPv4 DNS address for Tailscale"
-  value       = var.enable_gateway ? cloudflare_zero_trust_dns_location.tailscale[0].ipv4_destination : ""
+  value       = join("", cloudflare_zero_trust_dns_location.tailscale[*].ipv4_destination)
 }
 
 output "gateway_ipv4_backup" {
   description = "Backup IPv4 DNS address for Tailscale"
-  value       = var.enable_gateway ? cloudflare_zero_trust_dns_location.tailscale[0].ipv4_destination_backup : ""
+  value       = join("", cloudflare_zero_trust_dns_location.tailscale[*].ipv4_destination_backup)
 }

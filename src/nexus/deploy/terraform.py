@@ -198,7 +198,12 @@ def get_gateway_dns_ips() -> tuple[str, str]:
         ipv4_backup = outputs.get("gateway_ipv4_backup", {}).get("value", "")
 
         return (ipv4_primary, ipv4_backup)
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+    except (
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        KeyError,
+        FileNotFoundError,
+    ):
         return ("", "")
 
 

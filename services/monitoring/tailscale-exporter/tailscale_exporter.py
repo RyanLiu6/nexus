@@ -38,6 +38,10 @@ KEY_DAYS_REMAINING = Gauge(
 )
 
 
+# State to track known keys for cleanup
+KNOWN_KEY_LABELS: set[tuple[str, str, str]] = set()
+
+
 def get_keys() -> list[dict[str, Any]]:
     """Query the Tailscale API to get all keys.
 
@@ -73,11 +77,10 @@ def get_keys() -> list[dict[str, Any]]:
 
 def update_metrics() -> None:
     """Update Prometheus metrics with current key status."""
+    global KNOWN_KEY_LABELS
     keys = get_keys()
 
-    # Clear existing metrics to handle deleted keys is not natively supported
-    # efficiently by simple client without tracking. We will just overwrite.
-    current_key_ids = set()
+    current_labels: set[tuple[str, str, str]] = set()
 
     for key in keys:
         key_id = key.get("id", "unknown")
@@ -103,6 +106,8 @@ def update_metrics() -> None:
             seconds_remaining = (expires - now).total_seconds()
             days_remaining = seconds_remaining / 86400
 
+            labels = (key_id, description, user_login)
+
             KEY_EXPIRY_TIMESTAMP.labels(
                 key_id=key_id, description=description, user_login=user_login
             ).set(expires.timestamp())
@@ -111,7 +116,7 @@ def update_metrics() -> None:
                 key_id=key_id, description=description, user_login=user_login
             ).set(days_remaining)
 
-            current_key_ids.add(key_id)
+            current_labels.add(labels)
 
             if days_remaining < 7:
                 logger.warning(
@@ -121,7 +126,22 @@ def update_metrics() -> None:
         except ValueError as e:
             logger.error(f"Error parsing date for key {key_id}: {e}")
 
-    logger.info(f"Updated metrics for {len(current_key_ids)} keys")
+    # Remove metrics for keys that are no longer present
+    for labels in KNOWN_KEY_LABELS - current_labels:
+        key_id, description, user_login = labels
+        try:
+            KEY_EXPIRY_TIMESTAMP.remove(
+                key_id=key_id, description=description, user_login=user_login
+            )
+            KEY_DAYS_REMAINING.remove(
+                key_id=key_id, description=description, user_login=user_login
+            )
+            logger.info(f"Removed metrics for revoked/deleted key {key_id}")
+        except KeyError:
+            pass  # Metric already removed or not found
+
+    KNOWN_KEY_LABELS = current_labels
+    logger.info(f"Updated metrics for {len(current_labels)} keys")
 
 
 def main() -> None:

@@ -93,8 +93,8 @@ resource "tailscale_dns_nameservers" "global" {
   count = local.tailscale_enabled && var.enable_gateway ? 1 : 0
 
   nameservers = compact([
-    var.enable_gateway ? cloudflare_zero_trust_dns_location.tailscale[0].ipv4_destination : "",
-    var.enable_gateway ? cloudflare_zero_trust_dns_location.tailscale[0].ipv4_destination_backup : "",
+    join("", cloudflare_zero_trust_dns_location.tailscale[*].ipv4_destination),
+    join("", cloudflare_zero_trust_dns_location.tailscale[*].ipv4_destination_backup),
   ])
 }
 
