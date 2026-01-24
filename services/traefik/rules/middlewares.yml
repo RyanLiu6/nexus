@@ -38,3 +38,12 @@ http:
           X-XSS-Protection: "1; mode=block"
           Referrer-Policy: "strict-origin-when-cross-origin"
           Permissions-Policy: "geolocation=(self), microphone=(), camera=()"
+
+    # Combined middleware chain for Tailscale-protected services
+    # Use "tailscale-chain@file" instead of listing all three individually
+    tailscale-chain:
+      chain:
+        middlewares:
+          - tailscale-only@file
+          - tailscale-access@docker
+          - security-headers@file

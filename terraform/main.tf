@@ -4,6 +4,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
+    tailscale = {
+      source  = "tailscale/tailscale"
+      version = "~> 0.25"
+    }
   }
 
   required_version = ">= 1.0"
@@ -11,6 +15,11 @@ terraform {
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
+}
+
+provider "tailscale" {
+  api_key = var.tailscale_api_key
+  tailnet = var.tailnet_name
 }
 
 # =============================================================================
@@ -41,14 +50,8 @@ variable "domain" {
 }
 
 # =============================================================================
-# Cloudflare Tunnel Configuration (Recommended)
+# Cloudflare Tunnel Configuration
 # =============================================================================
-
-variable "use_tunnel" {
-  description = "Use Cloudflare Tunnel instead of port forwarding (recommended)"
-  type        = bool
-  default     = true
-}
 
 variable "tunnel_secret" {
   description = "Secret for the Cloudflare Tunnel (generate with: openssl rand -hex 32)"
@@ -58,24 +61,24 @@ variable "tunnel_secret" {
 }
 
 # =============================================================================
-# Port Forwarding Configuration (Legacy)
-# Only used when use_tunnel = false
+# Tailscale Configuration
 # =============================================================================
 
-variable "public_ip" {
-  description = "Public IP address for DNS A records (only if not using tunnel)"
+variable "tailscale_api_key" {
+  description = "Tailscale API key for managing ACLs and DNS"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tailnet_name" {
+  description = "Tailnet name (e.g., 'tail1234' from 'tail1234.ts.net')"
   type        = string
   default     = ""
 }
 
-variable "subdomains" {
-  description = "List of subdomains to create A records for (only if not using tunnel)"
-  type        = set(string)
-  default     = []
-}
-
-variable "proxied" {
-  description = "Whether to proxy through Cloudflare (Orange Cloud)"
-  type        = bool
-  default     = true
+variable "tailscale_users" {
+  description = "Map of group names to lists of user emails for Tailscale ACL"
+  type        = map(list(string))
+  default     = {}
 }

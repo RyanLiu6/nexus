@@ -81,9 +81,6 @@
     CLOUDFLARE_DNS_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
     CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"
     ACME_EMAIL: "{{ acme_email | default('') }}"
-    # Traefik
-    TRAEFIK_USER: "{{ traefik_user | default('admin') }}"
-    TRAEFIK_PASSWORD_HASH: "{{ traefik_password_hash | default('') }}"
     # FoundryVTT
     FOUNDRY_USERNAME: "{{ foundry_username | default('admin') }}"
     FOUNDRY_PASSWORD: "{{ foundry_password | default('') }}"
@@ -106,15 +103,15 @@
     GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
     GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"
     # Alerting
-    DISCORD_BOT_TOKEN: "{{ discord_bot_token | default('') }}"
-    DISCORD_CHANNEL_ID: "{{ discord_channel_id | default('') }}"
     DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
-    ALERT_PROVIDER: "{{ alert_provider | default('discord') }}"
     # Backups
     BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
     # Tailscale
     TAILNET_NAME: "{{ tailnet_name | default('') }}"
-    TAILSCALE_ADMIN_USERS: "{{ tailscale_admin_users | default('') }}"
+    TAILSCALE_API_KEY: "{{ tailscale_api_key | default('') }}"
+    # User/Group IDs for media containers
+    PUID: "{{ puid | default('1000') }}"
+    PGID: "{{ pgid | default('1000') }}"
   register: nexus_compose_result
 
 - name: Display deployment result

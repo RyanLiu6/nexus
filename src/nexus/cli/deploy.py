@@ -17,7 +17,7 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.terraform import get_gateway_dns_ips, run_terraform
+from nexus.deploy.terraform import run_terraform
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
     generate_dashboard_config,
@@ -134,7 +134,7 @@ def _generate_configs(
     data_dir: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
-    logging.info("Generating dashboard configuration...")
+    logging.info("Generating configurations...")
 
     # Resolve data_dir: arg -> env -> vault -> default
     if not data_dir:
@@ -218,11 +218,6 @@ def _generate_configs(
     help="Skip starting cloudflared.",
 )
 @click.option(
-    "--use-tunnel/--no-tunnel",
-    default=True,
-    help="Use Cloudflare Tunnel (default) or legacy A records.",
-)
-@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -244,7 +239,6 @@ def main(
     skip_dns: bool,
     skip_ansible: bool,
     skip_cloudflared: bool,
-    use_tunnel: bool,
     dry_run: bool,
     yes: bool,
 ) -> None:
@@ -263,7 +257,6 @@ def main(
         skip_dns: Skip Terraform DNS/tunnel provisioning.
         skip_ansible: Skip Ansible deployment phase.
         skip_cloudflared: Skip starting the cloudflared tunnel connector.
-        use_tunnel: Use Cloudflare Tunnel (True) or legacy A records (False).
         dry_run: Preview changes without applying them.
         yes: Skip all confirmation prompts.
 
@@ -349,13 +342,11 @@ def main(
         sys.exit(1)
 
     # Show deployment plan
-    dns_mode = "Tunnel" if use_tunnel else "A Records"
     vault_status = "Encrypted" if _is_vault_encrypted() else "⚠️  NOT ENCRYPTED"
     network_status = "Exists" if _check_docker_network() else "Will create"
 
     print(f"\nServices: {', '.join(services_list)}")
     print(f"Domain: {domain}")
-    print(f"DNS Mode: {dns_mode}")
     print(f"Vault: {vault_status}")
     print(f"Docker Network: {network_status}")
     print(f"Dry Run: {'Yes' if dry_run else 'No'}")
@@ -363,10 +354,11 @@ def main(
 
     if not yes and not dry_run:
         print("\n⚠️  Prerequisites check:")
-        print("   1. Have you configured ansible/vars/vault.yml?")
-        print("   2. Have you configured tailscale/access-rules.yml with user emails?")
-        print("   3. Have you uploaded tailscale/acl-policy.jsonc to Tailscale Admin?")
-        print("   4. Is Docker running?")
+        print(
+            "   1. Have you configured ansible/vars/vault.yml "
+            "(including tailscale_users)?"
+        )
+        print("   2. Is Docker running?")
         if not click.confirm("\nProceed with deployment?", default=True):
             logging.info("Deployment cancelled.")
             sys.exit(0)
@@ -398,7 +390,7 @@ def main(
     if not skip_dns:
         logging.info("\n🌐 Setting up Cloudflare Tunnel...")
         try:
-            run_terraform(services_list, domain, dry_run, use_tunnel)
+            run_terraform(services_list, domain, dry_run)
         except ValueError as e:
             logging.error(f"Terraform error: {e}")
             logging.info("Fix vault.yml configuration and retry, or use --skip-dns")
@@ -407,7 +399,7 @@ def main(
     # =========================================================================
     # Step 6: Start cloudflared
     # =========================================================================
-    if use_tunnel and not skip_cloudflared and not skip_dns:
+    if not skip_cloudflared and not skip_dns:
         if _is_cloudflared_running():
             logging.info("✅ Cloudflared already running")
         else:
@@ -440,8 +432,16 @@ def main(
     if dry_run:
         logging.info("\n[Dry Run Complete] No changes were made.")
     else:
-        # Get Gateway DNS IPs for the summary
-        gateway_primary, gateway_backup = get_gateway_dns_ips()
+        # Check if Tailscale API key was configured
+        tailscale_configured = False
+        try:
+            vault = read_vault()
+            tailscale_api_key = vault.get("tailscale_api_key", "")
+            tailscale_configured = bool(
+                tailscale_api_key and tailscale_api_key != "CHANGE_ME"
+            )
+        except Exception:
+            pass
 
         print("\n" + "=" * 60)
         print("  ✅ Deployment Complete!")
@@ -449,20 +449,20 @@ def main(
         print("\nAccess your services (via Tailscale):")
         print(f"  Dashboard: https://hub.{domain}")
         print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
-        print("\n⚠️  Manual step required:")
-        print("   Tag server: tailscale up --advertise-tags=tag:nexus-server")
-        if gateway_primary:
-            print("\n📡 Cloudflare Gateway DNS:")
-            print("   Add to Tailscale Admin → DNS → Nameservers:")
-            print(f"     Primary: {gateway_primary}")
-            if gateway_backup:
-                print(f"     Backup:  {gateway_backup}")
-            print("   Enable 'Override Local DNS'")
-            print("   (Handles split DNS + ad-blocking)")
+
+        if tailscale_configured:
+            print("\n✅ Tailscale ACL and DNS configured via Terraform")
+        else:
+            print("\n⚠️  Tailscale ACL/DNS not configured!")
+            print("   Add tailscale_api_key to vault.yml and redeploy.")
+            print("   Get key: https://login.tailscale.com/admin/settings/keys")
+
+        print("\n⚠️  One-time setup (if not done already):")
+        print("   tailscale up --advertise-tags=tag:nexus-server")
         print("\nUseful commands:")
-        print("  invoke logs --service traefik  # View logs")
-        print("  invoke ps                      # Show containers")
-        print(f"  invoke health --domain {domain}  # Health check")
+        print("  inv logs --service traefik  # View logs")
+        print("  inv ps                      # Show containers")
+        print(f"  inv health --domain {domain}  # Health check")
         print("=" * 60 + "\n")
 
 

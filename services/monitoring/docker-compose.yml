@@ -26,7 +26,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.node-exporter.rule=Host(`node-exporter.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.node-exporter.entrypoints=https"
-      - "traefik.http.routers.node-exporter.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.node-exporter.middlewares=tailscale-chain@file"
       - "traefik.http.routers.node-exporter.tls=true"
       - "traefik.http.routers.node-exporter.tls.certresolver=certchallenge"
 
@@ -59,7 +59,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.prometheus.entrypoints=https"
-      - "traefik.http.routers.prometheus.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.prometheus.middlewares=tailscale-chain@file"
       - "traefik.http.routers.prometheus.tls=true"
       - "traefik.http.routers.prometheus.tls.certresolver=certchallenge"
 
@@ -108,7 +108,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.grafana.rule=Host(`grafana.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.grafana.entrypoints=https"
-      - "traefik.http.routers.grafana.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.grafana.middlewares=tailscale-chain@file"
       - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.tls.certresolver=certchallenge"
 
@@ -145,7 +145,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.alertmanager.entrypoints=https"
-      - "traefik.http.routers.alertmanager.middlewares=tailscale-only@file,tailscale-access@docker,security-headers@file"
+      - "traefik.http.routers.alertmanager.middlewares=tailscale-chain@file"
       - "traefik.http.routers.alertmanager.tls=true"
       - "traefik.http.routers.alertmanager.tls.certresolver=certchallenge"
 
@@ -166,6 +166,28 @@ services:
       - nexus
     environment:
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    labels:
+      - "traefik.enable=false"
+
+  # Tailscale Exporter - API key expiration monitoring
+  tailscale-exporter:
+    build:
+      context: ${NEXUS_ROOT_DIRECTORY}/services/monitoring/tailscale-exporter
+      dockerfile: Dockerfile
+    container_name: tailscale-exporter
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 32M
+    networks:
+      - nexus
+    environment:
+      - TAILSCALE_API_KEY=${TAILSCALE_API_KEY}
+      - TAILNET_NAME=${TAILNET_NAME}
+      - SCRAPE_INTERVAL=86400
     labels:
       - "traefik.enable=false"
 

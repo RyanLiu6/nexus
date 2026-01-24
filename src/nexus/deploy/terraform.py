@@ -2,27 +2,14 @@ import json
 import logging
 import os
 import subprocess
-import urllib.request
 from typing import Any
 
 from nexus.config import TERRAFORM_PATH
 from nexus.utils import read_vault
 
 
-def _get_public_ip() -> str:
-    try:
-        with urllib.request.urlopen("https://api.ipify.org") as response:
-            return str(response.read().decode("utf-8"))
-    except Exception as e:
-        logging.warning(f"Could not detect public IP: {e}")
-        return "127.0.0.1"
-
-
-def _get_terraform_vars_from_vault(use_tunnel: bool) -> dict[str, str]:
+def _get_terraform_vars_from_vault() -> dict[str, str]:
     """Read Cloudflare credentials from vault.yml and return as TF_VAR dict.
-
-    Args:
-        use_tunnel: Whether tunnel mode is enabled (requires tunnel_secret).
 
     Returns:
         Dictionary of TF_VAR_* environment variables to set.
@@ -47,10 +34,13 @@ def _get_terraform_vars_from_vault(use_tunnel: bool) -> dict[str, str]:
         "cloudflare_api_token": "TF_VAR_cloudflare_api_token",
         "cloudflare_zone_id": "TF_VAR_cloudflare_zone_id",
         "cloudflare_account_id": "TF_VAR_cloudflare_account_id",
+        "tunnel_secret": "TF_VAR_tunnel_secret",
     }
 
-    if use_tunnel:
-        key_mapping["tunnel_secret"] = "TF_VAR_tunnel_secret"
+    # Optional Tailscale API key
+    tailscale_api_key = vault.get("tailscale_api_key", "")
+    if tailscale_api_key and tailscale_api_key != "CHANGE_ME":
+        key_mapping["tailscale_api_key"] = "TF_VAR_tailscale_api_key"
 
     # Check for missing keys and build env vars
     missing = []
@@ -76,20 +66,16 @@ def run_terraform(
     services: list[str],
     domain: str,
     dry_run: bool = False,
-    use_tunnel: bool = True,
 ) -> None:
-    """Execute Terraform to manage Cloudflare DNS/Tunnel for services.
+    """Execute Terraform to manage Cloudflare Tunnel and DNS for services.
 
-    For tunnels (recommended): Creates a Cloudflare Tunnel and CNAME records.
-    For legacy mode: Creates A records pointing to public IP.
-
+    Creates a Cloudflare Tunnel and configures DNS records.
     Reads Cloudflare credentials from vault.yml (decrypted via ansible-vault).
 
     Args:
-        services: List of service names (used for legacy A records).
+        services: List of service names (used for DNS subdomain records).
         domain: Base domain for DNS records (e.g., "example.com").
         dry_run: If True, show plan without applying.
-        use_tunnel: If True, use Cloudflare Tunnel. If False, use A records.
 
     Raises:
         subprocess.CalledProcessError: If terraform init or apply fails.
@@ -101,24 +87,27 @@ def run_terraform(
 
     # Get Cloudflare credentials from vault.yml
     logging.info("Reading Cloudflare credentials from vault.yml...")
-    tf_env_vars = _get_terraform_vars_from_vault(use_tunnel)
+    tf_env_vars = _get_terraform_vars_from_vault()
 
     # Set environment variables for Terraform
     env = os.environ.copy()
     env.update(tf_env_vars)
 
-    # Get optional tailscale_server_ip from vault for split DNS
+    # Get optional Tailscale configuration from vault
     tailscale_ip = ""
+    tailnet_name = ""
+    tailscale_users: dict[str, list[str]] = {}
     try:
         vault = read_vault()
         tailscale_ip = vault.get("tailscale_server_ip", "")
-    except Exception:
+        tailnet_name = vault.get("tailnet_name", "")
+        tailscale_users = vault.get("tailscale_users", {})
+    except (FileNotFoundError, KeyError, ValueError):
+        logging.debug("Could not read Tailscale configuration from vault")
         pass
 
-    # Build non-sensitive tfvars
-    # Calculate subdomains from services
+    # Build subdomains from services
     subdomains = []
-    # Explicit mapping of service names to subdomains
     service_map = {
         "dashboard": ["hub"],
         "monitoring": ["grafana", "prometheus", "alertmanager"],
@@ -132,34 +121,24 @@ def run_terraform(
         else:
             subdomains.append(svc)
 
-    # Remove duplicates
     subdomains = sorted(list(set(subdomains)))
 
     tf_vars: dict[str, Any] = {
         "domain": domain,
-        "use_tunnel": use_tunnel,
         "tailscale_server_ip": tailscale_ip,
+        "tailnet_name": tailnet_name,
+        "tailscale_users": tailscale_users,
         "subdomains": subdomains,
     }
-
-    # Legacy mode needs public IP and subdomains
-    if not use_tunnel:
-        public_ip = _get_public_ip()
-        logging.info(f"Detected Public IP: {public_ip}")
-        tf_vars["public_ip"] = public_ip
-        tf_vars["proxied"] = True
 
     tf_vars_path = TERRAFORM_PATH / "terraform.tfvars.json"
 
     if dry_run:
         logging.info("[DRY RUN] Configuration:")
-        mode = "Cloudflare Tunnel" if use_tunnel else "Port Forwarding"
-        logging.info(f"  Mode: {mode}")
         logging.info(f"  Domain: {domain}")
         logging.info(json.dumps(tf_vars, indent=2))
         logging.info("[DRY RUN] Would run: terraform plan")
 
-        # Show plan
         try:
             with open(tf_vars_path, "w") as f:
                 json.dump(tf_vars, f, indent=2)
@@ -169,8 +148,7 @@ def run_terraform(
             logging.warning("Terraform plan failed. Check configuration.")
         return
 
-    mode = "Cloudflare Tunnel" if use_tunnel else "A records"
-    logging.info(f"Configuring Cloudflare ({mode}) for {domain}...")
+    logging.info(f"Configuring Cloudflare Tunnel for {domain}...")
 
     with open(tf_vars_path, "w") as f:
         json.dump(tf_vars, f, indent=2)
@@ -179,11 +157,7 @@ def run_terraform(
     try:
         _run_terraform_cmd(["terraform", "init"], env, capture=True)
         _run_terraform_cmd(["terraform", "apply", "-auto-approve"], env)
-
-        if use_tunnel:
-            logging.info("✅ Tunnel configured!")
-        else:
-            logging.info("✅ DNS records updated!")
+        logging.info("✅ Tunnel and DNS configured!")
     except subprocess.CalledProcessError:
         logging.error("Terraform failed. Check configuration.")
         raise
@@ -225,7 +199,12 @@ def get_gateway_dns_ips() -> tuple[str, str]:
         ipv4_backup = outputs.get("gateway_ipv4_backup", {}).get("value", "")
 
         return (ipv4_primary, ipv4_backup)
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+    except (
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        KeyError,
+        FileNotFoundError,
+    ):
         return ("", "")
 
 
@@ -257,4 +236,4 @@ def apply_tunnel(dry_run: bool = False) -> None:
             "Edit vault.yml: ansible-vault edit ansible/vars/vault.yml"
         )
 
-    run_terraform(services=[], domain=domain, dry_run=dry_run, use_tunnel=True)
+    run_terraform(services=[], domain=domain, dry_run=dry_run)

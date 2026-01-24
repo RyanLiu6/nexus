@@ -50,6 +50,12 @@ nexus_domain: "example.com"
 # Timezone (find yours: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
 tz: "America/Vancouver"
 
+# User/Group IDs for media services (jellyfin, plex, transmission, nextcloud)
+# Find your IDs: id -u (PUID) and id -g (PGID)
+# Leave as 1000 for most single-user systems
+puid: 1000
+pgid: 1000
+
 
 # =============================================================================
 # Cloudflare - DNS, Tunnel, and Gateway (Zero Trust)
@@ -100,11 +106,26 @@ tailscale_server_ip: ""
 # Example: "tail1234" from "tail1234.ts.net"
 tailnet_name: "your-tailnet"
 
+# Tailscale API key for ACL and DNS management (required)
+#
+# To create an API key:
+#   1. Go to https://login.tailscale.com/admin/settings/keys
+#   2. Click "Generate API key..."
+#   3. Set expiration (max 90 days) - you'll need to rotate periodically
+#   4. Copy the key (starts with "tskey-api-")
+#
+# The key grants full admin access to your tailnet. Keep it secure.
+tailscale_api_key: ""
+
 # =============================================================================
 # Tailscale Users & Groups
 # =============================================================================
-# Define user emails here to populate access-rules.yml
-# These groups must match your Tailscale ACLs
+# Define user emails here - this is the SINGLE SOURCE OF TRUTH for access control.
+# Terraform applies ACL and DNS automatically on deploy.
+#
+# Group behavior:
+#   - admins: Full network access (all ports + SSH)
+#   - other groups: Web-only access (ports 80, 443)
 tailscale_users:
   admins:
     - "your-email@gmail.com"
@@ -141,7 +162,6 @@ grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 # Get webhook URL from: Discord Server Settings > Integrations > Webhooks
 
 discord_webhook_url: ""
-alert_provider: "discord"
 
 
 # =============================================================================
@@ -267,6 +287,6 @@ foundry_admin_key: "CHANGE_ME"
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
 # tailnet_name               -> TAILNET_NAME
-# ts_authkey                 -> TS_AUTHKEY
-# tsidp_grafana_client_id    -> TSIDP_GRAFANA_CLIENT_ID
-# tsidp_grafana_client_secret -> TSIDP_GRAFANA_CLIENT_SECRET
+# tailscale_api_key          -> TAILSCALE_API_KEY
+# puid                       -> PUID
+# pgid                       -> PGID

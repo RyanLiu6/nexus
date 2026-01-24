@@ -6,33 +6,14 @@ Docker Image is from Traefik, found [here](https://hub.docker.com/r/traefik/trae
 
 ## Setup
 
-1. **Generate a dashboard password** (optional):
+1. **Environment variables** (provided by Ansible from vault.yml):
+   - `NEXUS_DOMAIN` - Your domain (e.g., example.com)
+   - `ACME_EMAIL` - Email for Let's Encrypt certificates
+   - `CLOUDFLARE_DNS_API_TOKEN` - Cloudflare API token for DNS challenge
+
+2. **Deploy via Ansible:**
    ```bash
-   ./generate_password.sh
-   ```
-   > **Note:** To skip this step, edit `docker-compose.yml` and remove the password line.
-
-2. **Create an `.env` file:**
-   ```ini
-   DOMAIN=traefik.yourdomain.com
-   TLD=com
-   ACME_EMAIL=your.email@example.com
-   TRAEFIK_USER=admin
-   TRAEFIK_PASSWORD_HASH=<password from generate_password.sh>
-   CLOUDFLARE_DNS_API_TOKEN=<your token>
-   ```
-
-3. **Configure DNS provider** in `docker-compose.yml`:
-   ```yaml
-   environment:
-     - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
-   ```
-
-   Other DNS providers have different configuration. See [Traefik providers](https://doc.traefik.io/traefik/https/acme/#providers).
-
-4. **Run it:**
-   ```bash
-   docker compose up -d
+   cd ansible && ansible-playbook playbook.yml -e "services=traefik"
    ```
 
 ## Backups

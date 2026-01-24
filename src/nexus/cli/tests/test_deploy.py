@@ -121,7 +121,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible") as mock_ansible,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -144,7 +143,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -163,7 +161,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -182,7 +179,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -205,7 +201,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible") as mock_ansible,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -256,7 +251,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
@@ -307,7 +301,6 @@ class TestMain:
             patch("nexus.cli.deploy.run_ansible"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
-            patch("nexus.cli.deploy.get_gateway_dns_ips", return_value=("", "")),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
