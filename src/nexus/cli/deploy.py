@@ -17,7 +17,7 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.terraform import get_gateway_dns_ips, run_terraform
+from nexus.deploy.terraform import run_terraform
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
     generate_dashboard_config,
@@ -134,7 +134,7 @@ def _generate_configs(
     data_dir: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
-    logging.info("Generating dashboard configuration...")
+    logging.info("Generating configurations...")
 
     # Resolve data_dir: arg -> env -> vault -> default
     if not data_dir:
@@ -363,10 +363,11 @@ def main(
 
     if not yes and not dry_run:
         print("\n⚠️  Prerequisites check:")
-        print("   1. Have you configured ansible/vars/vault.yml?")
-        print("   2. Have you configured tailscale/access-rules.yml with user emails?")
-        print("   3. Have you uploaded tailscale/acl-policy.jsonc to Tailscale Admin?")
-        print("   4. Is Docker running?")
+        print(
+            "   1. Have you configured ansible/vars/vault.yml "
+            "(including tailscale_users)?"
+        )
+        print("   2. Is Docker running?")
         if not click.confirm("\nProceed with deployment?", default=True):
             logging.info("Deployment cancelled.")
             sys.exit(0)
@@ -440,8 +441,16 @@ def main(
     if dry_run:
         logging.info("\n[Dry Run Complete] No changes were made.")
     else:
-        # Get Gateway DNS IPs for the summary
-        gateway_primary, gateway_backup = get_gateway_dns_ips()
+        # Check if Tailscale API key was configured
+        tailscale_configured = False
+        try:
+            vault = read_vault()
+            tailscale_api_key = vault.get("tailscale_api_key", "")
+            tailscale_configured = bool(
+                tailscale_api_key and tailscale_api_key != "CHANGE_ME"
+            )
+        except Exception:
+            pass
 
         print("\n" + "=" * 60)
         print("  ✅ Deployment Complete!")
@@ -449,20 +458,20 @@ def main(
         print("\nAccess your services (via Tailscale):")
         print(f"  Dashboard: https://hub.{domain}")
         print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
-        print("\n⚠️  Manual step required:")
-        print("   Tag server: tailscale up --advertise-tags=tag:nexus-server")
-        if gateway_primary:
-            print("\n📡 Cloudflare Gateway DNS:")
-            print("   Add to Tailscale Admin → DNS → Nameservers:")
-            print(f"     Primary: {gateway_primary}")
-            if gateway_backup:
-                print(f"     Backup:  {gateway_backup}")
-            print("   Enable 'Override Local DNS'")
-            print("   (Handles split DNS + ad-blocking)")
+
+        if tailscale_configured:
+            print("\n✅ Tailscale ACL and DNS configured via Terraform")
+        else:
+            print("\n⚠️  Tailscale ACL/DNS not configured!")
+            print("   Add tailscale_api_key to vault.yml and redeploy.")
+            print("   Get key: https://login.tailscale.com/admin/settings/keys")
+
+        print("\n⚠️  One-time setup (if not done already):")
+        print("   tailscale up --advertise-tags=tag:nexus-server")
         print("\nUseful commands:")
-        print("  invoke logs --service traefik  # View logs")
-        print("  invoke ps                      # Show containers")
-        print(f"  invoke health --domain {domain}  # Health check")
+        print("  inv logs --service traefik  # View logs")
+        print("  inv ps                      # Show containers")
+        print(f"  inv health --domain {domain}  # Health check")
         print("=" * 60 + "\n")
 
 

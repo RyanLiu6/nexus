@@ -100,11 +100,26 @@ tailscale_server_ip: ""
 # Example: "tail1234" from "tail1234.ts.net"
 tailnet_name: "your-tailnet"
 
+# Tailscale API key for ACL and DNS management (required)
+#
+# To create an API key:
+#   1. Go to https://login.tailscale.com/admin/settings/keys
+#   2. Click "Generate API key..."
+#   3. Set expiration (max 90 days) - you'll need to rotate periodically
+#   4. Copy the key (starts with "tskey-api-")
+#
+# The key grants full admin access to your tailnet. Keep it secure.
+tailscale_api_key: ""
+
 # =============================================================================
 # Tailscale Users & Groups
 # =============================================================================
-# Define user emails here to populate access-rules.yml
-# These groups must match your Tailscale ACLs
+# Define user emails here - this is the SINGLE SOURCE OF TRUTH for access control.
+# Terraform applies ACL and DNS automatically on deploy.
+#
+# Group behavior:
+#   - admins: Full network access (all ports + SSH)
+#   - other groups: Web-only access (ports 80, 443)
 tailscale_users:
   admins:
     - "your-email@gmail.com"

@@ -4,6 +4,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
+    tailscale = {
+      source  = "tailscale/tailscale"
+      version = "~> 0.17"
+    }
   }
 
   required_version = ">= 1.0"
@@ -11,6 +15,11 @@ terraform {
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
+}
+
+provider "tailscale" {
+  api_key = var.tailscale_api_key
+  tailnet = var.tailnet_name
 }
 
 # =============================================================================
@@ -78,4 +87,27 @@ variable "proxied" {
   description = "Whether to proxy through Cloudflare (Orange Cloud)"
   type        = bool
   default     = true
+}
+
+# =============================================================================
+# Tailscale Configuration
+# =============================================================================
+
+variable "tailscale_api_key" {
+  description = "Tailscale API key for managing ACLs and DNS"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tailnet_name" {
+  description = "Tailnet name (e.g., 'tail1234' from 'tail1234.ts.net')"
+  type        = string
+  default     = ""
+}
+
+variable "tailscale_users" {
+  description = "Map of group names to lists of user emails for Tailscale ACL"
+  type        = map(list(string))
+  default     = {}
 }

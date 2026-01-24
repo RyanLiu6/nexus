@@ -52,6 +52,11 @@ def _get_terraform_vars_from_vault(use_tunnel: bool) -> dict[str, str]:
     if use_tunnel:
         key_mapping["tunnel_secret"] = "TF_VAR_tunnel_secret"
 
+    # Optional Tailscale API key (not required - falls back to manual upload)
+    tailscale_api_key = vault.get("tailscale_api_key", "")
+    if tailscale_api_key and tailscale_api_key != "CHANGE_ME":
+        key_mapping["tailscale_api_key"] = "TF_VAR_tailscale_api_key"
+
     # Check for missing keys and build env vars
     missing = []
     env_vars = {}
@@ -107,11 +112,15 @@ def run_terraform(
     env = os.environ.copy()
     env.update(tf_env_vars)
 
-    # Get optional tailscale_server_ip from vault for split DNS
+    # Get optional Tailscale configuration from vault
     tailscale_ip = ""
+    tailnet_name = ""
+    tailscale_users: dict[str, list[str]] = {}
     try:
         vault = read_vault()
         tailscale_ip = vault.get("tailscale_server_ip", "")
+        tailnet_name = vault.get("tailnet_name", "")
+        tailscale_users = vault.get("tailscale_users", {})
     except Exception:
         pass
 
@@ -139,6 +148,8 @@ def run_terraform(
         "domain": domain,
         "use_tunnel": use_tunnel,
         "tailscale_server_ip": tailscale_ip,
+        "tailnet_name": tailnet_name,
+        "tailscale_users": tailscale_users,
         "subdomains": subdomains,
     }
 

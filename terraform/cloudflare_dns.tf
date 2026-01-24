@@ -49,5 +49,5 @@ resource "cloudflare_record" "tailscale_subdomains" {
   content  = var.tailscale_server_ip
   type     = "A"
   ttl      = 1
-  proxied  = false  # Cannot proxy to private Tailscale IP
+  proxied  = false # Cannot proxy to private Tailscale IP
 }

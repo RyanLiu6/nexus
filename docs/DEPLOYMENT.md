@@ -114,27 +114,25 @@ tailnet_name: "your-tailnet"
 
 ---
 
-## Step 7: Configure Services
+## Step 7: Configure Tailscale Access
 
-**This step is critical.**
+**Users are configured in vault.yml** (already done in Step 3):
 
-1. **Tailscale Access Control:**
-   *   Edit `tailscale/acl-policy.jsonc` with your user emails and groups.
-   *   Edit `tailscale/access-rules.yml` with the **same** user emails.
-   *   Upload `acl-policy.jsonc` content to [Tailscale Admin Console](https://login.tailscale.com/admin/acls).
+```yaml
+tailscale_users:
+  admins:
+    - your-email@gmail.com
+  members:
+    - friend@gmail.com
+```
 
-2. **Tag Your Server:**
-   ```bash
-   sudo tailscale up --advertise-tags=tag:nexus-server
-   ```
+**Add Tailscale API key (required):**
 
-3. **Configure Split DNS:**
-   - Go to [Tailscale DNS Settings](https://login.tailscale.com/admin/dns)
-   - Add split DNS: `yourdomain.com` → Your server's Tailscale IP (100.x.x.x)
+1. Go to [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
+2. Click **"Generate API key..."** (max 90 days, rotate periodically)
+3. Add to vault.yml: `tailscale_api_key: "tskey-api-..."`
 
-4. **(Optional) Configure DNS Filtering:**
-   - Set up Cloudflare Zero Trust for ad-blocking and malware protection
-   - See [DNS Filtering Guide](DNS_FILTERING.md) for full setup instructions
+Deploy will automatically configure ACL and DNS via Terraform.
 
 ---
 
@@ -146,7 +144,14 @@ invoke deploy
 
 You'll be prompted for a vault password (save it somewhere secure).
 
-**After deployment:**
+## Step 9: Post-Deployment (one-time)
+
+**Tag your server:**
+```bash
+sudo tailscale up --advertise-tags=tag:nexus-server
+```
+
+**Access your services:**
 - Dashboard: `https://hub.yourdomain.com` (Tailscale only)
 - FoundryVTT: `https://foundry.yourdomain.com` (**Public** via Cloudflare Tunnel)
 - All other services are accessible only via Tailscale.

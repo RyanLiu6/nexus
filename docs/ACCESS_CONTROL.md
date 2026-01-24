@@ -67,35 +67,38 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 
 ## Quick Setup
 
-### 1. Configure Tailscale ACLs
+### 1. Configure Users in vault.yml
 
-Edit `tailscale/acl-policy.jsonc` with your users:
+Edit `ansible/vars/vault.yml` (the **single source of truth**):
 
-```jsonc
-"groups": {
-  "group:admins": ["your-email@gmail.com"],
-  "group:members": ["friend1@gmail.com"],
-  "group:finance": ["accountant@gmail.com"]
-}
+```yaml
+tailscale_users:
+  admins:
+    - your-email@gmail.com
+  members:
+    - friend1@gmail.com
+  finance:
+    - accountant@gmail.com
 ```
 
-Upload to [Tailscale Admin Console → Access Controls](https://login.tailscale.com/admin/acls).
+### 2. Add Tailscale API Key
 
-### 2. Tag Your Server
+**Required** for ACL and DNS management:
 
-```bash
-sudo tailscale up --advertise-tags=tag:nexus-server
-```
+1. Go to [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
+2. Click **"Generate API key..."** (max 90 days, rotate periodically)
+3. Add to vault.yml: `tailscale_api_key: "tskey-api-..."`
 
-### 3. Configure Split DNS
-
-1. Go to [Tailscale DNS Settings](https://login.tailscale.com/admin/dns)
-2. Add split DNS: `yourdomain.com` → Server's Tailscale IP
-
-### 4. Deploy
+### 3. Deploy
 
 ```bash
 invoke deploy --preset home
+```
+
+### 4. Tag Your Server (one-time)
+
+```bash
+sudo tailscale up --advertise-tags=tag:nexus-server
 ```
 
 ---
@@ -118,19 +121,21 @@ invoke deploy --preset home
 
 ---
 
-## Configuration Files
+## Configuration
 
-### `tailscale/acl-policy.jsonc`
+All access control is configured in `ansible/vars/vault.yml` and applied automatically.
 
-Tailscale network-level access control. Defines:
+### Tailscale ACL (via Terraform)
+
+Network-level access control applied directly to your tailnet:
 - **Groups**: Who belongs to which role
-- **Tag Owners**: Who can tag devices
-- **ACLs**: Who can reach the server
-- **SSH**: Who can SSH into the server
+- **ACLs**: Who can reach the server (admins: all ports, others: 80/443)
+- **SSH**: Who can SSH into the server (admins only)
+- **DNS**: Cloudflare Gateway nameservers
 
-### `tailscale/access-rules.yml`
+### `tailscale/access-rules.yml` (via Ansible)
 
-Per-service access control. Defines which groups can access which services.
+Per-service access control. To modify which groups can access which services, edit `ansible/roles/nexus/templates/access-rules.yml.j2`:
 
 ```yaml
 services:
@@ -189,13 +194,15 @@ Only `admins` group has SSH access (configured in ACL policy).
 
 ### Add to Existing Group
 
-1. Edit `tailscale/acl-policy.jsonc`:
-   ```jsonc
-   "group:members": ["friend1@gmail.com", "newuser@gmail.com"]
+1. Edit `ansible/vars/vault.yml`:
+   ```yaml
+   tailscale_users:
+     members:
+       - friend1@gmail.com
+       - newuser@gmail.com  # Add new user
    ```
-2. Upload to Tailscale admin console
+2. Run `inv deploy` (Terraform updates ACL automatically)
 3. Invite user to your tailnet
-4. Update `ansible/vars/vault.yml` (tailscale_users) and redeploy.
 
 ---
 

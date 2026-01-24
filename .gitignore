@@ -67,5 +67,6 @@ terraform/override.tf
 Thumbs.db
 
 .env
-tailscale/access-rules.yml
+
+# Generated Tailscale config (contains user emails from vault.yml)
 tailscale/access-rules.yml
