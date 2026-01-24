@@ -19,7 +19,7 @@ provider "cloudflare" {
 
 provider "tailscale" {
   api_key = var.tailscale_api_key
-  tailnet = var.tailnet_name
+  tailnet = var.tailnet_id
 }
 
 # =============================================================================
@@ -71,8 +71,8 @@ variable "tailscale_api_key" {
   default     = ""
 }
 
-variable "tailnet_name" {
-  description = "Tailnet name (e.g., 'tail1234' from 'tail1234.ts.net')"
+variable "tailnet_id" {
+  description = "Tailnet ID (found at admin/settings/general)"
   type        = string
   default     = ""
 }

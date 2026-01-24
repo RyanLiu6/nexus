@@ -72,7 +72,7 @@ def main(
     health_checks: list[ServiceHealth] = []
     for service in services_to_check:
         if service == "dashboard":
-            url = f"https://hub.{domain}" if domain else "http://localhost"
+            url = f"https://nexus.{domain}" if domain else "http://localhost"
         else:
             url = f"https://{service}.{domain}" if domain else "http://localhost"
 

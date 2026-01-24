@@ -173,7 +173,7 @@ class TailscaleExporter:
         if not self.api_key:
             logger.error("TAILSCALE_API_KEY not set")
         if not self.tailnet:
-            logger.error("TAILNET_NAME not set")
+            logger.error("TAILNET_ID not set")
 
         # Setup signal handlers
         signal.signal(signal.SIGTERM, self.handle_shutdown)
@@ -200,7 +200,7 @@ class TailscaleExporter:
 def main() -> None:
     """Entry point for the exporter."""
     api_key = os.environ.get("TAILSCALE_API_KEY", "")
-    tailnet = os.environ.get("TAILNET_NAME", "")
+    tailnet = os.environ.get("TAILNET_ID", "")
     scrape_interval = int(os.environ.get("SCRAPE_INTERVAL", "3600"))
     port = int(os.environ.get("PORT", "9199"))
 

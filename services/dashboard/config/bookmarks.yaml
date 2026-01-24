@@ -1,12 +1,16 @@
-# Bookmarks Configuration
-# https://gethomepage.dev/latest/configs/bookmarks/
-
-- Developer:
-    - Github:
-        icon: github.png
-        href: https://github.com/
-
-- Social:
-    - Reddit:
-        icon: reddit.png
-        href: https://reddit.com/
+- Productivity:
+  - Github:
+    - icon: si-github
+      href: https://github.com/
+  - Gmail:
+    - icon: si-gmail
+      href: https://mail.google.com/
+  - ProtonMail:
+    - icon: si-protonmail
+      href: https://mail.proton.me/
+  - Cloudflare:
+    - icon: si-cloudflare
+      href: https://dash.cloudflare.com/
+  - Tailscale:
+    - icon: si-tailscale
+      href: https://login.tailscale.com/admin/machines

@@ -186,7 +186,7 @@ services:
       - nexus
     environment:
       - TAILSCALE_API_KEY=${TAILSCALE_API_KEY}
-      - TAILNET_NAME=${TAILNET_NAME}
+      - TAILNET_ID=${TAILNET_ID}
       - SCRAPE_INTERVAL=86400
     labels:
       - "traefik.enable=false"

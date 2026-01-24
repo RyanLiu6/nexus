@@ -288,7 +288,7 @@ groups:
           severity: warning
         annotations:
           summary: "Cannot query Tailscale API"
-          description: "Check TAILSCALE_API_KEY and TAILNET_NAME configuration."
+          description: "Check TAILSCALE_API_KEY and TAILNET_ID configuration."
 
       - alert: TailscaleAPIKeyExpiringSoon
         expr: min(tailscale_key_days_remaining) > 0 and min(tailscale_key_days_remaining) < 14

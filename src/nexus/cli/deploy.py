@@ -447,7 +447,7 @@ def main(
         print("  ✅ Deployment Complete!")
         print("=" * 60)
         print("\nAccess your services (via Tailscale):")
-        print(f"  Dashboard: https://hub.{domain}")
+        print(f"  Dashboard: https://nexus.{domain}")
         print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
 
         if tailscale_configured:

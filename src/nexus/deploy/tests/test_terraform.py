@@ -143,7 +143,7 @@ class TestRunTerraform:
                 "admins": ["admin@example.com"],
                 "members": ["user@example.com"],
             },
-            "tailnet_name": "tail1234",
+            "tailnet_id": "tail1234",
             "tailscale_server_ip": "100.64.0.1",
         }
 
@@ -157,7 +157,7 @@ class TestRunTerraform:
             "admins": ["admin@example.com"],
             "members": ["user@example.com"],
         }
-        assert config["tailnet_name"] == "tail1234"
+        assert config["tailnet_id"] == "tail1234"
         assert config["tailscale_server_ip"] == "100.64.0.1"
 
     @patch("nexus.deploy.terraform._run_terraform_cmd")
@@ -197,7 +197,7 @@ class TestRunTerraform:
             config = json.load(f)
 
         assert config["tailscale_users"] == {}
-        assert config["tailnet_name"] == ""
+        assert config["tailnet_id"] == ""
         assert config["tailscale_server_ip"] == ""
 
     @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")

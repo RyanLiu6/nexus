@@ -1,16 +1,31 @@
-# Settings Configuration
-# https://gethomepage.dev/latest/configs/settings/
-
-title: Nexus Dashboard
+title: Nexus
 background:
-  image: https://images.unsplash.com/photo-1506318137071-a8bcbf6d919d?auto=format&fit=crop&w=1920&q=80
-  opacity: 0.5
-theme: dark
+  image: /images/background.png
+  opacity: 30
 color: slate
+cardBlur: md
+headerStyle: clean
+statusStyle: dot
+hideVersion: true
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: false
+  showSearchSuggestions: true
+  hideVisitURL: false
+  provider: duckduckgo
 layout:
-  Core:
+  Media:
+    style: row
+    columns: 3
+  Finance:
     style: row
     columns: 2
-  Media:
+  Gaming:
+    style: row
+    columns: 2
+  Core:
+    style: row
+    columns: 4
+  Utilities:
     style: row
     columns: 2

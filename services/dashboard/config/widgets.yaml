@@ -1,15 +1,17 @@
-# Widgets Configuration
-# https://gethomepage.dev/latest/configs/widgets/
-
 - resources:
     cpu: true
     memory: true
     disk: /
-
-- search:
-    provider: duckduckgo
-    target: _blank
-
-- greeting:
-    text_size: xl
-    text: Welcome to Nexus
+- datetime:
+    text_size: lg
+    format:
+      dateStyle: long
+      timeStyle: short
+      hour12: true
+- openmeteo:
+    label: Weather
+    latitude: 49.2827
+    longitude: -123.1207
+    timezone: America/Vancouver
+    units: metric
+    cache: 5

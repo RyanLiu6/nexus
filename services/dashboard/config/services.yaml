@@ -1,24 +1,45 @@
-Core:
-- traefik:
-    href: https://traefik.${NEXUS_DOMAIN}
-    description: Reverse proxy and SSL management
-    icon: traefik.png
-Media:
-- jellyfin:
-    href: https://jellyfin.${NEXUS_DOMAIN}
-    description: Media server
-    icon: jellyfin.png
-- transmission:
-    href: https://transmission.${NEXUS_DOMAIN}
-    description: Torrent client
-    icon: transmission.png
-Gaming:
-- foundryvtt:
-    href: https://foundry.${NEXUS_DOMAIN}
-    description: Virtual Tabletop
-    icon: foundryvtt.png
-Finance:
-- sure:
-    href: https://sure.${NEXUS_DOMAIN}
-    description: Finance and budgeting
-    icon: sh-sure.png
+- Core:
+  - prometheus:
+      href: https://prometheus.${NEXUS_DOMAIN}
+      description: Metrics database
+      icon: si-prometheus
+  - grafana:
+      href: https://grafana.${NEXUS_DOMAIN}
+      description: Metrics dashboards
+      icon: si-grafana
+  - alertmanager:
+      href: https://alertmanager.${NEXUS_DOMAIN}
+      description: Alert management
+      icon: mdi-alert
+  - traefik:
+      href: https://traefik.${NEXUS_DOMAIN}
+      description: Reverse proxy and SSL management
+      icon: si-traefik
+- Finance:
+  - sure-web:
+      href: https://sure.${NEXUS_DOMAIN}
+      description: Finance and budgeting
+      icon: mdi-chart-line
+- Gaming:
+  - foundryvtt:
+      href: https://foundry.${NEXUS_DOMAIN}
+      description: Virtual Tabletop
+      icon: si-foundryvirtualtabletop
+- Media:
+  - jellyfin:
+      href: https://jellyfin.${NEXUS_DOMAIN}
+      description: Media server
+      icon: si-jellyfin
+  - plex:
+      href: https://plex.${NEXUS_DOMAIN}
+      description: Media streaming
+      icon: si-plex
+  - transmission:
+      href: https://transmission.${NEXUS_DOMAIN}
+      description: Torrent client
+      icon: si-transmission
+- Other:
+  - app:
+      href: https://nextcloud.${NEXUS_DOMAIN}
+      description: ''
+      icon: unknown.png

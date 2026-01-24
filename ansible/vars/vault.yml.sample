@@ -102,9 +102,8 @@ tailscale_server_ip: ""
 # =============================================================================
 # Tailscale Configuration
 # =============================================================================
-# Your tailnet name (find in Tailscale admin console URL or settings)
-# Example: "tail1234" from "tail1234.ts.net"
-tailnet_name: "your-tailnet"
+# Your Tailnet ID (Unique ID found under Settings -> General)
+tailnet_id: "your-tailnet-id"
 
 # Tailscale API key for ACL and DNS management (required)
 #
@@ -286,7 +285,7 @@ foundry_admin_key: "CHANGE_ME"
 # foundry_username           -> FOUNDRY_USERNAME
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
-# tailnet_name               -> TAILNET_NAME
+# tailnet_id                 -> TAILNET_ID
 # tailscale_api_key          -> TAILSCALE_API_KEY
 # puid                       -> PUID
 # pgid                       -> PGID

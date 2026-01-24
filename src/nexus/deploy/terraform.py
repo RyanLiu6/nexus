@@ -95,12 +95,12 @@ def run_terraform(
 
     # Get optional Tailscale configuration from vault
     tailscale_ip = ""
-    tailnet_name = ""
+    tailnet_id = ""
     tailscale_users: dict[str, list[str]] = {}
     try:
         vault = read_vault()
         tailscale_ip = vault.get("tailscale_server_ip", "")
-        tailnet_name = vault.get("tailnet_name", "")
+        tailnet_id = vault.get("tailnet_id", "")
         tailscale_users = vault.get("tailscale_users", {})
     except (FileNotFoundError, KeyError, ValueError):
         logging.debug("Could not read Tailscale configuration from vault")
@@ -109,7 +109,7 @@ def run_terraform(
     # Build subdomains from services
     subdomains = []
     service_map = {
-        "dashboard": ["hub"],
+        "dashboard": ["nexus"],
         "monitoring": ["grafana", "prometheus", "alertmanager"],
         "foundryvtt": [],  # Handled by tunnel CNAME
         "tailscale-access": [],  # Internal only
@@ -126,7 +126,7 @@ def run_terraform(
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "tailscale_server_ip": tailscale_ip,
-        "tailnet_name": tailnet_name,
+        "tailnet_id": tailnet_id,
         "tailscale_users": tailscale_users,
         "subdomains": subdomains,
     }
