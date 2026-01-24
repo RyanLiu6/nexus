@@ -112,9 +112,11 @@ resource "tailscale_dns_preferences" "main" {
 output "tailscale_acl_applied" {
   description = "Whether Tailscale ACL was applied"
   value       = local.tailscale_enabled
+  sensitive   = true
 }
 
 output "tailscale_groups" {
   description = "Groups configured in Tailscale ACL"
   value       = local.tailscale_enabled ? keys(var.tailscale_users) : []
+  sensitive   = true
 }

@@ -58,5 +58,6 @@ output "tunnel_token" {
 }
 
 output "tunnel_id" {
-  value = local.tunnel_enabled ? cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id : ""
+  value     = local.tunnel_enabled ? cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id : ""
+  sensitive = true
 }
