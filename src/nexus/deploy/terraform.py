@@ -102,7 +102,8 @@ def run_terraform(
         tailscale_ip = vault.get("tailscale_server_ip", "")
         tailnet_name = vault.get("tailnet_name", "")
         tailscale_users = vault.get("tailscale_users", {})
-    except Exception:
+    except (FileNotFoundError, KeyError, ValueError):
+        logging.debug("Could not read Tailscale configuration from vault")
         pass
 
     # Build subdomains from services

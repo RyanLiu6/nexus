@@ -14,7 +14,7 @@ from nexus.deploy.terraform import (
 
 class TestGetTerraformVarsFromVault:
     @patch("nexus.deploy.terraform.read_vault")
-    def test_get_vars(self, mock_read_vault: MagicMock) -> None:
+    def test_get_terraform_vars_from_vault(self, mock_read_vault: MagicMock) -> None:
         mock_read_vault.return_value = {
             "cloudflare_api_token": "token123",
             "cloudflare_zone_id": "zone123",
@@ -109,6 +109,96 @@ class TestRunTerraform:
         mock_tf_path.__truediv__.return_value.exists.return_value = False
 
         run_terraform(["plex"], "example.com")
+
+    @patch("nexus.deploy.terraform._run_terraform_cmd")
+    @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")
+    @patch("nexus.deploy.terraform.read_vault")
+    @patch("nexus.deploy.terraform.TERRAFORM_PATH")
+    def test_run_terraform_with_tailscale_users(
+        self,
+        mock_tf_path: MagicMock,
+        mock_read_vault: MagicMock,
+        mock_get_vault_vars: MagicMock,
+        mock_run_cmd: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_tf_path.__truediv__.return_value = tmp_path / "main.tf"
+        (tmp_path / "main.tf").touch()
+
+        tf_vars_path = tmp_path / "terraform.tfvars.json"
+
+        def path_side_effect(arg: str) -> Path:
+            return tmp_path / arg
+
+        mock_tf_path.__truediv__.side_effect = path_side_effect
+        mock_tf_path.exists.return_value = True
+        mock_get_vault_vars.return_value = {
+            "TF_VAR_cloudflare_api_token": "token",
+            "TF_VAR_cloudflare_zone_id": "zone",
+            "TF_VAR_cloudflare_account_id": "account",
+            "TF_VAR_tunnel_secret": "secret",
+        }
+        mock_read_vault.return_value = {
+            "tailscale_users": {
+                "admins": ["admin@example.com"],
+                "members": ["user@example.com"],
+            },
+            "tailnet_name": "tail1234",
+            "tailscale_server_ip": "100.64.0.1",
+        }
+
+        run_terraform(["plex"], "example.com", dry_run=False)
+
+        assert tf_vars_path.exists()
+        with open(tf_vars_path) as f:
+            config = json.load(f)
+
+        assert config["tailscale_users"] == {
+            "admins": ["admin@example.com"],
+            "members": ["user@example.com"],
+        }
+        assert config["tailnet_name"] == "tail1234"
+        assert config["tailscale_server_ip"] == "100.64.0.1"
+
+    @patch("nexus.deploy.terraform._run_terraform_cmd")
+    @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")
+    @patch("nexus.deploy.terraform.read_vault")
+    @patch("nexus.deploy.terraform.TERRAFORM_PATH")
+    def test_run_terraform_without_tailscale_config(
+        self,
+        mock_tf_path: MagicMock,
+        mock_read_vault: MagicMock,
+        mock_get_vault_vars: MagicMock,
+        mock_run_cmd: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_tf_path.__truediv__.return_value = tmp_path / "main.tf"
+        (tmp_path / "main.tf").touch()
+
+        tf_vars_path = tmp_path / "terraform.tfvars.json"
+
+        def path_side_effect(arg: str) -> Path:
+            return tmp_path / arg
+
+        mock_tf_path.__truediv__.side_effect = path_side_effect
+        mock_tf_path.exists.return_value = True
+        mock_get_vault_vars.return_value = {
+            "TF_VAR_cloudflare_api_token": "token",
+            "TF_VAR_cloudflare_zone_id": "zone",
+            "TF_VAR_cloudflare_account_id": "account",
+            "TF_VAR_tunnel_secret": "secret",
+        }
+        mock_read_vault.side_effect = FileNotFoundError("vault not found")
+
+        run_terraform(["plex"], "example.com", dry_run=False)
+
+        assert tf_vars_path.exists()
+        with open(tf_vars_path) as f:
+            config = json.load(f)
+
+        assert config["tailscale_users"] == {}
+        assert config["tailnet_name"] == ""
+        assert config["tailscale_server_ip"] == ""
 
     @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")
     @patch("nexus.deploy.terraform.TERRAFORM_PATH")

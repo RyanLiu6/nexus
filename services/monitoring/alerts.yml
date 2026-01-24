@@ -280,41 +280,38 @@ groups:
 
   - name: tailscale_alerts
     rules:
-      # =========================================================================
-      # Tailscale API Key Expiration Alerts
-      # =========================================================================
+      - alert: TailscaleExporterDown
+        expr: tailscale_exporter_up == 0
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cannot query Tailscale API"
+          description: "Check TAILSCALE_API_KEY and TAILNET_NAME configuration."
+
       - alert: TailscaleAPIKeyExpiringSoon
-        expr: tailscale_api_key_expiry_seconds > 0 and tailscale_api_key_expiry_seconds < 14 * 24 * 60 * 60
+        expr: min(tailscale_key_days_remaining) > 0 and min(tailscale_key_days_remaining) < 14
         for: 1h
         labels:
           severity: warning
         annotations:
           summary: "Tailscale API key expiring soon"
-          description: "API key expires in {{ printf \"%.0f\" (divf $value 86400) }} days. Rotate at https://login.tailscale.com/admin/settings/keys"
+          description: "Key expires in {{ printf \"%.0f\" $value }} days. Rotate at https://login.tailscale.com/admin/settings/keys"
 
       - alert: TailscaleAPIKeyExpiringSoonCritical
-        expr: tailscale_api_key_expiry_seconds > 0 and tailscale_api_key_expiry_seconds < 7 * 24 * 60 * 60
+        expr: min(tailscale_key_days_remaining) > 0 and min(tailscale_key_days_remaining) < 7
         for: 1h
         labels:
           severity: critical
         annotations:
           summary: "Tailscale API key expiring very soon"
-          description: "API key expires in {{ printf \"%.0f\" (divf $value 86400) }} days! Rotate immediately at https://login.tailscale.com/admin/settings/keys"
+          description: "Key expires in {{ printf \"%.0f\" $value }} days! Rotate immediately."
 
       - alert: TailscaleAPIKeyExpired
-        expr: tailscale_api_key_expiry_seconds < 0 and tailscale_api_key_expiry_seconds != -1
+        expr: min(tailscale_key_days_remaining) <= 0
         for: 0m
         labels:
           severity: critical
         annotations:
           summary: "Tailscale API key has expired"
-          description: "API key has expired! Terraform cannot manage Tailscale. Rotate at https://login.tailscale.com/admin/settings/keys"
-
-      - alert: TailscaleExporterError
-        expr: tailscale_api_key_expiry_seconds == -1
-        for: 2h
-        labels:
-          severity: warning
-        annotations:
-          summary: "Cannot determine Tailscale API key expiration"
-          description: "Tailscale exporter cannot query key expiration. Check TAILSCALE_API_KEY and TAILNET_NAME configuration."
+          description: "Terraform cannot manage Tailscale. Rotate key immediately."
