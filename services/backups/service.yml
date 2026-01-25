@@ -4,10 +4,10 @@
 name: backups
 description: Automated Borgmatic backups
 category: utils
-subdomain: null  # No web interface
+subdomain: null # No web interface
 
 access:
-  groups: []  # Automated, no interactive access
+  groups: [] # Automated, no interactive access
   public: false
 
 dependencies: []
