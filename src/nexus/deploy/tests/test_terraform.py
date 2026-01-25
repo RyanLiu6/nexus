@@ -7,7 +7,6 @@ import pytest
 
 from nexus.deploy.terraform import (
     _get_terraform_vars_from_vault,
-    get_gateway_dns_ips,
     run_terraform,
 )
 
@@ -143,7 +142,7 @@ class TestRunTerraform:
                 "admins": ["admin@example.com"],
                 "members": ["user@example.com"],
             },
-            "tailnet_name": "tail1234",
+            "tailnet_id": "tail1234",
             "tailscale_server_ip": "100.64.0.1",
         }
 
@@ -157,7 +156,7 @@ class TestRunTerraform:
             "admins": ["admin@example.com"],
             "members": ["user@example.com"],
         }
-        assert config["tailnet_name"] == "tail1234"
+        assert config["tailnet_id"] == "tail1234"
         assert config["tailscale_server_ip"] == "100.64.0.1"
 
     @patch("nexus.deploy.terraform._run_terraform_cmd")
@@ -197,7 +196,7 @@ class TestRunTerraform:
             config = json.load(f)
 
         assert config["tailscale_users"] == {}
-        assert config["tailnet_name"] == ""
+        assert config["tailnet_id"] == ""
         assert config["tailscale_server_ip"] == ""
 
     @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")
@@ -252,49 +251,3 @@ class TestRunTerraform:
 
         with pytest.raises(subprocess.CalledProcessError):
             run_terraform(["plex"], "example.com")
-
-
-class TestGetGatewayDnsIps:
-    @patch("subprocess.run")
-    def test_success(self, mock_run: MagicMock) -> None:
-        mock_run.return_value.stdout = json.dumps(
-            {
-                "gateway_ipv4_primary": {"value": "1.2.3.4"},
-                "gateway_ipv4_backup": {"value": "5.6.7.8"},
-            }
-        )
-        mock_run.return_value.returncode = 0
-
-        primary, backup = get_gateway_dns_ips()
-
-        assert primary == "1.2.3.4"
-        assert backup == "5.6.7.8"
-
-    @patch("subprocess.run")
-    def test_subprocess_error(self, mock_run: MagicMock) -> None:
-        mock_run.side_effect = subprocess.CalledProcessError(1, "terraform")
-
-        primary, backup = get_gateway_dns_ips()
-
-        assert primary == ""
-        assert backup == ""
-
-    @patch("subprocess.run")
-    def test_json_error(self, mock_run: MagicMock) -> None:
-        mock_run.return_value.stdout = "invalid json"
-        mock_run.return_value.returncode = 0
-
-        primary, backup = get_gateway_dns_ips()
-
-        assert primary == ""
-        assert backup == ""
-
-    @patch("subprocess.run")
-    def test_missing_keys(self, mock_run: MagicMock) -> None:
-        mock_run.return_value.stdout = "{}"
-        mock_run.return_value.returncode = 0
-
-        primary, backup = get_gateway_dns_ips()
-
-        assert primary == ""
-        assert backup == ""

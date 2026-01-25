@@ -1,0 +1,13 @@
+# Traefik - Reverse Proxy
+# Handles SSL termination, routing, and load balancing
+
+name: traefik
+description: Reverse proxy with automatic SSL
+category: core
+subdomain: traefik
+
+access:
+  groups: [admins]
+  public: false
+
+dependencies: []

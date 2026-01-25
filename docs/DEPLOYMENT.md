@@ -104,7 +104,7 @@ cloudflare_account_id: "your-account-id"
 tunnel_secret: "run: openssl rand -hex 32"
 
 # Tailscale
-tailnet_name: "your-tailnet"
+tailnet_id: "your-tailnet-id"
 ```
 
 **Where to find Cloudflare values:**
@@ -152,7 +152,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server
 ```
 
 **Access your services:**
-- Dashboard: `https://hub.yourdomain.com` (Tailscale only)
+- Dashboard: `https://nexus.yourdomain.com` (Tailscale only)
 - FoundryVTT: `https://foundry.yourdomain.com` (**Public** via Cloudflare Tunnel)
 - All other services are accessible only via Tailscale.
 - Authentication is handled automatically via Tailscale identity.

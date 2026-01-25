@@ -1,12 +1,17 @@
 import logging
 import os
 import subprocess
+from typing import Optional
 
 from nexus.config import ANSIBLE_PATH
 from nexus.utils import run_command
 
 
-def run_ansible(services: list[str], dry_run: bool = False) -> None:
+def run_ansible(
+    services: list[str],
+    dry_run: bool = False,
+    r2_credentials: Optional[dict[str, str]] = None,
+) -> None:
     """Execute the Ansible playbook to deploy Docker services.
 
     Runs the main playbook with the specified services passed as extra
@@ -16,6 +21,9 @@ def run_ansible(services: list[str], dry_run: bool = False) -> None:
         services: List of service names to deploy (e.g., ["traefik", "auth"]).
             These are passed to ansible-playbook as a comma-separated string.
         dry_run: If True, log the intended actions without executing the playbook.
+        r2_credentials: Optional R2 credentials from Terraform. If provided,
+            these are passed as extra-vars to override vault values for
+            Foundry S3 configuration.
 
     Raises:
         FileNotFoundError: If the Ansible playbook does not exist.
@@ -34,6 +42,13 @@ def run_ansible(services: list[str], dry_run: bool = False) -> None:
 
     if email := os.environ.get("ACME_EMAIL"):
         extra_vars.append(f"acme_email={email}")
+
+    # Pass R2 credentials from Terraform if provided
+    if r2_credentials:
+        extra_vars.append(f"foundry_s3_endpoint={r2_credentials['endpoint']}")
+        extra_vars.append(f"foundry_s3_access_key={r2_credentials['access_key']}")
+        extra_vars.append(f"foundry_s3_secret_key={r2_credentials['secret_key']}")
+        extra_vars.append(f"foundry_s3_bucket={r2_credentials['bucket']}")
 
     extra_vars_str = " ".join(extra_vars)
 

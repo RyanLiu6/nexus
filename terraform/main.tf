@@ -19,7 +19,7 @@ provider "cloudflare" {
 
 provider "tailscale" {
   api_key = var.tailscale_api_key
-  tailnet = var.tailnet_name
+  tailnet = var.tailnet_id
 }
 
 # =============================================================================
@@ -27,7 +27,7 @@ provider "tailscale" {
 # =============================================================================
 
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token with Zone:DNS:Edit, Zone:Zone:Read, and Account:Cloudflare Tunnel:Edit permissions"
+  description = "Cloudflare API token with Account permissions (Tunnel:Edit, R2:Edit) and User permissions (API Tokens:Read, API Tokens:Edit)"
   type        = string
   sensitive   = true
 }
@@ -71,8 +71,8 @@ variable "tailscale_api_key" {
   default     = ""
 }
 
-variable "tailnet_name" {
-  description = "Tailnet name (e.g., 'tail1234' from 'tail1234.ts.net')"
+variable "tailnet_id" {
+  description = "Tailnet ID (found at admin/settings/general)"
   type        = string
   default     = ""
 }

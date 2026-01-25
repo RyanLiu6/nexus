@@ -1,6 +1,6 @@
 services:
   foundryvtt:
-    image: felddy/foundryvtt:release
+    image: felddy/foundryvtt:13.351.0
     container_name: foundryvtt
     restart: "unless-stopped"
     deploy:

@@ -35,7 +35,7 @@ default: deny
 #
 # The service name is extracted from the Host header:
 #   grafana.example.com → grafana
-#   hub.example.com → hub
+#   nexus.example.com → nexus
 services:
   # ---------------------------------------------------------------------------
   # Admin-only services (infrastructure, monitoring)
@@ -96,8 +96,8 @@ services:
 
   homepage:
     groups: [admins, members, finance]
-    description: "Dashboard"
-
-  hub:
-    groups: [admins, members, finance]
     description: "Dashboard (alias)"
+
+  nexus:
+    groups: [admins, members, finance]
+    description: "Dashboard"

@@ -66,6 +66,10 @@ pgid: 1000
 #   - Zone:Zone:Read
 #   - Account:Cloudflare Tunnel:Edit
 #   - Account:Zero Trust:Edit (for Gateway DNS filtering)
+#   - Account:Workers R2 Storage:Edit (for FoundryVTT R2 bucket provisioning)
+#   User Permissions:
+#   - User:API Tokens:Read (to look up permission policies)
+#   - User:API Tokens:Edit (to create Foundry-specific access tokens)
 cloudflare_api_token: "CHANGE_ME"
 
 # Find Zone ID on your domain's Overview page in Cloudflare dashboard
@@ -102,9 +106,8 @@ tailscale_server_ip: ""
 # =============================================================================
 # Tailscale Configuration
 # =============================================================================
-# Your tailnet name (find in Tailscale admin console URL or settings)
-# Example: "tail1234" from "tail1234.ts.net"
-tailnet_name: "your-tailnet"
+# Your Tailnet ID (Unique ID found under Settings -> General)
+tailnet_id: "your-tailnet-id"
 
 # Tailscale API key for ACL and DNS management (required)
 #
@@ -234,6 +237,20 @@ foundry_password: "CHANGE_ME"
 # Generate with: openssl rand -base64 24
 foundry_admin_key: "CHANGE_ME"
 
+# Cloudflare R2 Storage (S3 Compatible) configuration
+# TERRAFORM-MANAGED: When deploying with Terraform (default), these values are
+# automatically provisioned and passed via extra-vars. Manual configuration is
+# only needed when using --skip-dns or managing R2 buckets outside Terraform.
+#
+# To use vault values instead of Terraform:
+#   1. Deploy with --skip-dns flag
+#   2. Set the values below manually
+# Endpoint: https://<account_id>.r2.cloudflarestorage.com
+foundry_s3_endpoint: "CHANGE_ME"
+foundry_s3_access_key: "CHANGE_ME"
+foundry_s3_secret_key: "CHANGE_ME"
+foundry_s3_bucket: "foundry-assets"
+
 
 # =============================================================================
 # Jellyfin - Media Server (Optional)
@@ -286,7 +303,7 @@ foundry_admin_key: "CHANGE_ME"
 # foundry_username           -> FOUNDRY_USERNAME
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
-# tailnet_name               -> TAILNET_NAME
+# tailnet_id                 -> TAILNET_ID
 # tailscale_api_key          -> TAILSCALE_API_KEY
 # puid                       -> PUID
 # pgid                       -> PGID

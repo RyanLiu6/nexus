@@ -8,58 +8,43 @@ from nexus.config import SERVICES_PATH
 DESCRIPTIONS = {
     "traefik": "Reverse proxy and SSL management",
     "dashboard": "Homepage dashboard",
-    "backups": "Automated backups",
     "plex": "Media streaming",
     "jellyfin": "Media server",
     "transmission": "Torrent client",
-    "sure": "Finance and budgeting",
     "sure-web": "Finance and budgeting",
     "foundryvtt": "Virtual Tabletop",
     "nextcloud": "File storage",
-    "monitoring": "Metrics collection and visualization",
     "prometheus": "Metrics database",
     "grafana": "Metrics dashboards",
     "alertmanager": "Alert management",
-    "node-exporter": "System metrics",
-    "tailscale-access": "Auth Middleware",
 }
 
 ICONS = {
-    "traefik": "si-traefik",
+    "traefik": "si-traefikproxy",
     "dashboard": "si-homeassistant",
-    "backups": "mdi-backup-restore",
     "plex": "si-plex",
     "jellyfin": "si-jellyfin",
     "transmission": "si-transmission",
-    "sure": "mdi-chart-line",
-    "sure-web": "mdi-chart-line",
+    "sure-web": "mdi-finance",
     "foundryvtt": "si-foundryvirtualtabletop",
     "nextcloud": "si-nextcloud",
-    "monitoring": "si-prometheus",
     "prometheus": "si-prometheus",
     "grafana": "si-grafana",
-    "alertmanager": "mdi-alert",
-    "node-exporter": "si-linux",
-    "tailscale-access": "si-tailscale",
+    "alertmanager": "si-prometheus",
 }
 
 CATEGORIES = {
     "traefik": "Core",
     "dashboard": "Core",
-    "backups": "Utilities",
     "plex": "Media",
     "jellyfin": "Media",
     "transmission": "Media",
-    "sure": "Finance",
     "sure-web": "Finance",
     "foundryvtt": "Gaming",
     "nextcloud": "Files",
-    "monitoring": "Core",
     "prometheus": "Core",
     "grafana": "Core",
     "alertmanager": "Core",
-    "node-exporter": "Core",
-    "tailscale-access": "Core",
 }
 
 EXCLUDED_SERVICES = [
@@ -170,7 +155,15 @@ def categorize_service(service_name: str) -> str:
 
 
 def generate_dashboard_config(
-    services: list[str], domain: str, dry_run: bool = False
+    services: list[str],
+    domain: str,
+    dry_run: bool = False,
+    latitude: float = 49.2827,
+    longitude: float = -123.1207,
+    timezone: str = "America/Vancouver",
+    units: str = "metric",
+    city: str = "Vancouver",
+    secrets: dict[str, Any] | None = None,
 ) -> list[dict[str, list[dict[str, Any]]]]:
     """Generate Homepage dashboard configuration for the specified services.
 
@@ -182,12 +175,19 @@ def generate_dashboard_config(
             The "dashboard" service itself is automatically excluded.
         domain: Base domain used as fallback if Host rule not found.
         dry_run: If True, log what would be generated without side effects.
+        latitude: Location latitude for weather widget.
+        longitude: Location longitude for weather widget.
+        timezone: Timezone identifier for weather data.
+        units: Temperature units - "metric" or "imperial".
+        city: City name for display.
+        secrets: Dictionary of secrets for service widget authentication.
 
     Returns:
         List of dictionaries mapping category names to lists of service configurations,
         formatted for Homepage's services.yaml file.
     """
     dashboard_config: dict[str, list[dict[str, Any]]] = {}
+    secrets = secrets or {}
 
     for service_dir in services:
         if service_dir == "dashboard":
@@ -226,11 +226,49 @@ def generate_dashboard_config(
                 }
             )
 
-    # Convert to list format expected by Homepage
+            # Inject Service Widget if supported
+            widget_config = {}
+            if svc_name == "traefik":
+                widget_config = {"type": "traefik", "url": "http://traefik:8080"}
+            elif svc_name == "grafana":
+                user = secrets.get("grafana_admin_user", "admin")
+                pw = secrets.get("grafana_admin_password")
+                if pw:
+                    widget_config = {
+                        "type": "grafana",
+                        "url": "http://grafana:3000",
+                        "username": user,
+                        "password": pw,
+                    }
+            elif svc_name == "prometheus":
+                widget_config = {"type": "prometheus", "url": "http://prometheus:9090"}
+            elif svc_name == "transmission":
+                # Transmission might need auth if configured, but default often internal
+                widget_config = {
+                    "type": "transmission",
+                    "url": "http://transmission:9091",
+                }
+            elif svc_name == "jellyfin":
+                key = secrets.get("jellyfin_api_key")
+                if key:
+                    widget_config = {
+                        "type": "jellyfin",
+                        "url": "http://jellyfin:8096",
+                        "key": key,
+                    }
+            elif svc_name == "plex":
+                token = secrets.get("plex_token")
+                if token:
+                    widget_config = {
+                        "type": "plex",
+                        "url": "http://plex:32400",
+                        "key": token,
+                    }
+
+            if widget_config:
+                dashboard_config[category][-1][svc_name]["widget"] = widget_config
+
     final_config = []
-    # Sort categories to ensure Core is first, etc if needed?
-    # For now just append in order found or keys.
-    # To make it deterministic, we might want to sort keys.
     for category in sorted(dashboard_config.keys()):
         final_config.append({category: dashboard_config[category]})
 
@@ -264,10 +302,10 @@ def generate_settings_config() -> dict[str, Any]:
         "statusStyle": "dot",
         "hideVersion": True,
         "layout": {
-            "Media": {"style": "row", "columns": 3},
+            "Media": {"style": "row", "columns": 2},
             "Finance": {"style": "row", "columns": 2},
             "Gaming": {"style": "row", "columns": 2},
-            "Core": {"style": "row", "columns": 4},
+            "Core": {"style": "row", "columns": 2},
             "Utilities": {"style": "row", "columns": 2},
         },
     }
@@ -329,9 +367,10 @@ def generate_widgets_config(
     """
     return [
         {
-            "greeting": {
-                "text_size": "xl",
-                "text": "Welcome to Nexus",
+            "resources": {
+                "cpu": True,
+                "memory": True,
+                "disk": "/",
             }
         },
         {
@@ -352,19 +391,6 @@ def generate_widgets_config(
                 "timezone": timezone,
                 "units": units,
                 "cache": 5,
-            }
-        },
-        {
-            "resources": {
-                "cpu": True,
-                "memory": True,
-                "disk": "/",
-            }
-        },
-        {
-            "search": {
-                "provider": "google",
-                "target": "_blank",
             }
         },
     ]

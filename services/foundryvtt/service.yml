@@ -1,0 +1,14 @@
+# FoundryVTT - Virtual Tabletop
+# D&D and tabletop gaming platform
+
+name: foundryvtt
+description: Virtual tabletop for D&D
+category: apps
+subdomain: foundry
+
+access:
+  groups: [admins, members, finance]
+  public: true  # Exposed via Cloudflare Tunnel
+
+dependencies:
+  - traefik

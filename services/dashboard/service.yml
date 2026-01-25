@@ -1,0 +1,15 @@
+# Dashboard - Homepage
+# Central homepage with links to all services
+
+name: dashboard
+description: Service dashboard and homepage
+category: core
+subdomain: nexus
+
+access:
+  groups: [admins, members, finance]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access

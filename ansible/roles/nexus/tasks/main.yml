@@ -47,10 +47,19 @@
     dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
     mode: "0644"
 
-- name: Ensure Docker network exists
-  community.docker.docker_network:
-    name: proxy
-    state: present
+- name: Ensure FoundryVTT Config directory exists
+  ansible.builtin.file:
+    path: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/foundryvtt/data/Config"
+    state: directory
+    mode: "0755"
+  when: "'foundryvtt' in nexus_final_services"
+
+- name: Configure FoundryVTT S3/R2 storage
+  ansible.builtin.template:
+    src: "{{ nexus_root_directory }}/services/foundryvtt/s3.json.j2"
+    dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/foundryvtt/data/Config/s3.json"
+    mode: "0644"
+  when: "'foundryvtt' in nexus_final_services and foundry_s3_access_key is defined"
 
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
@@ -107,7 +116,7 @@
     # Backups
     BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
     # Tailscale
-    TAILNET_NAME: "{{ tailnet_name | default('') }}"
+    TAILNET_ID: "{{ tailnet_id | default('') }}"
     TAILSCALE_API_KEY: "{{ tailscale_api_key | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
