@@ -16,20 +16,18 @@ resource "cloudflare_api_token" "r2_access" {
 
   policies = [{
     permission_groups = [
-      { id = one([for p in data.cloudflare_account_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Read"]) },
-      { id = one([for p in data.cloudflare_account_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Write"]) },
+      { id = one([for p in data.cloudflare_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Read"]) },
+      { id = one([for p in data.cloudflare_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Write"]) },
     ]
-    resources = {
+    resources = jsonencode({
       "com.cloudflare.edge.r2.bucket.${var.cloudflare_account_id}_default_${cloudflare_r2_bucket.foundry.name}" = "*"
-    }
+    })
     effect = "allow"
   }]
 }
 
 # Get available permission groups
-data "cloudflare_account_api_token_permission_groups_list" "all" {
-  account_id = var.cloudflare_account_id
-}
+data "cloudflare_api_token_permission_groups_list" "all" {}
 
 # =============================================================================
 # Outputs for Ansible/Foundry Configuration
