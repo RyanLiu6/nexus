@@ -62,7 +62,7 @@ resource "cloudflare_zero_trust_dns_location" "tailscale" {
       enabled = true
     }
     ipv4 = {
-      enabled = true
+      enabled = false
     }
     ipv6 = {
       enabled = true

@@ -25,7 +25,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "nexus" {
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id
 
   config = {
-    ingress_rule = [
+    ingress = [
       {
         hostname = "foundry.${var.domain}"
         service  = "http://localhost:80"
