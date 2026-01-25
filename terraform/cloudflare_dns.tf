@@ -4,7 +4,7 @@
 # Only devices on Tailscale can reach these services
 # =============================================================================
 
-resource "cloudflare_record" "tailscale_subdomains" {
+resource "cloudflare_dns_record" "tailscale_subdomains" {
   for_each = var.tailscale_server_ip != "" ? var.subdomains : toset([])
   zone_id  = var.cloudflare_zone_id
   name     = each.key

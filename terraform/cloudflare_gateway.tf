@@ -54,17 +54,17 @@ resource "cloudflare_zero_trust_dns_location" "tailscale" {
   client_default = true
   ecs_support    = false
 
-  endpoints {
-    doh {
+  endpoints = {
+    doh = {
       enabled = true
     }
-    dot {
+    dot = {
       enabled = true
     }
-    ipv4 {
-      enabled = true
+    ipv4 = {
+      enabled = false
     }
-    ipv6 {
+    ipv6 = {
       enabled = true
     }
   }
@@ -93,7 +93,7 @@ resource "cloudflare_zero_trust_gateway_policy" "resolve_subdomains" {
   # Does NOT match the apex domain (example.com)
   traffic = "dns.fqdn matches \".*\\\\.${replace(var.domain, ".", "\\\\.")}$\""
 
-  rule_settings {
+  rule_settings = {
     override_ips = [var.tailscale_server_ip]
   }
 }
@@ -116,7 +116,7 @@ resource "cloudflare_zero_trust_gateway_policy" "block_security_threats" {
   # Cloudflare's recommended security categories blocklist
   traffic = "any(dns.security_category[*] in {68 80 83 117 131 134 151 153 175 176 178})"
 
-  rule_settings {
+  rule_settings = {
     block_page_enabled = false
   }
 }
@@ -136,7 +136,7 @@ resource "cloudflare_zero_trust_gateway_policy" "block_ads" {
 
   traffic = "any(dns.content_category[*] in {66})"
 
-  rule_settings {
+  rule_settings = {
     block_page_enabled = false
   }
 }
@@ -156,7 +156,7 @@ resource "cloudflare_zero_trust_gateway_policy" "block_adult_content" {
 
   traffic = "any(dns.content_category[*] in {67 84 87 99 125 133})"
 
-  rule_settings {
+  rule_settings = {
     block_page_enabled = false
   }
 }

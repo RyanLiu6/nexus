@@ -14,19 +14,20 @@ resource "cloudflare_r2_bucket" "foundry" {
 resource "cloudflare_api_token" "r2_access" {
   name = "foundry-r2-access"
 
-  policy {
+  policies = [{
     permission_groups = [
-      data.cloudflare_api_token_permission_groups.all.r2["Workers R2 Storage Bucket Item Read"],
-      data.cloudflare_api_token_permission_groups.all.r2["Workers R2 Storage Bucket Item Write"],
+      { id = one([for p in data.cloudflare_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Read"]) },
+      { id = one([for p in data.cloudflare_api_token_permission_groups_list.all.result : p.id if p.name == "Workers R2 Storage Bucket Item Write"]) },
     ]
-    resources = {
+    resources = jsonencode({
       "com.cloudflare.edge.r2.bucket.${var.cloudflare_account_id}_default_${cloudflare_r2_bucket.foundry.name}" = "*"
-    }
-  }
+    })
+    effect = "allow"
+  }]
 }
 
 # Get available permission groups
-data "cloudflare_api_token_permission_groups" "all" {}
+data "cloudflare_api_token_permission_groups_list" "all" {}
 
 # =============================================================================
 # Outputs for Ansible/Foundry Configuration
