@@ -15,7 +15,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "nexus" {
   count      = local.tunnel_enabled ? 1 : 0
   account_id = var.cloudflare_account_id
   name       = "nexus-${var.domain}"
-  secret     = base64encode(var.tunnel_secret)
+  tunnel_secret = base64encode(var.tunnel_secret)
 }
 
 # Tunnel configuration - only routes FoundryVTT through the tunnel
@@ -24,24 +24,27 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "nexus" {
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id
 
-  config {
-    # FoundryVTT - the only publicly accessible service
-    # Has its own authentication system for game sessions
-    ingress_rule {
-      hostname = "foundry.${var.domain}"
-      service  = "http://localhost:80"
-    }
-
-    # Catch-all - return 403 for any other subdomain
-    # All other services require Tailscale access
-    ingress_rule {
-      service = "http_status:403"
-    }
+  config = {
+    ingress_rule = [
+      {
+        hostname = "foundry.${var.domain}"
+        service  = "http://localhost:80"
+      },
+      {
+        service = "http_status:403"
+      }
+    ]
   }
 }
 
+data "cloudflare_zero_trust_tunnel_cloudflared_token" "nexus" {
+  count      = local.tunnel_enabled ? 1 : 0
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.nexus[0].id
+}
+
 # DNS CNAME record for FoundryVTT pointing to the tunnel
-resource "cloudflare_record" "tunnel_foundry" {
+resource "cloudflare_dns_record" "tunnel_foundry" {
   count   = local.tunnel_enabled ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "foundry"
@@ -53,7 +56,7 @@ resource "cloudflare_record" "tunnel_foundry" {
 
 # Output the tunnel token for cloudflared to use
 output "tunnel_token" {
-  value     = local.tunnel_enabled ? cloudflare_zero_trust_tunnel_cloudflared.nexus[0].tunnel_token : ""
+  value     = local.tunnel_enabled ? data.cloudflare_zero_trust_tunnel_cloudflared_token.nexus[0].token : ""
   sensitive = true
 }
 
