@@ -4,22 +4,40 @@
     "config:recommended",
     "docker:enableMajor"
   ],
-  "labels": ["dependencies"],
-  "schedule": ["before 9am on monday"],
+  "labels": [
+    "dependencies"
+  ],
+  "schedule": [
+    "before 9am on monday"
+  ],
   "timezone": "America/Vancouver",
   "packageRules": [
     {
-      "matchManagers": ["docker-compose"],
-      "matchUpdateTypes": ["major"],
-      "labels": ["dependencies", "major"]
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "dependencies",
+        "major"
+      ]
     },
     {
-      "matchManagers": ["docker-compose"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "automerge": false
     }
   ],
   "docker-compose": {
-    "fileMatch": ["services/.*/docker-compose\\.yml$"]
+    "managerFilePatterns": [
+      "/services/.*/docker-compose\\.yml$/"
+    ]
   }
 }
