@@ -95,7 +95,7 @@ services:
     labels:
 
   sure-db:
-    image: postgres:16
+    image: postgres:18
     container_name: sure-db
     restart: unless-stopped
     networks:
