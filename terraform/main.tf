@@ -27,7 +27,7 @@ provider "tailscale" {
 # =============================================================================
 
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token with Zone:DNS:Edit, Zone:Zone:Read, and Account:Cloudflare Tunnel:Edit permissions"
+  description = "Cloudflare API token with Account permissions (Tunnel:Edit, R2:Edit) and User permissions (API Tokens:Read, API Tokens:Edit)"
   type        = string
   sensitive   = true
 }

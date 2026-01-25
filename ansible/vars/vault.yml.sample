@@ -67,6 +67,10 @@ pgid: 1000
 #   - Account:Cloudflare Tunnel:Edit
 #   - Account:Zero Trust:Edit (for Gateway DNS filtering)
 #   - Account:Workers R2 Storage:Edit (for FoundryVTT R2 bucket provisioning)
+#
+#   User Permissions:
+#   - User:API Tokens:Read (to look up permission policies)
+#   - User:API Tokens:Edit (to create Foundry-specific access tokens)
 cloudflare_api_token: "CHANGE_ME"
 
 # Find Zone ID on your domain's Overview page in Cloudflare dashboard
