@@ -1,0 +1,15 @@
+# Sure - Personal Finance
+# Budget tracking and financial management
+
+name: sure
+description: Personal finance and budgeting
+category: apps
+subdomain: sure
+
+access:
+  groups: [admins, finance]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access

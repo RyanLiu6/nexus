@@ -179,11 +179,12 @@ def _run_terraform_cmd(
     )
 
 
-def get_gateway_dns_ips() -> tuple[str, str]:
-    """Get Cloudflare Gateway DNS IPv4 addresses from terraform state.
+def get_r2_credentials() -> dict[str, str]:
+    """Get Foundry R2 credentials from terraform state.
 
     Returns:
-        Tuple of (primary_ip, backup_ip). Empty strings if not available.
+        Dictionary with keys: endpoint, access_key, secret_key, bucket.
+        Empty dict if R2 is not provisioned.
     """
     try:
         result = subprocess.run(
@@ -195,45 +196,23 @@ def get_gateway_dns_ips() -> tuple[str, str]:
         )
         outputs = json.loads(result.stdout)
 
-        ipv4_primary = outputs.get("gateway_ipv4_primary", {}).get("value", "")
-        ipv4_backup = outputs.get("gateway_ipv4_backup", {}).get("value", "")
+        endpoint = outputs.get("foundry_r2_endpoint", {}).get("value", "")
+        access_key = outputs.get("foundry_r2_access_key", {}).get("value", "")
+        secret_key = outputs.get("foundry_r2_secret_key", {}).get("value", "")
+        bucket = outputs.get("foundry_r2_bucket", {}).get("value", "")
 
-        return (ipv4_primary, ipv4_backup)
+        if endpoint and access_key and secret_key and bucket:
+            return {
+                "endpoint": endpoint,
+                "access_key": access_key,
+                "secret_key": secret_key,
+                "bucket": bucket,
+            }
+        return {}
     except (
         subprocess.CalledProcessError,
         json.JSONDecodeError,
         KeyError,
         FileNotFoundError,
     ):
-        return ("", "")
-
-
-def apply_tunnel(dry_run: bool = False) -> None:
-    """Apply Cloudflare Tunnel configuration, reading all values from vault.
-
-    This is a convenience function for standalone terraform operations.
-    Reads domain and all credentials from vault.yml.
-
-    Args:
-        dry_run: If True, show plan without applying.
-
-    Raises:
-        ValueError: If required vault values are missing.
-    """
-    try:
-        vault = read_vault()
-    except FileNotFoundError as err:
-        raise ValueError("vault.yml not found. Run: invoke setup") from err
-    except subprocess.CalledProcessError as err:
-        raise ValueError(
-            "Failed to decrypt vault.yml. Check your vault password."
-        ) from err
-
-    domain = vault.get("nexus_domain")
-    if not domain or domain == "example.com":
-        raise ValueError(
-            "nexus_domain not configured in vault.yml.\n"
-            "Edit vault.yml: ansible-vault edit ansible/vars/vault.yml"
-        )
-
-    run_terraform(services=[], domain=domain, dry_run=dry_run)
+        return {}

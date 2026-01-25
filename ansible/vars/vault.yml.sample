@@ -66,6 +66,7 @@ pgid: 1000
 #   - Zone:Zone:Read
 #   - Account:Cloudflare Tunnel:Edit
 #   - Account:Zero Trust:Edit (for Gateway DNS filtering)
+#   - Account:Workers R2 Storage:Edit (for FoundryVTT R2 bucket provisioning)
 cloudflare_api_token: "CHANGE_ME"
 
 # Find Zone ID on your domain's Overview page in Cloudflare dashboard
@@ -232,6 +233,20 @@ foundry_password: "CHANGE_ME"
 # Admin key for Foundry setup page
 # Generate with: openssl rand -base64 24
 foundry_admin_key: "CHANGE_ME"
+
+# Cloudflare R2 Storage (S3 Compatible) configuration
+# TERRAFORM-MANAGED: When deploying with Terraform (default), these values are
+# automatically provisioned and passed via extra-vars. Manual configuration is
+# only needed when using --skip-dns or managing R2 buckets outside Terraform.
+#
+# To use vault values instead of Terraform:
+#   1. Deploy with --skip-dns flag
+#   2. Set the values below manually
+# Endpoint: https://<account_id>.r2.cloudflarestorage.com
+foundry_s3_endpoint: "CHANGE_ME"
+foundry_s3_access_key: "CHANGE_ME"
+foundry_s3_secret_key: "CHANGE_ME"
+foundry_s3_bucket: "foundry-assets"
 
 
 # =============================================================================

@@ -311,3 +311,62 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
             mock_create.assert_called_once()
+
+    def test_main_retrieves_r2_credentials_for_foundryvtt(self):
+        with (
+            patch("nexus.cli.deploy._check_dependencies", return_value=[]),
+            patch("nexus.cli.deploy._check_docker_network", return_value=True),
+            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
+            patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
+            patch("nexus.cli.deploy.run_terraform"),
+            patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,
+            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("nexus.cli.deploy._generate_configs"),
+            patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
+            patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
+        ):
+            mock_vault.exists.return_value = True
+            mock_r2.return_value = {
+                "endpoint": "https://test.r2.cloudflarestorage.com",
+                "access_key": "test_key",
+                "secret_key": "test_secret",
+                "bucket": "test-bucket",
+            }
+
+            runner = CliRunner()
+            result = runner.invoke(
+                main, ["foundryvtt", "--domain", "example.com", "-y"]
+            )
+
+            assert result.exit_code == 0, result.output
+            mock_r2.assert_called_once()
+            mock_ansible.assert_called_once()
+            _args, kwargs = mock_ansible.call_args
+            assert kwargs["r2_credentials"] == mock_r2.return_value
+
+    def test_main_skips_r2_credentials_when_skip_dns(self):
+        with (
+            patch("nexus.cli.deploy._check_dependencies", return_value=[]),
+            patch("nexus.cli.deploy._check_docker_network", return_value=True),
+            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
+            patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
+            patch("nexus.cli.deploy.run_terraform") as mock_tf,
+            patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,
+            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("nexus.cli.deploy._generate_configs"),
+            patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
+            patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
+        ):
+            mock_vault.exists.return_value = True
+
+            runner = CliRunner()
+            result = runner.invoke(
+                main, ["foundryvtt", "--domain", "example.com", "--skip-dns", "-y"]
+            )
+
+            assert result.exit_code == 0, result.output
+            mock_tf.assert_not_called()
+            mock_r2.assert_not_called()
+            mock_ansible.assert_called_once()
+            _args, kwargs = mock_ansible.call_args
+            assert kwargs["r2_credentials"] == {}

@@ -1,0 +1,15 @@
+# Nextcloud - File Storage
+# Self-hosted cloud storage and productivity
+
+name: nextcloud
+description: Self-hosted file storage
+category: apps
+subdomain: nextcloud
+
+access:
+  groups: [admins]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access

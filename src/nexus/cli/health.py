@@ -5,6 +5,7 @@ from typing import Optional
 
 import click
 
+from nexus.config import ALL_SERVICES
 from nexus.health.checks import (
     ServiceHealth,
     check_all_services,
@@ -17,16 +18,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-CRITICAL_SERVICES = ["traefik", "auth"]
-ALL_SERVICES = [
-    "traefik",
-    "auth",
-    "dashboard",
-    "plex",
-    "jellyfin",
-    "sure",
-    "foundryvtt",
-]
+CRITICAL_SERVICES = ["traefik", "tailscale-access"]
 
 
 @click.command()

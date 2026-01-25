@@ -1,0 +1,14 @@
+# Tailscale Access - Authentication Middleware
+# ForwardAuth middleware for Tailscale-based access control
+
+name: tailscale-access
+description: Tailscale authentication middleware
+category: core
+subdomain: null  # Internal only, no external access
+
+access:
+  groups: []  # Internal service
+  public: false
+
+dependencies:
+  - traefik

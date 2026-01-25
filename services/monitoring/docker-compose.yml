@@ -1,20 +1,28 @@
 services:
   # Node Exporter for system metrics
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.10.2
     container_name: node-exporter
     restart: unless-stopped
     networks:
       - nexus
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9100/metrics",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
     command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -32,7 +40,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.1
     container_name: prometheus
     restart: unless-stopped
     deploy:
@@ -44,7 +52,15 @@ services:
     networks:
       - nexus
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9090/-/healthy",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -65,7 +81,7 @@ services:
 
   # Grafana - uses Header Auth via tailscale-access
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.1
     container_name: grafana
     restart: unless-stopped
     deploy:
@@ -77,7 +93,15 @@ services:
     networks:
       - nexus
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -114,7 +138,7 @@ services:
 
   # Alertmanager
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.30.0
     container_name: alertmanager
     restart: unless-stopped
     deploy:
@@ -126,7 +150,15 @@ services:
     networks:
       - nexus
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9093/-/healthy",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -134,8 +166,8 @@ services:
       - ${NEXUS_ROOT_DIRECTORY}/services/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - alertmanager-data:/alertmanager
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
     depends_on:
       - alert-bot
     labels:

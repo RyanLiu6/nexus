@@ -1,0 +1,13 @@
+# Backups - Borgmatic
+# Automated backup of service data
+
+name: backups
+description: Automated Borgmatic backups
+category: utils
+subdomain: null  # No web interface
+
+access:
+  groups: []  # Automated, no interactive access
+  public: false
+
+dependencies: []

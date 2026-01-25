@@ -17,7 +17,8 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.terraform import run_terraform
+from nexus.deploy.terraform import get_r2_credentials, run_terraform
+from nexus.generate.access_rules import sync_access_rules
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
     generate_dashboard_config,
@@ -136,6 +137,13 @@ def _generate_configs(
 ) -> None:
     logging.info("Generating configurations...")
 
+    # Generate access rules from service manifests
+    if dry_run:
+        logging.info("[DRY RUN] Would generate access rules from service manifests")
+    else:
+        rules_path = sync_access_rules(services)
+        logging.info(f"Generated access rules: {rules_path}")
+
     # Resolve data_dir: arg -> env -> vault -> default
     if not data_dir:
         data_dir = os.environ.get("NEXUS_DATA_DIRECTORY")
@@ -156,8 +164,14 @@ def _generate_configs(
     bookmarks_path = homepage_dir / "bookmarks.yaml"
     widgets_path = homepage_dir / "widgets.yaml"
 
+    vault = {}
+    try:
+        vault = read_vault()
+    except Exception:
+        logging.warning("Could not read vault secrets for dashboard generation.")
+
     dashboard_config = generate_dashboard_config(
-        services, domain or "example.com", dry_run
+        services, domain or "example.com", dry_run, secrets=vault
     )
     settings_config = generate_settings_config()
     bookmarks_config = generate_bookmarks_config()
@@ -420,11 +434,20 @@ def main(
     _generate_configs(services_list, domain, dry_run=dry_run)
 
     # =========================================================================
+    # Step 7.5: Retrieve R2 credentials from Terraform (if applicable)
+    # =========================================================================
+    r2_credentials: dict[str, str] = {}
+    if not skip_dns and "foundryvtt" in services_list:
+        r2_credentials = get_r2_credentials()
+        if r2_credentials:
+            logging.info("✅ Retrieved R2 credentials from Terraform")
+
+    # =========================================================================
     # Step 8: Deploy with Ansible
     # =========================================================================
     if not skip_ansible:
         logging.info("\n🚀 Deploying services...")
-        run_ansible(services_list, dry_run)
+        run_ansible(services_list, dry_run, r2_credentials=r2_credentials)
 
     # =========================================================================
     # Done!

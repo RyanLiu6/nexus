@@ -164,93 +164,21 @@ def deploy(
 
 
 @task
-def generate_dashboard(c, preset="home", domain=None):
-    """Generate dashboard configuration.
+def restart(c, services=None, preset=None, all_services=False):
+    """Quickly restart/redeploy services (skips DNS/Tunnel setup).
 
-    Args:
-        c: Invoke context.
-        preset: Service preset to generate for.
-        domain: Base domain.
+    Regenerates configurations and runs Ansible to apply changes/restart containers.
+    Basically 'inv deploy' but faster.
     """
-    args = [f"-p {preset}"]
-    if domain:
-        args.append(f"-d {domain}")
-    c.run(
-        f"uv run python -m nexus.cli.deploy --skip-dns --skip-ansible {' '.join(args)}"
+    deploy(
+        c,
+        services=services,
+        preset=preset,
+        all_services=all_services,
+        skip_dns=True,
+        skip_cloudflared=True,
+        yes=True,
     )
-
-
-# =============================================================================
-# Docker Tasks
-# =============================================================================
-
-
-@task
-def up(c, service=None):
-    """Start Docker services.
-
-    Args:
-        c: Invoke context.
-        service: Specific service to start.
-    """
-    service_arg = service if service else ""
-    c.run(f"docker compose up -d {service_arg}")
-
-
-@task
-def down(c):
-    """Stop all Docker services.
-
-    Args:
-        c: Invoke context.
-    """
-    c.run("docker compose down")
-
-
-@task
-def logs(c, service=None, follow=False):
-    """View Docker logs.
-
-    Args:
-        c: Invoke context.
-        service: Specific service to view logs for.
-        follow: Follow log output.
-    """
-    service_arg = service if service else ""
-    follow_arg = "-f" if follow else ""
-    c.run(f"docker compose logs {follow_arg} {service_arg}")
-
-
-@task
-def ps(c):
-    """Show running containers.
-
-    Args:
-        c: Invoke context.
-    """
-    c.run("docker compose ps")
-
-
-@task
-def pull(c):
-    """Pull latest images for all services.
-
-    Args:
-        c: Invoke context.
-    """
-    c.run("docker compose pull")
-
-
-@task
-def restart(c, service=None):
-    """Restart services.
-
-    Args:
-        c: Invoke context.
-        service: Specific service to restart.
-    """
-    service_arg = service if service else ""
-    c.run(f"docker compose restart {service_arg}")
 
 
 # =============================================================================
@@ -346,83 +274,6 @@ def restore(c, backup, service=None, dry_run=False):
 
 
 # =============================================================================
-# Ansible Tasks
-# =============================================================================
-
-
-@task
-def ansible_check(c):
-    """Check Ansible playbook syntax.
-
-    Args:
-        c: Invoke context.
-    """
-    c.run("ansible-playbook ansible/playbook.yml --syntax-check")
-
-
-@task
-def ansible_run(c, services="all", check=False):
-    """Run Ansible playbook.
-
-    Args:
-        c: Invoke context.
-        services: Comma-separated list of services or 'all'.
-        check: Run in check mode (dry-run).
-    """
-    check_arg = "--check" if check else ""
-    c.run(
-        f"ansible-playbook ansible/playbook.yml "
-        f"--extra-vars 'services={services}' "
-        f"--ask-vault-pass {check_arg}"
-    )
-
-
-# =============================================================================
-# Terraform Tasks
-# =============================================================================
-
-
-@task
-def tf_init(c):
-    """Initialize Terraform.
-
-    Args:
-        c: Invoke context.
-    """
-    c.run("terraform -chdir=terraform init")
-
-
-@task
-def tf_plan(c):
-    """Show Terraform plan (reads credentials and domain from vault.yml).
-
-    Args:
-        c: Invoke context.
-    """
-    c.run(
-        'uv run python -c "'
-        "from nexus.deploy.terraform import apply_tunnel; "
-        "apply_tunnel(dry_run=True)"
-        '"'
-    )
-
-
-@task
-def tf_apply(c):
-    """Apply Terraform changes (reads credentials and domain from vault.yml).
-
-    Args:
-        c: Invoke context.
-    """
-    c.run(
-        'uv run python -c "'
-        "from nexus.deploy.terraform import apply_tunnel; "
-        "apply_tunnel(dry_run=False)"
-        '"'
-    )
-
-
-# =============================================================================
 # Alert Bot
 # =============================================================================
 
@@ -436,85 +287,3 @@ def alert_bot(c, port=8080):
         port: Port to run the webhook server on.
     """
     c.run(f"uv run python -m nexus.cli.alert_bot --port {port}")
-
-
-# =============================================================================
-# Setup Tasks
-# =============================================================================
-
-
-@task
-def setup_network(c):
-    """Create Docker nexus network.
-
-    Args:
-        c: Invoke context.
-    """
-    result = c.run("docker network ls --format '{{.Name}}'", hide=True)
-    if "nexus" not in result.stdout:
-        c.run("docker network create nexus")
-        print("✅ Created 'nexus' network")
-    else:
-        print("✅ 'nexus' network already exists")
-
-
-@task
-def setup_vault(c):
-    """Create vault.yml from sample if it doesn't exist.
-
-    Args:
-        c: Invoke context.
-    """
-    import shutil
-    from pathlib import Path
-
-    vault_path = Path("ansible/vars/vault.yml")
-    sample_path = Path("ansible/vars/vault.yml.sample")
-
-    if vault_path.exists():
-        print("⚠️  vault.yml already exists. Edit it manually.")
-    elif sample_path.exists():
-        shutil.copy(sample_path, vault_path)
-        print("✅ Created vault.yml from sample. Edit it with your secrets.")
-        print("   Then encrypt: ansible-vault encrypt ansible/vars/vault.yml")
-    else:
-        print("❌ vault.yml.sample not found!")
-
-
-@task
-def setup_inventory(c):
-    """Create Ansible inventory from example if it doesn't exist.
-
-    Args:
-        c: Invoke context.
-    """
-    import shutil
-    from pathlib import Path
-
-    inventory_path = Path("ansible/inventory/hosts.yml")
-    example_path = Path("ansible/inventory/hosts.example")
-
-    if inventory_path.exists():
-        print("⚠️  hosts.yml already exists.")
-    elif example_path.exists():
-        shutil.copy(example_path, inventory_path)
-        print("✅ Created hosts.yml from example.")
-    else:
-        print("❌ hosts.example not found!")
-
-
-@task
-def setup(c):
-    """Run all setup tasks.
-
-    Args:
-        c: Invoke context.
-    """
-    setup_network(c)
-    setup_vault(c)
-    setup_inventory(c)
-    print("\n✅ Setup complete! Next steps:")
-    print("   1. Edit ansible/vars/vault.yml with your secrets")
-    print("   2. Configure Tailscale ACLs in admin console")
-    print("   3. Encrypt vault: ansible-vault encrypt ansible/vars/vault.yml")
-    print("   4. Deploy: invoke deploy")

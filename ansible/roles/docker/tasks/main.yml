@@ -42,7 +42,7 @@
 
 - name: Create Docker network
   community.docker.docker_network:
-    name: proxy
+    name: nexus
     state: present
   failed_when: false
 

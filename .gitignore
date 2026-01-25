@@ -70,3 +70,6 @@ Thumbs.db
 
 # Generated Tailscale config (contains user emails from vault.yml)
 tailscale/access-rules.yml
+
+# Generated Dashboard Configs
+services/dashboard/config/*.yaml

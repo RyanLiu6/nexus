@@ -1,0 +1,18 @@
+# Monitoring - Prometheus, Grafana, Alertmanager
+# Metrics collection, visualization, and alerting
+
+name: monitoring
+description: Prometheus + Grafana monitoring stack
+category: core
+subdomains:
+  - grafana
+  - prometheus
+  - alertmanager
+
+access:
+  groups: [admins]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access
