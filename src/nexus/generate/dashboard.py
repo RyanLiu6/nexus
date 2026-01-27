@@ -343,6 +343,14 @@ def generate_bookmarks_config() -> list[dict[str, Any]]:
                         }
                     ]
                 },
+                {
+                    "SimpleFIN": [
+                        {
+                            "icon": "mdi-bank",
+                            "href": "https://beta-bridge.simplefin.org/",
+                        }
+                    ]
+                },
             ]
         },
     ]
