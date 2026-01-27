@@ -96,7 +96,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/sure/postgres:/var/lib/postgresql/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/sure/postgres:/var/lib/postgresql
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}

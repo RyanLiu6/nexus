@@ -22,10 +22,15 @@ SimpleFIN (bank sync) → Sure imports transactions → AI auto-categorizes
 
 Your data never leaves your server. Requires ~6GB RAM.
 
-```bash
-cd services/sure
-./scripts/setup_model.sh
-```
+> **Note:** Install Ollama natively on your host (not containerized) for best performance with Apple Silicon or GPU acceleration.
+
+1. Install Ollama on your host: [ollama.com](https://ollama.com)
+
+2. Run the setup script:
+   ```bash
+   cd services/sure
+   ./scripts/setup_model.sh
+   ```
 
 Add to `.env`:
 ```ini

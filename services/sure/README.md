@@ -71,20 +71,24 @@ Sure supports multiple AI providers for automatic transaction categorization.
 
 **Quick Config - Local AI (Recommended):**
 
-1. Run the setup script to configure Ollama:
+> **Note:** Install Ollama natively on your host machine (not containerized) for best performance with Apple Silicon or GPU acceleration. See [Ollama Setup](docs/ollama-setup.md).
+
+1. Install Ollama on your host: [ollama.com](https://ollama.com)
+
+2. Run the setup script to configure the model:
    ```bash
    cd services/sure
    ./scripts/setup_model.sh
    ```
 
-2. Add to your `.env`:
+3. Add to your `.env`:
    ```ini
    SURE_OPENAI_ACCESS_TOKEN=ollama-local
    SURE_OPENAI_URI_BASE=http://host.docker.internal:11434/v1
    SURE_OPENAI_MODEL=ryanliu6/ena:latest
    ```
 
-3. Restart Sure and enable in UI:
+4. Restart Sure and enable in UI:
    ```bash
    docker compose restart sure-web sure-worker
    ```
