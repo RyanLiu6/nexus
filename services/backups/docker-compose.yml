@@ -1,6 +1,6 @@
 services:
   borgmatic:
-    image: ghcr.io/borgmatic-collective/borgmatic:2.1.0
+    image: ghcr.io/borgmatic-collective/borgmatic:2.1.1
     container_name: borgmatic
     restart: unless-stopped
     deploy:
