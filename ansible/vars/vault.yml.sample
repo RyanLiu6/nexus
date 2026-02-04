@@ -153,6 +153,22 @@ grafana_admin_user: "admin"
 grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
 
+# =============================================================================
+# Vaultwarden - Password Manager (Optional but recommended)
+# =============================================================================
+# Admin panel access token (Argon2 hash)
+# Generate with: docker run --rm -it vaultwarden/server /vaultwarden hash
+# You'll be prompted for a password - save both the password and resulting hash
+# Use the PASSWORD to access /admin panel, store the HASH here
+vaultwarden_admin_token: "CHANGE_ME"
+
+# Disable new user signups (use invitations instead for security)
+vaultwarden_signups_allowed: "false"
+
+# Allow admins to invite users via admin panel
+vaultwarden_invitations_allowed: "true"
+
+
 # #############################################################################
 #                           OPTIONAL SERVICES
 #                     (Configure only what you use)
@@ -305,5 +321,8 @@ foundry_s3_bucket: "foundry-assets"
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
 # tailnet_id                 -> TAILNET_ID
 # tailscale_api_key          -> TAILSCALE_API_KEY
+# vaultwarden_admin_token    -> VAULTWARDEN_ADMIN_TOKEN
+# vaultwarden_signups_allowed -> VAULTWARDEN_SIGNUPS_ALLOWED
+# vaultwarden_invitations_allowed -> VAULTWARDEN_INVITATIONS_ALLOWED
 # puid                       -> PUID
 # pgid                       -> PGID

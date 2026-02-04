@@ -113,6 +113,7 @@ def run_terraform(
         "monitoring": ["grafana", "prometheus", "alertmanager"],
         "foundryvtt": [],  # Handled by tunnel CNAME
         "tailscale-access": [],  # Internal only
+        "vaultwarden": ["vault"],  # Uses 'vault' subdomain
     }
 
     for svc in services:
