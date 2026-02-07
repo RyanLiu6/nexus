@@ -81,7 +81,7 @@ services:
 
   # Grafana - uses Header Auth via tailscale-access
   grafana:
-    image: grafana/grafana:12.3.1
+    image: grafana/grafana:12.3.2
     container_name: grafana
     restart: unless-stopped
     deploy:
