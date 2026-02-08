@@ -7,7 +7,8 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Dashboard** - Single homepage to access all services
 - **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
-- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files)
+- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Donetick (tasks)
+- **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
 - **Backups** - Automated with Borgmatic
 
@@ -66,9 +67,9 @@ invoke ops --daily               # Daily maintenance
 
 ## Services
 
-**Core:** traefik, tailscale-access, dashboard, monitoring
+**Core:** traefik, tailscale-access, dashboard, monitoring, vaultwarden
 **Media:** jellyfin, plex, transmission
-**Apps:** foundryvtt, sure, nextcloud
+**Apps:** foundryvtt, sure, nextcloud, donetick
 **Utils:** backups
 
 ## Access Control
@@ -76,7 +77,7 @@ invoke ops --daily               # Daily maintenance
 | Group | Access | Auth |
 |-------|--------|------|
 | admin | All services | Tailscale + SSH |
-| members | FoundryVTT, Homepage | Tailscale |
+| members | FoundryVTT, Donetick, Homepage | Tailscale |
 | finance | Sure, Homepage | Tailscale |
 
 ## Documentation

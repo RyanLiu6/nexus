@@ -25,6 +25,8 @@ Nexus is a self-hosted homelab solution that provides:
 | Media Server | ✅ | Jellyfin (primary), Plex (optional) |
 | Gaming | ✅ | FoundryVTT for D&D |
 | Finance | ✅ | Sure for budgeting |
+| Passwords | ✅ | Vaultwarden (Bitwarden) |
+| Tasks | ✅ | Donetick for chores/tasks |
 
 ## Tech Stack
 
@@ -121,8 +123,8 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 
 ```python
 PRESETS = {
-    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
-    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
+    "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
+    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "donetick"],
 }
 ```
 
@@ -139,6 +141,8 @@ PRESETS = {
 | **transmission** | Torrent client | Admin |
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |
 | **sure** | Finance tracking | Admin + Wife |
+| **donetick** | Chore tracker | Admin + Family |
+| **vaultwarden** | Password manager | Admin |
 | **backups** | Borgmatic | Automated |
 
 ---
@@ -169,9 +173,8 @@ nexus/
 │   ├── tailscale-access/     # Auth middleware
 │   ├── dashboard/
 │   ├── monitoring/
-│   │   ├── docker-compose.yml
-│   │   ├── prometheus.yml
-│   │   └── alertmanager.yml
+│   ├── vaultwarden/
+│   ├── donetick/
 │   └── ...
 │
 ├── src/nexus/                # Python library
