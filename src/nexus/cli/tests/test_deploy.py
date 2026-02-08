@@ -369,4 +369,4 @@ class TestMain:
             mock_r2.assert_not_called()
             mock_ansible.assert_called_once()
             _args, kwargs = mock_ansible.call_args
-            assert kwargs["r2_credentials"] == {}
+            assert kwargs["r2_credentials"] is None
