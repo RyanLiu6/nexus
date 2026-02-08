@@ -118,6 +118,10 @@
     # Tailscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
     TAILSCALE_API_KEY: "{{ tailscale_api_key | default('') }}"
+    # Vaultwarden
+    VAULTWARDEN_ADMIN_TOKEN: "{{ vaultwarden_admin_token | default('') }}"
+    VAULTWARDEN_SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed | default('false') }}"
+    VAULTWARDEN_INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed | default('true') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"

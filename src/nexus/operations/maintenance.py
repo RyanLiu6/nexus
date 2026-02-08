@@ -1,7 +1,6 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Union
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def check_container_status() -> bool:
     return True
 
 
-def check_disk_space() -> dict[str, Union[str, int]]:
+def check_disk_space() -> dict[str, str | int]:
     """Check root filesystem disk usage and warn if thresholds exceeded.
 
     Runs `df -h /` and logs warnings at 80% usage and errors at 90%.

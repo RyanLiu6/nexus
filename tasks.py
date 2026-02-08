@@ -1,4 +1,6 @@
-from invoke import task
+from typing import Optional
+
+from invoke import Context, task
 
 # =============================================================================
 # Core Development Tasks
@@ -6,7 +8,7 @@ from invoke import task
 
 
 @task
-def test(c, verbose=False, coverage=True):
+def test(c: Context, verbose: bool = False, coverage: bool = True) -> None:
     """Run pytest with coverage.
 
     Args:
@@ -20,7 +22,7 @@ def test(c, verbose=False, coverage=True):
 
 
 @task
-def test_ci(c):
+def test_ci(c: Context) -> None:
     """Run tests for CI with XML output.
 
     Args:
@@ -38,7 +40,7 @@ def test_ci(c):
 
 
 @task
-def ruff_check(c, fix=False):
+def ruff_check(c: Context, fix: bool = False) -> None:
     """Check code with ruff.
 
     Args:
@@ -51,7 +53,7 @@ def ruff_check(c, fix=False):
 
 
 @task
-def ruff_format(c, check_only=False):
+def ruff_format(c: Context, check_only: bool = False) -> None:
     """Format code with ruff.
 
     Args:
@@ -64,7 +66,7 @@ def ruff_format(c, check_only=False):
 
 
 @task
-def mypy(c):
+def mypy(c: Context) -> None:
     """Run mypy type checking.
 
     Args:
@@ -75,7 +77,7 @@ def mypy(c):
 
 
 @task
-def lint(c):
+def lint(c: Context) -> None:
     """Run all linting checks (ruff check, ruff format --check, mypy).
 
     Args:
@@ -87,7 +89,7 @@ def lint(c):
 
 
 @task
-def format(c):
+def format(c: Context) -> None:
     """Format and fix all code issues.
 
     Args:
@@ -104,17 +106,17 @@ def format(c):
 
 @task
 def deploy(
-    c,
-    services=None,
-    preset=None,
-    all_services=False,
-    skip_dns=False,
-    skip_ansible=False,
-    skip_cloudflared=False,
-    no_tunnel=False,
-    dry_run=False,
-    yes=False,
-):
+    c: Context,
+    services: Optional[str] = None,
+    preset: Optional[str] = None,
+    all_services: bool = False,
+    skip_dns: bool = False,
+    skip_ansible: bool = False,
+    skip_cloudflared: bool = False,
+    no_tunnel: bool = False,
+    dry_run: bool = False,
+    yes: bool = False,
+) -> None:
     """Deploy Nexus services.
 
     --services         Comma-separated list of services to deploy
@@ -164,7 +166,12 @@ def deploy(
 
 
 @task
-def restart(c, services=None, preset=None, all_services=False):
+def restart(
+    c: Context,
+    services: Optional[str] = None,
+    preset: Optional[str] = None,
+    all_services: bool = False,
+) -> None:
     """Quickly restart/redeploy services (skips DNS/Tunnel setup).
 
     Regenerates configurations and runs Ansible to apply changes/restart containers.
@@ -187,7 +194,7 @@ def restart(c, services=None, preset=None, all_services=False):
 
 
 @task
-def health(c, domain=None, verbose=False):
+def health(c: Context, domain: Optional[str] = None, verbose: bool = False) -> None:
     """Run health checks.
 
     Args:
@@ -204,7 +211,13 @@ def health(c, domain=None, verbose=False):
 
 
 @task
-def ops(c, daily=False, weekly=False, monthly=False, all_tasks=False):
+def ops(
+    c: Context,
+    daily: bool = False,
+    weekly: bool = False,
+    monthly: bool = False,
+    all_tasks: bool = False,
+) -> None:
     """Run operations/maintenance tasks.
 
     Args:
@@ -232,7 +245,7 @@ def ops(c, daily=False, weekly=False, monthly=False, all_tasks=False):
 
 
 @task
-def backup_list(c):
+def backup_list(c: Context) -> None:
     """List available backups.
 
     Args:
@@ -242,7 +255,7 @@ def backup_list(c):
 
 
 @task
-def backup_verify(c, backup=None):
+def backup_verify(c: Context, backup: Optional[str] = None) -> None:
     """Verify backup integrity.
 
     Args:
@@ -256,7 +269,12 @@ def backup_verify(c, backup=None):
 
 
 @task
-def restore(c, backup, service=None, dry_run=False):
+def restore(
+    c: Context,
+    backup: str = "",
+    service: Optional[str] = None,
+    dry_run: bool = False,
+) -> None:
     """Restore from backup.
 
     Args:
@@ -279,7 +297,7 @@ def restore(c, backup, service=None, dry_run=False):
 
 
 @task
-def alert_bot(c, port=8080):
+def alert_bot(c: Context, port: int = 8080) -> None:
     """Run the Discord alert bot.
 
     Args:

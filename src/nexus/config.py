@@ -27,11 +27,8 @@ def get_all_services() -> list[str]:
     return get_all_service_names()
 
 
-# For backwards compatibility - prefer get_all_services()
-ALL_SERVICES = sorted([d.name for d in SERVICES_PATH.iterdir() if d.is_dir()])
-
 PRESETS = {
-    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
+    "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
     "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
 }
 

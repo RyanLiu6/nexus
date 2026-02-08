@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from nexus.config import ALL_SERVICES
+from nexus.config import get_all_services
 from nexus.health.checks import (
     ServiceHealth,
     check_all_services,
@@ -59,7 +59,7 @@ def main(
     if domain:
         ssl_status = check_ssl_certificates(domain)
 
-    services_to_check = CRITICAL_SERVICES if critical_only else ALL_SERVICES
+    services_to_check = CRITICAL_SERVICES if critical_only else get_all_services()
 
     health_checks: list[ServiceHealth] = []
     for service in services_to_check:

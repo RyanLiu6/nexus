@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
@@ -17,6 +17,7 @@ DESCRIPTIONS = {
     "prometheus": "Metrics database",
     "grafana": "Metrics dashboards",
     "alertmanager": "Alert management",
+    "vaultwarden": "Password manager",
 }
 
 ICONS = {
@@ -31,6 +32,7 @@ ICONS = {
     "prometheus": "si-prometheus",
     "grafana": "si-grafana",
     "alertmanager": "si-prometheus",
+    "vaultwarden": "si-bitwarden",
 }
 
 CATEGORIES = {
@@ -45,6 +47,7 @@ CATEGORIES = {
     "prometheus": "Core",
     "grafana": "Core",
     "alertmanager": "Core",
+    "vaultwarden": "Core",
 }
 
 EXCLUDED_SERVICES = [
@@ -163,7 +166,7 @@ def generate_dashboard_config(
     timezone: str = "America/Vancouver",
     units: str = "metric",
     city: str = "Vancouver",
-    secrets: dict[str, Any] | None = None,
+    secrets: Optional[dict[str, Any]] = None,
 ) -> list[dict[str, list[dict[str, Any]]]]:
     """Generate Homepage dashboard configuration for the specified services.
 

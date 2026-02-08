@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import IO, Any, Optional, Union
+from typing import IO, Any, Optional
 
 import yaml
 
@@ -13,7 +13,7 @@ def run_command(
     cwd: Optional[Path] = None,
     capture: bool = False,
     check: bool = True,
-    stdin: Optional[Union[IO[Any], int]] = None,
+    stdin: Optional[IO[Any] | int] = None,
 ) -> subprocess.CompletedProcess[str]:
     """Execute a shell command with standardized error handling and logging.
 
