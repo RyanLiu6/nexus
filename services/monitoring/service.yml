@@ -13,6 +13,28 @@ access:
   groups: [admins]
   public: false
 
+# Sub-services for dashboard (each gets its own card)
+services:
+  grafana:
+    icon: si-grafana
+    description: Metrics dashboards
+    widget:
+      type: grafana
+      url: http://grafana:3000
+  prometheus:
+    icon: si-prometheus
+    description: Metrics database
+    widget:
+      type: prometheus
+      url: http://prometheus:9090
+  alertmanager:
+    icon: si-prometheus
+    description: Alert management
+  node-exporter:
+    exclude: true
+  alert-bot:
+    exclude: true
+
 dependencies:
   - traefik
   - tailscale-access

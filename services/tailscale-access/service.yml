@@ -4,11 +4,15 @@
 name: tailscale-access
 description: Tailscale authentication middleware
 category: core
-subdomain: null  # Internal only, no external access
+icon: si-tailscale
+subdomain: null # Internal only, no external access
 
 access:
-  groups: []  # Internal service
+  groups: [] # Internal service
   public: false
+
+dashboard:
+  exclude: true # Internal service, no dashboard card
 
 dependencies:
   - traefik

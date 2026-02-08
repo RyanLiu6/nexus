@@ -1,12 +1,13 @@
 import pytest
 
-from nexus.config import PRESETS, get_base_domain, resolve_preset
+from nexus.config import get_base_domain, load_presets, resolve_preset
 
 
 class TestPresets:
     def test_presets_exist(self) -> None:
-        assert "core" in PRESETS
-        assert "home" in PRESETS
+        presets = load_presets()
+        assert "core" in presets
+        assert "home" in presets
 
     def test_resolve_preset(self) -> None:
         services = resolve_preset("core")

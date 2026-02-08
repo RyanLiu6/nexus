@@ -1,12 +1,6 @@
-"""Service discovery and manifest parsing.
-
-This module provides a unified way to discover services and read their
-configuration from service.yml manifest files.
-"""
-
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import yaml
 
@@ -15,6 +9,27 @@ from nexus.config import SERVICES_PATH
 
 @dataclass
 class ServiceManifest:
+    """Service manifest parsed from service.yml files.
+
+    Attributes:
+        name: Service identifier.
+        description: Human-readable description.
+        category: Dashboard category (e.g., 'Core', 'Media').
+        subdomains: List of subdomains routing to this service.
+        access_groups: List of groups allowed access.
+        is_public: Whether service is publicly accessible.
+        dependencies: List of service names this service depends on.
+        path: Path to the service directory.
+        icon: Dashboard icon identifier (e.g., 'si-plex').
+        display_name: Optional human-readable display name.
+        dashboard_exclude: Whether to exclude from the dashboard.
+        widget: Homepage widget configuration dict (e.g., {'type': 'grafana', ...}).
+        sub_services: Dictionary of sub-services for composite
+            stacks (e.g., monitoring).
+            Structure:
+            {'sub_name': {'icon': str, 'description': str, 'widget': dict}}
+    """
+
     name: str
     description: str
     category: str
@@ -23,6 +38,12 @@ class ServiceManifest:
     is_public: bool = False
     dependencies: list[str] = field(default_factory=list)
     path: Path = field(default_factory=Path)
+    # Dashboard configuration
+    icon: str = "mdi-application"
+    display_name: str = ""
+    dashboard_exclude: bool = False
+    widget: dict[str, Any] = field(default_factory=dict)
+    sub_services: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
     def from_yaml(cls, path: Path) -> "ServiceManifest":
@@ -53,6 +74,11 @@ class ServiceManifest:
         access_groups = access.get("groups", [])
         is_public = access.get("public", False)
 
+        # Parse dashboard config
+        dashboard = data.get("dashboard", {})
+        dashboard_exclude = dashboard.get("exclude", False)
+        widget = dashboard.get("widget", {})
+
         return cls(
             name=data["name"],
             description=data.get("description", ""),
@@ -62,6 +88,11 @@ class ServiceManifest:
             is_public=is_public,
             dependencies=data.get("dependencies", []),
             path=path.parent,
+            icon=data.get("icon", "mdi-application"),
+            display_name=data.get("display_name", ""),
+            dashboard_exclude=dashboard_exclude,
+            widget=widget,
+            sub_services=data.get("services", {}),
         )
 
     def has_web_access(self) -> bool:

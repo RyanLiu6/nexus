@@ -1,0 +1,20 @@
+# Nexus Deployment Presets
+#
+# Presets define groups of services that are commonly deployed together.
+# Use with: nexus deploy --preset <name>
+
+core:
+  - traefik
+  - tailscale-access
+  - dashboard
+  - monitoring
+  - vaultwarden
+
+home:
+  extends: core
+  services:
+    - backups
+    - sure
+    - foundryvtt
+    - jellyfin
+    - transmission

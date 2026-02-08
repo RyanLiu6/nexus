@@ -4,11 +4,17 @@
 name: transmission
 description: Torrent download client
 category: media
+icon: si-transmission
 subdomain: transmission
 
 access:
   groups: [admins]
   public: false
+
+dashboard:
+  widget:
+    type: transmission
+    url: http://transmission:9091
 
 dependencies:
   - traefik

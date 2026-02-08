@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import IO, Any, Optional
+from typing import Any, Optional, TextIO, Union
 
 import yaml
 
@@ -13,7 +13,7 @@ def run_command(
     cwd: Optional[Path] = None,
     capture: bool = False,
     check: bool = True,
-    stdin: Optional[IO[Any] | int] = None,
+    stdin: Optional[Union[TextIO, int]] = None,
 ) -> subprocess.CompletedProcess[str]:
     """Execute a shell command with standardized error handling and logging.
 
@@ -66,6 +66,7 @@ def read_vault(vault_path: Optional[Path] = None) -> dict[str, Any]:
 
     Returns:
         Dictionary containing the decrypted vault contents.
+        Structure matches the vault.yml schema (mixed types).
 
     Raises:
         FileNotFoundError: If the vault file does not exist.

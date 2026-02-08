@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from nexus.generate.dashboard import (
     categorize_service,
     generate_bookmarks_config,
@@ -14,50 +16,61 @@ from nexus.generate.dashboard import (
 
 
 class TestGetServiceDescription:
-    def test_get_service_description(self) -> None:
-        assert get_service_description("traefik") == "Reverse proxy and SSL management"
-        assert get_service_description("dashboard") == "Homepage dashboard"
-        assert get_service_description("sure-web") == "Finance and budgeting"
-        assert get_service_description("foundryvtt") == "Virtual Tabletop"
-        assert get_service_description("jellyfin") == "Media server"
-        assert get_service_description("transmission") == "Torrent client"
-
-    def test_get_service_description_unknown(self) -> None:
-        assert get_service_description("unknown") == ""
+    @pytest.mark.parametrize(
+        "service,expected",
+        [
+            ("traefik", "Reverse proxy with automatic SSL"),
+            ("dashboard", "Service dashboard and homepage"),
+            ("sure-web", "Finance and budgeting"),
+            ("foundryvtt", "Virtual tabletop for D&D"),
+            ("jellyfin", "Media server for movies and TV"),
+            ("transmission", "Torrent download client"),
+            ("unknown", ""),
+        ],
+    )
+    def test_get_service_description(self, service: str, expected: str) -> None:
+        assert get_service_description(service) == expected
 
 
 class TestGetServiceIcon:
-    def test_get_service_icon(self) -> None:
-        assert get_service_icon("traefik") == "si-traefikproxy"
-        assert get_service_icon("dashboard") == "si-homeassistant"
-        assert get_service_icon("plex") == "si-plex"
-        assert get_service_icon("jellyfin") == "si-jellyfin"
-        assert get_service_icon("transmission") == "si-transmission"
-        assert get_service_icon("transmission") == "si-transmission"
-        assert get_service_icon("prometheus") == "si-prometheus"
-        assert get_service_icon("grafana") == "si-grafana"
-        assert get_service_icon("alertmanager") == "si-prometheus"
-
-    def test_get_service_icon_unknown(self) -> None:
-        assert get_service_icon("unknown") == "unknown.png"
+    @pytest.mark.parametrize(
+        "service,expected",
+        [
+            ("traefik", "si-traefikproxy"),
+            ("dashboard", "si-homeassistant"),
+            ("plex", "si-plex"),
+            ("jellyfin", "si-jellyfin"),
+            ("transmission", "si-transmission"),
+            ("prometheus", "si-prometheus"),
+            ("grafana", "si-grafana"),
+            ("alertmanager", "si-prometheus"),
+            ("unknown", "mdi-application"),
+        ],
+    )
+    def test_get_service_icon(self, service: str, expected: str) -> None:
+        assert get_service_icon(service) == expected
 
 
 class TestCategorizeService:
-    def test_categorize_service(self) -> None:
-        assert categorize_service("traefik") == "Core"
-        assert categorize_service("dashboard") == "Core"
-        assert categorize_service("prometheus") == "Core"
-        assert categorize_service("grafana") == "Core"
-        assert categorize_service("alertmanager") == "Core"
-        assert categorize_service("plex") == "Media"
-        assert categorize_service("jellyfin") == "Media"
-        assert categorize_service("transmission") == "Media"
-        assert categorize_service("sure-web") == "Finance"
-        assert categorize_service("foundryvtt") == "Gaming"
-        assert categorize_service("nextcloud") == "Files"
-
-    def test_categorize_service_unknown(self) -> None:
-        assert categorize_service("unknown") == "Other"
+    @pytest.mark.parametrize(
+        "service,expected",
+        [
+            ("traefik", "Core"),
+            ("dashboard", "Core"),
+            ("prometheus", "Core"),
+            ("grafana", "Core"),
+            ("alertmanager", "Core"),
+            ("plex", "Media"),
+            ("jellyfin", "Media"),
+            ("transmission", "Media"),
+            ("sure-web", "Apps"),
+            ("foundryvtt", "Apps"),
+            ("nextcloud", "Apps"),
+            ("unknown", "Other"),
+        ],
+    )
+    def test_categorize_service(self, service: str, expected: str) -> None:
+        assert categorize_service(service) == expected
 
 
 class TestGetServiceConfig:
@@ -179,8 +192,6 @@ class TestGenerateDashboardConfig:
 
         result = generate_dashboard_config(["plex", "jellyfin"], "example.com")
 
-        # Result is list[dict[category, list[service]]]
-        # We need to find the "Media" category item in the list
         media_category = next((item for item in result if "Media" in item), None)
         assert media_category is not None
         assert len(media_category["Media"]) == 2
@@ -191,7 +202,6 @@ class TestGenerateDashboardConfig:
     ) -> None:
         result = generate_dashboard_config(["dashboard"], "example.com")
 
-        # Verify Weather Category is NOT present (moved to top bar)
         weather_group = next((c["Weather"] for c in result if "Weather" in c), None)
         assert weather_group is None
 
@@ -203,7 +213,6 @@ class TestGenerateDashboardConfig:
 
         result = generate_dashboard_config(["missing"], "example.com")
 
-        # Verify Weather Category is NOT present
         weather_group = next((c["Weather"] for c in result if "Weather" in c), None)
         assert weather_group is None
 
@@ -250,7 +259,6 @@ class TestGenerateDashboardConfig:
         services = ["traefik", "grafana", "jellyfin"]
         config = generate_dashboard_config(services, "example.com", secrets=secrets)
 
-        # Check Traefik Widget
         core_group = next((c["Core"] for c in config if "Core" in c), None)
         assert core_group is not None
         traefik = next((i["traefik"] for i in core_group if "traefik" in i), None)
@@ -259,13 +267,11 @@ class TestGenerateDashboardConfig:
         assert traefik["widget"]["type"] == "traefik"
         assert traefik["widget"]["url"] == "http://traefik:8080"
 
-        # Check Grafana Widget (Auth)
         grafana = next((i["grafana"] for i in core_group if "grafana" in i), None)
         assert grafana is not None
         assert grafana["widget"]["username"] == "admin"
         assert grafana["widget"]["password"] == "secret"
 
-        # Check Jellyfin Widget (Key)
         media_group = next((c["Media"] for c in config if "Media" in c), None)
         assert media_group is not None
         jellyfin = next((i["jellyfin"] for i in media_group if "jellyfin" in i), None)
@@ -273,7 +279,6 @@ class TestGenerateDashboardConfig:
         assert jellyfin["widget"]["key"] == "jellykey"
 
     def test_generate_dashboard_config_missing_secrets(self) -> None:
-        # Test widget generation skips if secret missing
         with patch("nexus.generate.dashboard.get_service_config") as mock_get:
             mock_get.return_value = [
                 {
@@ -291,7 +296,7 @@ class TestGenerateDashboardConfig:
                 (i["jellyfin"] for i in media_group if "jellyfin" in i), None
             )
             assert jellyfin is not None
-            assert "widget" not in jellyfin  # Should skip widget if key missing
+            assert "widget" not in jellyfin
 
     @patch("nexus.generate.dashboard.get_service_config")
     def test_generate_dashboard_config_domain_substitution(
@@ -309,9 +314,9 @@ class TestGenerateDashboardConfig:
 
         result = generate_dashboard_config(["foundryvtt"], "my-domain.com")
 
-        gaming_category = next((item for item in result if "Gaming" in item), None)
-        assert gaming_category is not None
-        href = gaming_category["Gaming"][0]["foundryvtt"]["href"]
+        apps_category = next((item for item in result if "Apps" in item), None)
+        assert apps_category is not None
+        href = apps_category["Apps"][0]["foundryvtt"]["href"]
         assert href == "https://foundry.my-domain.com"
 
 
@@ -359,7 +364,6 @@ class TestGenerateWidgetsConfig:
         config = generate_widgets_config()
 
         assert isinstance(config, list)
-        # Weather is back in widgets
         assert len(config) == 3
 
         widget_types = [next(iter(w.keys())) for w in config]

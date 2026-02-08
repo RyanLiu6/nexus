@@ -1,7 +1,8 @@
 name: vaultwarden
 description: Bitwarden-compatible password manager
-icon: bitwarden
 category: core
+icon: si-bitwarden
+display_name: Bitwarden
 subdomain: vault
 
 access:

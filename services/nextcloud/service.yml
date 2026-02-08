@@ -4,6 +4,7 @@
 name: nextcloud
 description: Self-hosted file storage
 category: apps
+icon: si-nextcloud
 subdomain: nextcloud
 
 access:

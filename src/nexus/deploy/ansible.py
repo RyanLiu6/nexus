@@ -4,13 +4,14 @@ import subprocess
 from typing import Optional
 
 from nexus.config import ANSIBLE_PATH
+from nexus.types import R2Credentials
 from nexus.utils import run_command
 
 
 def run_ansible(
     services: list[str],
     dry_run: bool = False,
-    r2_credentials: Optional[dict[str, str]] = None,
+    r2_credentials: Optional[R2Credentials] = None,
 ) -> None:
     """Execute the Ansible playbook to deploy Docker services.
 

@@ -4,11 +4,17 @@
 name: plex
 description: Plex media server
 category: media
+icon: si-plex
 subdomain: plex
 
 access:
   groups: [admins]
   public: false
+
+dashboard:
+  widget:
+    type: plex
+    url: http://plex:32400
 
 dependencies:
   - traefik
