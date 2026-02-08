@@ -21,6 +21,13 @@ services:
       - "traefik.http.middlewares.tailscale-access.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.tailscale-access.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name"
 
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
     ports:
       - "8000:8000"
 

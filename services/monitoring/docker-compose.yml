@@ -4,6 +4,12 @@ services:
     image: prom/node-exporter:v1.10.2
     container_name: node-exporter
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     networks:
       - nexus
     healthcheck:
@@ -144,9 +150,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
-        reservations:
           memory: 128M
+        reservations:
+          memory: 64M
     networks:
       - nexus
     healthcheck:

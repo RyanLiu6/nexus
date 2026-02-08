@@ -7,8 +7,9 @@ services:
       resources:
         limits:
           memory: 2G
+          cpus: "2.0"
         reservations:
-          memory: 1G
+          memory: 512M
     networks:
       - nexus
     ports:
