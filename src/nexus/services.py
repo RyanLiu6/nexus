@@ -1,9 +1,3 @@
-"""Service discovery and manifest parsing.
-
-This module provides a unified way to discover services and read their
-configuration from service.yml manifest files.
-"""
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional

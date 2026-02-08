@@ -1,10 +1,18 @@
-"""Shared type definitions for Nexus."""
-
 from typing import Any, TypedDict
 
 
 class ServiceMetadata(TypedDict):
-    """Metadata dictionary for a service or sub-service."""
+    """Metadata dictionary for a service or sub-service.
+
+    Attributes:
+        description: Human-readable description of the service.
+        icon: Icon identifier (e.g., "si-plex", "mdi-application").
+        category: Service category for dashboard grouping (e.g., "core", "home).
+        dashboard_exclude: Whether to exclude this service from the dashboard.
+        widget: Homepage widget configuration dictionary.
+            Structure: {"type": str, "url": str}, with optional runtime keys
+            "username", "password", or "key" injected from vault secrets.
+    """
 
     description: str
     icon: str
@@ -14,8 +22,6 @@ class ServiceMetadata(TypedDict):
 
 
 class R2Credentials(TypedDict):
-    """Credentials for Cloudflare R2 storage."""
-
     endpoint: str
     access_key: str
     secret_key: str
@@ -23,8 +29,6 @@ class R2Credentials(TypedDict):
 
 
 class TraefikConfig(TypedDict):
-    """Traefik configuration extracted from docker-compose labels."""
-
     name: str
     container: str
     rule: str

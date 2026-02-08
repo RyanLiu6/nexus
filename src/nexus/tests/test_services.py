@@ -142,7 +142,6 @@ class TestGetServicesByCategory:
 
     def test_expected_categories_exist(self) -> None:
         by_category = get_services_by_category()
-        # At minimum we should have these categories
         assert "core" in by_category
         assert "apps" in by_category or "media" in by_category
 
@@ -164,21 +163,18 @@ class TestResolveDependencies:
         resolved = resolve_dependencies(["dashboard"], all_services)
 
         assert "dashboard" in resolved
-        # Dashboard depends on traefik and tailscale-access
         assert "traefik" in resolved
         assert "tailscale-access" in resolved
 
-    def test_handles_no_dependencies(self) -> None:
+    def test_resolve_dependencies_no_dependencies(self) -> None:
         all_services = discover_services()
         resolved = resolve_dependencies(["traefik"], all_services)
 
         assert "traefik" in resolved
-        # Traefik has no dependencies, so only itself
         assert len(resolved) >= 1
 
-    def test_deduplicates(self) -> None:
+    def test_resolve_dependencies_deduplicates(self) -> None:
         all_services = discover_services()
         resolved = resolve_dependencies(["dashboard", "sure", "traefik"], all_services)
 
-        # Should not have duplicates
         assert len(resolved) == len(set(resolved))
