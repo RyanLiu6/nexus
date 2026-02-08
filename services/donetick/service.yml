@@ -1,0 +1,13 @@
+name: donetick
+description: Collaborative task and chore management
+category: apps
+icon: mdi-checkbox-marked-circle-outline
+subdomain: donetick
+
+access:
+  groups: [admins]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access

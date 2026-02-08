@@ -15,6 +15,7 @@ home:
   services:
     - backups
     - sure
+    - donetick
     - foundryvtt
     - jellyfin
     - transmission
