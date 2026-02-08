@@ -6,11 +6,6 @@ database:
   type: "sqlite"
   migration: true
 
-jwt:
-  secret: "placeholder"
-  session_time: 168h
-  max_refresh: 1440h
-
 server:
   port: 2021
   read_timeout: 10s
@@ -48,3 +43,19 @@ realtime:
   enable_stats: true
   allowed_origins:
     - "*"
+
+# Sections required for Viper env var overrides to work
+jwt:
+  secret: "placeholder"
+  session_time: 168h
+  max_refresh: 1440h
+
+storage:
+  max_user_storage: 104857600
+  max_file_size: 10485760
+  bucket_name: ""
+  region: ""
+  base_path: ""
+  access_key: ""
+  secret_key: ""
+  endpoint: ""

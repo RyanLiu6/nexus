@@ -228,6 +228,20 @@ sure_openai_model: "ryanliu6/ena:latest"
 # Generate with: openssl rand -base64 32
 donetick_jwt_secret: "CHANGE_ME"
 
+# Donetick R2 Storage (populated from Terraform outputs)
+# TERRAFORM-MANAGED: When deploying with Terraform (default), these values are
+# automatically provisioned and passed via extra-vars. Manual configuration is
+# only needed when using --skip-dns or managing R2 buckets outside Terraform.
+#
+# To use vault values instead of Terraform:
+#   1. Deploy with --skip-dns flag
+#   2. Set the values below manually
+# Endpoint: https://<account_id>.r2.cloudflarestorage.com
+donetick_r2_endpoint: "CHANGE_ME"
+donetick_r2_access_key: "CHANGE_ME"
+donetick_r2_secret_key: "CHANGE_ME"
+donetick_r2_bucket: "donetick-storage"
+
 # =============================================================================
 # Nextcloud - File Storage (Optional)
 # =============================================================================
@@ -261,7 +275,6 @@ foundry_s3_endpoint: "CHANGE_ME"
 foundry_s3_access_key: "CHANGE_ME"
 foundry_s3_secret_key: "CHANGE_ME"
 foundry_s3_bucket: "foundry-assets"
-
 
 # =============================================================================
 # Jellyfin - Media Server (Optional)
