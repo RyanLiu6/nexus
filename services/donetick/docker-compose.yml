@@ -1,0 +1,50 @@
+services:
+  donetick:
+    image: donetick/donetick:v0.1.64
+    container_name: donetick
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - nexus
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/donetick/data:/donetick-data
+      - ${NEXUS_ROOT_DIRECTORY}/services/donetick/config:/config
+    environment:
+      - DT_ENV=selfhosted
+      - DT_SQLITE_PATH=/donetick-data/donetick.db
+      - DT_JWT_SECRET=${DONETICK_JWT_SECRET}
+      - TZ=${TZ}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:2021",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.donetick.loadbalancer.server.port=2021"
+      - "traefik.http.routers.donetick.rule=Host(`donetick.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.donetick.entrypoints=https"
+      - "traefik.http.routers.donetick.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.donetick.tls=true"
+      - "traefik.http.routers.donetick.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true

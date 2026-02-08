@@ -1,6 +1,6 @@
 name: vaultwarden
 description: Bitwarden-compatible password manager
-category: core
+category: apps
 icon: si-bitwarden
 display_name: Bitwarden
 subdomain: vault

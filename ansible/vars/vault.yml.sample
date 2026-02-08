@@ -23,7 +23,6 @@
 #
 # =============================================================================
 
-
 # #############################################################################
 #                           CORE CONFIGURATION
 #                    (Required for all deployments)
@@ -55,7 +54,6 @@ tz: "America/Vancouver"
 # Leave as 1000 for most single-user systems
 puid: 1000
 pgid: 1000
-
 
 # =============================================================================
 # Cloudflare - DNS, Tunnel, and Gateway (Zero Trust)
@@ -90,7 +88,6 @@ tunnel_secret: "CHANGE_ME"
 # Leave empty to skip split DNS (only use Gateway for ad-blocking)
 tailscale_server_ip: ""
 
-
 # #############################################################################
 #                           CORE SERVICES
 #                    (traefik, auth, dashboard, monitoring)
@@ -101,7 +98,6 @@ tailscale_server_ip: ""
 # =============================================================================
 # Uses cloudflare_api_token for DNS challenge SSL certificates
 # No additional secrets required - uses ACME_EMAIL and CLOUDFLARE_DNS_API_TOKEN
-
 
 # =============================================================================
 # Tailscale Configuration
@@ -138,12 +134,10 @@ tailscale_users:
   finance:
     - "accountant@gmail.com"
 
-
 # =============================================================================
 # Dashboard (Homepage)
 # =============================================================================
 # No secrets required - uses NEXUS_DOMAIN and TZ
-
 
 # =============================================================================
 # Monitoring - Prometheus, Grafana, Alertmanager
@@ -151,7 +145,6 @@ tailscale_users:
 # Grafana admin credentials (for API access only - users login via Tailscale Header Auth)
 grafana_admin_user: "admin"
 grafana_admin_password: "CHANGE_ME"  # openssl rand -base64 24
-
 
 # =============================================================================
 # Vaultwarden - Password Manager (Optional but recommended)
@@ -168,7 +161,6 @@ vaultwarden_signups_allowed: "false"
 # Allow admins to invite users via admin panel
 vaultwarden_invitations_allowed: "true"
 
-
 # #############################################################################
 #                           OPTIONAL SERVICES
 #                     (Configure only what you use)
@@ -182,7 +174,6 @@ vaultwarden_invitations_allowed: "true"
 
 discord_webhook_url: ""
 
-
 # =============================================================================
 # Backups - Borgmatic (Optional but recommended)
 # =============================================================================
@@ -190,7 +181,6 @@ discord_webhook_url: ""
 # IMPORTANT: Store this securely! Without it, backups are unrecoverable
 # Generate with: openssl rand -base64 32
 borg_passphrase: "CHANGE_ME"
-
 
 # =============================================================================
 # Sure - Personal Finance (Optional)
@@ -231,6 +221,12 @@ sure_openai_model: "ryanliu6/ena:latest"
 # sure_openai_uri_base: "https://openrouter.ai/api/v1"
 # sure_openai_model: "deepseek/deepseek-chat"
 
+# =============================================================================
+# Donetick - Task & Chore Management (Optional)
+# =============================================================================
+# JWT secret for session tokens
+# Generate with: openssl rand -base64 32
+donetick_jwt_secret: "CHANGE_ME"
 
 # =============================================================================
 # Nextcloud - File Storage (Optional)
@@ -240,7 +236,6 @@ mysql_user: "nextcloud"
 mysql_password: "CHANGE_ME"  # openssl rand -base64 32
 mysql_database: "nextcloud"
 mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
-
 
 # =============================================================================
 # FoundryVTT - Virtual Tabletop (Optional)
@@ -274,20 +269,17 @@ foundry_s3_bucket: "foundry-assets"
 # No secrets required - uses NEXUS_DOMAIN and TZ
 # Media paths configured via data_directory
 
-
 # =============================================================================
 # Plex - Media Server (Optional)
 # =============================================================================
 # No secrets required - uses NEXUS_DOMAIN and TZ
 # Claim token obtained via plex.tv/claim during setup
 
-
 # =============================================================================
 # Transmission - Torrent Client (Optional)
 # =============================================================================
 # No secrets required - protected by Tailscale Access
 # Uses NEXUS_DOMAIN and TZ
-
 
 # #############################################################################
 #                           ENVIRONMENT VARIABLE MAPPING
@@ -324,5 +316,6 @@ foundry_s3_bucket: "foundry-assets"
 # vaultwarden_admin_token    -> VAULTWARDEN_ADMIN_TOKEN
 # vaultwarden_signups_allowed -> VAULTWARDEN_SIGNUPS_ALLOWED
 # vaultwarden_invitations_allowed -> VAULTWARDEN_INVITATIONS_ALLOWED
+# donetick_jwt_secret        -> DONETICK_JWT_SECRET
 # puid                       -> PUID
 # pgid                       -> PGID

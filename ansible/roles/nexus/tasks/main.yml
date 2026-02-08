@@ -122,6 +122,8 @@
     VAULTWARDEN_ADMIN_TOKEN: "{{ vaultwarden_admin_token | default('') }}"
     VAULTWARDEN_SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed | default('false') }}"
     VAULTWARDEN_INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed | default('true') }}"
+    # Donetick
+    DONETICK_JWT_SECRET: "{{ donetick_jwt_secret | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"
