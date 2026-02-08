@@ -1,8 +1,16 @@
-# NextCloud <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Nextcloud_Logo.svg" width="32">
+# Nextcloud <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Nextcloud_Logo.svg" width="32">
 
-[NextCloud](https://nextcloud.com/) is an open-source file storage and collaboration platform.
+[Nextcloud](https://nextcloud.com/) is an open-source file storage and collaboration platform.
 
 Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxserver/nextcloud).
+
+## Features
+
+- **File Storage** - Sync and share files across devices
+- **Collaboration** - Edit documents, manage calendars and contacts
+- **Photos** - Automatic photo upload and organization
+- **Extensions** - Huge library of apps (Notes, Deck, Talk, etc.)
+- **Privacy** - Self-hosted, you own your data
 
 ## Setup
 
@@ -20,22 +28,34 @@ Docker Image is from Linuxserver, found [here](https://hub.docker.com/r/linuxser
    docker compose up -d
    ```
 
-3. Complete the web setup wizard on first access.
+3. **Complete the web setup wizard** on first access.
+
+## Access
+
+- **URL:** `https://nextcloud.${NEXUS_DOMAIN}`
+- **Auth:** Tailscale + tailscale-access (plus internal Nextcloud auth)
+
+## Data Storage
+
+Nextcloud data is stored in `${NEXUS_DATA_DIRECTORY}/nextcloud`:
+
+| Path | Contents |
+|------|----------|
+| `config/` | Nextcloud configuration files |
+| `data/` | User files and data |
+| `db/` | MariaDB database files |
 
 ## Backups
+
+Ensure the entire data directory is included in your backup strategy.
 
 ```bash
 # Backup database
 docker exec nextcloud_db mysqldump -u root --password=<root password> nextcloud > backup.sql
 
-# Restore database
-cat backup.sql | docker exec -i nextcloud_db mysql -u root --password=<root password> nextcloud
-
 # Backup data
-tar -czf nextcloud-data.tar.gz $DATA_DIRECTORY/nextcloud
+tar -czf nextcloud-backup-$(date +%F).tar.gz ${NEXUS_DATA_DIRECTORY}/nextcloud
 ```
-
----
 
 ## Troubleshooting
 
@@ -75,18 +95,15 @@ docker exec -it nextcloud php /var/www/html/occ config:system:set trusted_domain
 2. Verify storage permissions
 3. Check disk space: `df -h`
 
----
+## Operations
 
-## Useful OCC Commands
+### Useful OCC Commands
 
 ```bash
 # Check status
 docker exec -it nextcloud php /var/www/html/occ status
 
-# Add trusted domain
-docker exec -it nextcloud php /var/www/html/occ config:system:set trusted_domains 1 --value=yourdomain.com
-
-# Scan files
+# Scan files (re-index)
 docker exec -it nextcloud php /var/www/html/occ files:scan --all
 
 # Add missing database indices
@@ -97,26 +114,18 @@ docker exec -it nextcloud php /var/www/html/occ upgrade
 
 # Cleanup locks
 docker exec -it nextcloud php /var/www/html/occ files:cleanup
-
-# Background jobs
-docker exec -it nextcloud php /var/www/html/occ background:cron
 ```
 
----
-
-## Performance Tips
+### Performance Tips
 
 1. **Add Redis** for caching (not included by default)
 2. **Increase PHP memory** if needed
 3. **Set up cron** for background jobs
 4. **Add indices**: Run `occ db:add-missing-indices` periodically
 
----
+## Resources
 
-## Security
-
-1. Force HTTPS via Traefik
-2. Use strong database passwords
-3. Enable 2FA in Nextcloud
-4. Keep Nextcloud updated
-5. Review access logs regularly
+- [Official Website](https://nextcloud.com/)
+- [Admin Manual](https://docs.nextcloud.com/server/latest/admin_manual/)
+- [User Manual](https://docs.nextcloud.com/server/latest/user_manual/)
+- [Docker Hub](https://hub.docker.com/r/linuxserver/nextcloud)

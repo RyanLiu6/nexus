@@ -1,6 +1,14 @@
-# Dashboard (Homepage)
+# Dashboard (Homepage) <img src="https://gethomepage.dev/images/icon.png" width="24">
 
 A modern, fully static, fast, secure, fully proxied, highly customizable application dashboard using [Homepage](https://gethomepage.dev/).
+
+## Features
+
+- **Centralized Hub** - Access all your self-hosted services
+- **Live Widgets** - Real-time status for Docker, Traefik, Jellyfin, and more
+- **Fast & Static** - No database, pure YAML configuration
+- **Secure** - Full integration with Tailscale authentication
+- **Customizable** - Themes, layouts, and custom CSS/JS
 
 ## Setup
 
@@ -15,93 +23,33 @@ A modern, fully static, fast, secure, fully proxied, highly customizable applica
    docker compose up -d
    ```
 
-## Configuration Files
+## Access
 
-| File | Purpose |
-|------|---------|
+- **URL:** `https://dashboard.${NEXUS_DOMAIN}` (or just `https://${NEXUS_DOMAIN}`)
+- **Auth:** Tailscale + tailscale-access
+
+## Data Storage
+
+Dashboard configuration relies on YAML files in `${NEXUS_DATA_DIRECTORY}/Dashboard`:
+
+| Path | Contents |
+|------|----------|
 | `config/services.yaml` | Service cards with icons and links |
 | `config/bookmarks.yaml` | Quick link bookmarks |
 | `config/settings.yaml` | Theme, title, background |
 | `config/widgets.yaml` | Status and info widgets |
+| `config/icons/` | Custom icons |
+| `images/` | Background images |
 
----
+## Backups
 
-## Troubleshooting
+Back up the `config/` directory to save your layout and settings.
 
-### Widget Not Loading
-
-**Symptoms:** Widget shows loading spinner or error
-
-**Solutions:**
-1. Check dashboard container:
-   ```bash
-   docker ps | grep dashboard
-   docker compose logs dashboard --tail=50
-   ```
-
-2. Verify service URL in `services.yaml`
-
-3. Test service connectivity:
-   ```bash
-   curl -k https://service.yourdomain.com
-   ```
-
-4. Check browser console for JavaScript errors (F12)
-
-### Service Icons Missing
-
-**Symptoms:** Generic icon displayed
-
-**Solutions:**
-1. Check icon files exist:
-   ```bash
-   ls config/icons/
-   ```
-
-2. Verify icon path in `services.yaml`:
-   ```yaml
-   - Service Name:
-       icon: service-name.png  # Must exist in icons folder
-   ```
-
-3. Use built-in icons from [Dashboard Icons](https://github.com/walkxcode/dashboard-icons)
-
-### Configuration Not Updating
-
-**Symptoms:** Changes not reflected
-
-**Solutions:**
-1. Restart dashboard:
-   ```bash
-   docker compose restart dashboard
-   ```
-
-2. Check file permissions:
-   ```bash
-   ls -la config/
-   ```
-
-3. Clear browser cache (Ctrl+Shift+R / Cmd+Shift+R)
-
-4. Verify YAML syntax:
-   ```bash
-   python -c "import yaml; yaml.safe_load(open('config/services.yaml'))"
-   ```
-
----
-
-## Customization
-
-### Settings Example
-
-```yaml
-# config/settings.yaml
-title: My Homelab
-background: images/background.jpg
-layout:
-  style: columns
-  columns: 3
+```bash
+tar -czf dashboard-backup-$(date +%F).tar.gz -C ${NEXUS_DATA_DIRECTORY}/Dashboard config
 ```
+
+## Configuration
 
 ### Services Example
 
@@ -120,19 +68,50 @@ layout:
     - Grafana:
         href: https://grafana.yourdomain.com
         icon: grafana.png
-    - Traefik:
-        href: https://traefik.yourdomain.com
-        icon: traefik.png
 ```
 
----
+### Settings Example
 
-## Common Issues
+```yaml
+# config/settings.yaml
+title: My Homelab
+background: images/background.jpg
+layout:
+  style: columns
+  columns: 3
+```
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Widget errors | Service offline | Start service container |
-| No icons | Missing files | Add icons to config/icons/ |
-| Not updating | Need restart | Restart dashboard container |
-| CORS errors | Wrong origin | Check service CORS config |
-| Slow loading | Network issue | Check proxy network |
+## Troubleshooting
+
+### Widget Not Loading
+
+**Symptoms:** Widget shows loading spinner or error
+
+**Solutions:**
+1. Check dashboard container logs: `docker logs dashboard`
+2. Verify service URL in `services.yaml` is reachable from inside the container
+3. Check browser console for JavaScript errors
+
+### Service Icons Missing
+
+**Symptoms:** Generic icon displayed
+
+**Solutions:**
+1. Check icon files exist in `config/icons/`
+2. Verify icon filename in `services.yaml` matches exactly
+3. Use built-in icons from [Dashboard Icons](https://github.com/walkxcode/dashboard-icons)
+
+### Configuration Not Updating
+
+**Symptoms:** Changes not reflected
+
+**Solutions:**
+1. Restart dashboard: `docker compose restart dashboard`
+2. Clear browser cache
+3. Verify YAML syntax
+
+## Resources
+
+- [Official Documentation](https://gethomepage.dev/)
+- [Icon Repository](https://github.com/walkxcode/dashboard-icons)
+- [Widget List](https://gethomepage.dev/latest/widgets/)
