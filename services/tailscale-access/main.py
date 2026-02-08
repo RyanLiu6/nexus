@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import socket
+from typing import Optional
 
 import yaml
 from flask import Flask, Response, render_template, request
@@ -29,7 +30,7 @@ TRUSTED_NETWORKS = [
 ]
 
 
-def is_trusted_ip(ip_str):
+def is_trusted_ip(ip_str: str) -> bool:
     """Check if an IP address is from a trusted local network.
 
     Args:
@@ -45,7 +46,7 @@ def is_trusted_ip(ip_str):
         return False
 
 
-def load_rules():
+def load_rules() -> dict:
     """Load access rules from the configured YAML file.
 
     Returns:
@@ -54,13 +55,14 @@ def load_rules():
     """
     try:
         with open(ACCESS_RULES_PATH) as f:
-            return yaml.safe_load(f)
+            result = yaml.safe_load(f)
+            return result if isinstance(result, dict) else {}
     except Exception as e:
         logger.error(f"Error loading rules: {e}")
         return {}
 
 
-def get_service_from_host(host):
+def get_service_from_host(host: Optional[str]) -> str:
     """Extract the service name from the hostname.
 
     Args:
@@ -77,7 +79,7 @@ def get_service_from_host(host):
 
 
 class UnixSocketConnection(http.client.HTTPConnection):
-    def __init__(self, socket_path):
+    def __init__(self, socket_path: str) -> None:
         super().__init__("localhost")
         self.socket_path = socket_path
 
@@ -86,7 +88,7 @@ class UnixSocketConnection(http.client.HTTPConnection):
         self.sock.connect(self.socket_path)
 
 
-def get_tailscale_user(ip):
+def get_tailscale_user(ip: str) -> Optional[dict]:
     """Query the local Tailscale API to identify the user behind an IP address.
 
     Args:
@@ -113,16 +115,17 @@ def get_tailscale_user(ip):
         # The API returns a structure like:
         # {
         #   "Node": { ... },
-        #   "UserProfile": { "LoginName": "user@gmail.com", ... },
+        #   "UserProfile": { "LoginName": "user@example.com", ... },
         #   "CapMap": { ... }
         # }
-        return data.get("UserProfile")
+        user_profile = data.get("UserProfile")
+        return user_profile if isinstance(user_profile, dict) else None
     except Exception as e:
         logger.error(f"Error querying Tailscale: {e}")
         return None
 
 
-def get_user_groups(email, rules):
+def get_user_groups(email: str, rules: dict) -> list[str]:
     """Determine which groups a user belongs to based on their email.
 
     Args:
@@ -143,7 +146,7 @@ def get_user_groups(email, rules):
 
 
 @app.route("/auth")
-def auth():
+def auth() -> Response | tuple[str, int]:
     """Handle authentication requests from Traefik ForwardAuth.
 
     1. Identifies the target service from the Host header.
@@ -189,6 +192,13 @@ def auth():
         ), 403
 
     user_email = user_profile.get("LoginName")
+    if not user_email:
+        return render_template(
+            "403.html",
+            reason="User email not found in profile",
+            service=service,
+            ip=client_ip,
+        ), 403
 
     # 3. Check Access
     rules = load_rules()
@@ -230,7 +240,7 @@ def auth():
 
 
 @app.route("/health")
-def health():
+def health() -> tuple[str, int]:
     """Health check endpoint for container orchestration.
 
     Returns:

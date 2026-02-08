@@ -13,11 +13,6 @@ VAULTWARDEN_COMPOSE_PATH = VAULTWARDEN_SERVICE_PATH / "docker-compose.yml"
 
 @pytest.fixture
 def compose_config() -> dict[str, Any]:
-    """Load and parse the Vaultwarden docker-compose.yml file.
-
-    Returns:
-        Parsed docker-compose.yml as a dictionary.
-    """
     with open(VAULTWARDEN_COMPOSE_PATH) as f:
         return dict(yaml.safe_load(f))
 

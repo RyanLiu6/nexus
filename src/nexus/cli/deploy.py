@@ -10,10 +10,10 @@ import click
 import yaml
 
 from nexus.config import (
-    ALL_SERVICES,
     PRESETS,
     TERRAFORM_PATH,
     VAULT_PATH,
+    get_all_services,
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
@@ -328,7 +328,7 @@ def main(
 
     # Determine services
     if all:
-        services_list = ALL_SERVICES
+        services_list = get_all_services()
     elif preset:
         services_list = resolve_preset(preset)
     elif services:

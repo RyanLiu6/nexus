@@ -1,5 +1,3 @@
-"""Tests for service discovery and manifest parsing."""
-
 from pathlib import Path
 
 from nexus.services import (
@@ -115,21 +113,18 @@ access:
 
 
 class TestDiscoverServices:
-    def test_discover_services_returns_dict(self) -> None:
-        """Test that discover_services returns a dictionary."""
+    def test_discover_services(self) -> None:
         services = discover_services()
         assert isinstance(services, dict)
         assert len(services) > 0
 
     def test_discover_services_includes_known_services(self) -> None:
-        """Test expected services are discovered."""
         services = discover_services()
         assert "traefik" in services
         assert "dashboard" in services
         assert "monitoring" in services
 
     def test_get_all_service_names(self) -> None:
-        """Test that get_all_service_names returns sorted list."""
         names = get_all_service_names()
         assert isinstance(names, list)
         assert names == sorted(names)

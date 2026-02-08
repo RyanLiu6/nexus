@@ -4,7 +4,7 @@ Auto-generates tailscale/access-rules.yml from service.yml manifests.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
@@ -14,8 +14,8 @@ from nexus.utils import read_vault
 
 
 def generate_access_rules(
-    services: list[str] | None = None,
-    output_path: Path | None = None,
+    services: Optional[list[str]] = None,
+    output_path: Optional[Path] = None,
 ) -> dict[str, Any]:
     """Generate access rules from service manifests.
 
@@ -92,7 +92,7 @@ def generate_access_rules(
     return rules
 
 
-def sync_access_rules(services: list[str] | None = None) -> Path:
+def sync_access_rules(services: Optional[list[str]] = None) -> Path:
     """Sync access rules file with current service manifests.
 
     Args:

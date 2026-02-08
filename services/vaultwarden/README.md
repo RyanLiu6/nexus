@@ -4,8 +4,8 @@ Vaultwarden is a lightweight, self-hosted implementation of the Bitwarden passwo
 
 ## Access
 
-- URL: `https://vault.ryanliu6.xyz` (via Tailscale)
-- Admin Panel: `https://vault.ryanliu6.xyz/admin`
+- URL: `https://vault.example.com` (via Tailscale)
+- Admin Panel: `https://vault.example.com/admin`
 
 ## Setup
 
@@ -92,7 +92,7 @@ Each layer provides independent protection. Compromise of one layer doesn't comp
 
 ## Admin Panel
 
-Access the admin panel at `https://vault.ryanliu6.xyz/admin` using the admin token password (not the Argon2 hash).
+Access the admin panel at `https://vault.example.com/admin` using the admin token password (not the Argon2 hash).
 
 From the admin panel you can:
 - View registered users

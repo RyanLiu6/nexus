@@ -23,7 +23,18 @@ logger = logging.getLogger(__name__)
 
 
 class TailscaleExporter:
-    """Prometheus exporter for Tailscale API key expiration monitoring."""
+    """Prometheus exporter for Tailscale API key expiration monitoring.
+
+    Queries the Tailscale API periodically and exposes key expiration
+    times as Prometheus metrics for alerting on upcoming expirations.
+
+    Attributes:
+        api_key: Tailscale API key for authentication.
+        tailnet: Tailnet name for API queries (e.g., 'tail1234').
+        scrape_interval: Seconds between API queries.
+        port: HTTP port for Prometheus metrics endpoint.
+        running: Whether the exporter main loop is active.
+    """
 
     def __init__(
         self,

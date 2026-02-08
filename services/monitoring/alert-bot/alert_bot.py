@@ -24,7 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 def create_embed(alert: dict) -> Embed:
-    """Create a Discord embed from an Alertmanager alert."""
+    """Create a Discord embed from an Alertmanager alert.
+
+    Args:
+        alert: Alertmanager alert dictionary containing status, labels,
+            and annotations.
+
+    Returns:
+        Discord Embed object with alert details, color-coded by status.
+    """
     status = alert.get("status", "firing")
     labels = alert.get("labels", {})
     annotations = alert.get("annotations", {})
@@ -60,7 +68,11 @@ def create_embed(alert: dict) -> Embed:
 
 
 async def send_to_discord(alerts: list[dict]) -> None:
-    """Send alerts to Discord webhook."""
+    """Send alerts to Discord via webhook.
+
+    Args:
+        alerts: List of Alertmanager alert dictionaries to forward.
+    """
     if not DISCORD_WEBHOOK_URL:
         logger.warning("DISCORD_WEBHOOK_URL not configured, skipping")
         return
@@ -80,7 +92,14 @@ async def send_to_discord(alerts: list[dict]) -> None:
 
 
 async def handle_webhook(request: web.Request) -> web.Response:
-    """Handle incoming Alertmanager webhook."""
+    """Handle incoming Alertmanager webhook.
+
+    Args:
+        request: aiohttp request containing the Alertmanager JSON payload.
+
+    Returns:
+        HTTP 200 on success, 400 for invalid JSON, 500 on internal errors.
+    """
     try:
         data = await request.json()
         logger.debug(f"Received webhook: {json.dumps(data, indent=2)}")
@@ -100,12 +119,23 @@ async def handle_webhook(request: web.Request) -> web.Response:
 
 
 async def handle_health(request: web.Request) -> web.Response:
-    """Health check endpoint."""
+    """Health check endpoint.
+
+    Args:
+        request: aiohttp request (unused).
+
+    Returns:
+        HTTP 200 with "OK" body.
+    """
     return web.Response(text="OK", status=200)
 
 
 async def main() -> None:
-    """Start the webhook server."""
+    """Start the webhook server.
+
+    Configures routes for /webhook and /health, then binds to the port
+    specified by the PORT environment variable (default 8080).
+    """
     app = web.Application()
     app.router.add_post("/webhook", handle_webhook)
     app.router.add_get("/health", handle_health)

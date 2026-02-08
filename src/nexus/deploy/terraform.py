@@ -5,6 +5,7 @@ import subprocess
 from typing import Any
 
 from nexus.config import TERRAFORM_PATH
+from nexus.services import discover_services
 from nexus.utils import read_vault
 
 
@@ -106,19 +107,16 @@ def run_terraform(
         logging.debug("Could not read Tailscale configuration from vault")
         pass
 
-    # Build subdomains from services
+    # Build subdomains from service manifests
     subdomains = []
-    service_map = {
-        "dashboard": ["nexus"],
-        "monitoring": ["grafana", "prometheus", "alertmanager"],
-        "foundryvtt": [],  # Handled by tunnel CNAME
-        "tailscale-access": [],  # Internal only
-        "vaultwarden": ["vault"],  # Uses 'vault' subdomain
-    }
+    all_manifests = discover_services()
 
     for svc in services:
-        if svc in service_map:
-            subdomains.extend(service_map[svc])
+        if svc in all_manifests:
+            manifest = all_manifests[svc]
+            if manifest.is_public:
+                continue
+            subdomains.extend(manifest.subdomains)
         else:
             subdomains.append(svc)
 

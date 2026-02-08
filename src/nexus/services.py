@@ -15,8 +15,6 @@ from nexus.config import SERVICES_PATH
 
 @dataclass
 class ServiceManifest:
-    """Parsed service manifest from service.yml."""
-
     name: str
     description: str
     category: str
@@ -67,7 +65,11 @@ class ServiceManifest:
         )
 
     def has_web_access(self) -> bool:
-        """Check if service has web access (subdomain or is public)."""
+        """Check if service has web access configuration.
+
+        Returns:
+            True if the service has subdomains or is public, False otherwise.
+        """
         return bool(self.subdomains) or self.is_public
 
 

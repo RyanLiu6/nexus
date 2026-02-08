@@ -7,14 +7,14 @@ from nexus.cli.deploy import _check_dependencies, _generate_configs, main
 
 
 class TestCheckDependencies:
-    def test_check_dependencies(self):
+    def test_check_dependencies(self) -> None:
         with patch("shutil.which") as mock_which:
             mock_which.return_value = "/usr/bin/tool"
             missing = _check_dependencies()
             assert missing == []
             assert mock_which.call_count == 4
 
-    def test_check_dependencies_missing_docker(self):
+    def test_check_dependencies_missing_docker(self) -> None:
         def side_effect(cmd):
             if cmd == "docker":
                 return None
@@ -24,7 +24,7 @@ class TestCheckDependencies:
             missing = _check_dependencies()
             assert "docker" in missing
 
-    def test_check_dependencies_missing_terraform(self):
+    def test_check_dependencies_missing_terraform(self) -> None:
         def side_effect(cmd):
             if cmd == "terraform":
                 return None
@@ -34,7 +34,7 @@ class TestCheckDependencies:
             missing = _check_dependencies()
             assert "terraform" in missing
 
-    def test_check_dependencies_missing_ansible_vault(self):
+    def test_check_dependencies_missing_ansible_vault(self) -> None:
         def side_effect(cmd):
             if cmd == "ansible-vault":
                 return None
@@ -111,7 +111,7 @@ class TestGenerateConfigs:
 
 
 class TestMain:
-    def test_main(self):
+    def test_main(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -133,7 +133,7 @@ class TestMain:
             mock_tf.assert_called_once()
             mock_ansible.assert_called_once()
 
-    def test_main_with_all_services(self):
+    def test_main_with_all_services(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -151,7 +151,7 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
 
-    def test_main_default_preset(self):
+    def test_main_default_preset(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -169,7 +169,7 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
 
-    def test_main_skip_dns(self):
+    def test_main_skip_dns(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -191,7 +191,7 @@ class TestMain:
             assert result.exit_code == 0, result.output
             mock_tf.assert_not_called()
 
-    def test_main_skip_ansible(self):
+    def test_main_skip_ansible(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -220,7 +220,7 @@ class TestMain:
             assert result.exit_code == 0, result.output
             mock_ansible.assert_not_called()
 
-    def test_main_dry_run(self):
+    def test_main_dry_run(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -241,7 +241,7 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
 
-    def test_main_with_specific_services(self):
+    def test_main_with_specific_services(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -261,7 +261,7 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
 
-    def test_main_missing_vault_exits(self):
+    def test_main_missing_vault_exits(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
@@ -277,7 +277,7 @@ class TestMain:
 
             assert result.exit_code == 1
 
-    def test_main_missing_tools_exits(self):
+    def test_main_missing_tools_exits(self) -> None:
         with (
             patch(
                 "nexus.cli.deploy._check_dependencies",
@@ -290,7 +290,7 @@ class TestMain:
 
             assert result.exit_code == 1
 
-    def test_main_creates_network_if_missing(self):
+    def test_main_creates_network_if_missing(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=False),
@@ -312,7 +312,7 @@ class TestMain:
             assert result.exit_code == 0, result.output
             mock_create.assert_called_once()
 
-    def test_main_retrieves_r2_credentials_for_foundryvtt(self):
+    def test_main_retrieves_r2_credentials_for_foundryvtt(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
@@ -344,7 +344,7 @@ class TestMain:
             _args, kwargs = mock_ansible.call_args
             assert kwargs["r2_credentials"] == mock_r2.return_value
 
-    def test_main_skips_r2_credentials_when_skip_dns(self):
+    def test_main_skips_r2_credentials_when_skip_dns(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
