@@ -2,10 +2,14 @@
 
 Vaultwarden is a lightweight, self-hosted implementation of the Bitwarden password manager. It's fully compatible with Bitwarden clients (browser extensions, mobile apps, desktop apps).
 
-## Access
+## Features
 
-- URL: `https://vault.example.com` (via Tailscale)
-- Admin Panel: `https://vault.example.com/admin`
+- **Password Management** - Store logins, credit cards, identities, and secure notes
+- **Cross-Platform Access** - Web vault, extensions, mobile apps, and desktop apps
+- **Organization Support** - Share items with family or team members
+- **Two-Factor Authentication** - TOTP, Duo, YubiKey (FIDO2)
+- **Send** - Securely share files and text
+- **Lightweight** - Written in Rust, optimized for self-hosting
 
 ## Setup
 
@@ -52,61 +56,77 @@ nexus deploy vaultwarden
 nexus deploy core
 ```
 
+## Access
+
+- **URL:** `https://vault.${NEXUS_DOMAIN}` (via Tailscale)
+- **Admin Panel:** `https://vault.${NEXUS_DOMAIN}/admin`
+- **Auth:** Tailscale for network access + Bitwarden account
+
+## Data Storage
+
+Vaultwarden stores data in the `${NEXUS_DATA_DIRECTORY}/Config/vaultwarden` directory:
+
+| Path | Contents |
+|------|----------|
+| `db.sqlite3` | Main database |
+| `attachments/` | File attachments |
+| `icon_cache/` | Website icons |
+| `sends/` | Bitwarden Send files |
+| `config.json` | Runtime configuration |
+
+## Backups
+
+Ensure the entire data directory is included in your backup strategy.
+
+```bash
+# Manual backup (stops container to ensure DB integrity)
+docker stop vaultwarden
+cp -r ${NEXUS_DATA_DIRECTORY}/Config/vaultwarden ${NEXUS_DATA_DIRECTORY}/Backups/vaultwarden-$(date +%F)
+docker start vaultwarden
+```
+
 ## Configuration
 
 - **Signups**: Disabled by default for security. Use invitations instead.
 - **Invitations**: Enabled by default. Admins can invite users via the admin panel.
-- **Admin Token**: Required to access the admin panel at `/admin`.
 - **WebSocket**: Enabled for real-time sync across devices.
 
-## Security Requirements
+### Security Requirements
 
-### Two-Factor Authentication (2FA) - MANDATORY
+All accounts **MUST enable 2FA**. Recommended methods:
+1. **FIDO2/WebAuthn** (YubiKey) - Most secure
+2. **TOTP** (Authenticator apps) - Strongly recommended
 
-All accounts MUST enable 2FA. Recommended methods in order of preference:
+**Do not rely solely on master passwords.**
 
-1. **FIDO2/WebAuthn** (Hardware keys like YubiKey) - Most secure
-2. **TOTP** (Authenticator apps like Authy, 1Password) - Strongly recommended
-3. **Duo** (If already part of your security infrastructure)
+### Admin Panel
 
-**Do not rely solely on master passwords.** Even with a strong master password, 2FA is required for defense in depth.
+Access at `/admin` using the plaintext admin token.
+- Manage users and organizations
+- View diagnostics
+- Configure global settings
 
-### Admin Panel Security
+## Troubleshooting
 
-The admin token must be strong since it provides full control over the instance. The setup instructions above use `openssl rand -base64 24` which generates a 24-byte random password (~32 characters).
+### Clients Can't Connect
 
-### Defense in Depth
+**Symptoms:** "Connection failure" or sync errors
 
-Vaultwarden security operates in multiple layers:
+**Solutions:**
+1. Verify SSL certificate is valid (required for crypto operations)
+2. Check Websocket connection for live sync
+3. Ensure client URL is `https://`
 
-| Layer | Protection | Purpose |
-|-------|-----------|---------|
-| **Network** | Tailscale-only access | Prevents unauthorized network access |
-| **Container** | `no-new-privileges` | Prevents privilege escalation |
-| **Application** | Rate limiting | Mitigates brute-force attacks |
-| **Application** | Password hints disabled | Prevents information leakage |
-| **Authentication** | Master password + 2FA | Multi-factor user authentication |
-| **Data** | AES-256 encryption | Protects data at rest |
+### Admin Panel Locked
 
-Each layer provides independent protection. Compromise of one layer doesn't compromise the entire system.
+**Symptoms:** "Invalid token"
 
-## Admin Panel
+**Solutions:**
+1. Verify `vaultwarden_admin_token` in `vault.yml` is the Argon2 hash, not plaintext
+2. Check logs: `docker logs vaultwarden`
 
-Access the admin panel at `https://vault.example.com/admin` using the admin token password (not the Argon2 hash).
+## Resources
 
-From the admin panel you can:
-- View registered users
-- Delete users
-- Invite new users
-- Disable user accounts
-- View diagnostics and logs
-
-## Backup
-
-Vaultwarden data is stored in `${NEXUS_DATA_DIRECTORY}/Config/vaultwarden`. This includes:
-- SQLite database (`db.sqlite3`)
-- User attachments
-- Icons cache
-- Configuration
-
-Ensure this directory is included in your backup strategy.
+- [GitHub Repository](https://github.com/dani-garcia/vaultwarden)
+- [Official Documentation](https://github.com/dani-garcia/vaultwarden/wiki)
+- [Bitwarden Help](https://bitwarden.com/help/)

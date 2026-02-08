@@ -4,6 +4,14 @@
 
 Docker Image is from felddy, found [here](https://hub.docker.com/r/felddy/foundryvtt).
 
+## Features
+
+- **Self-Hosted** - You own your data, no subscription fees
+- **Modern Web Tech** - HTML5, CSS3, WebGL, and WebSockets
+- **System Agnostic** - Support for D&D, Pathfinder, and hundreds more
+- **Extensible** - Huge library of community modules and systems
+- **Direct Connection** - Players connect directly to your server (via Cloudflare Tunnel)
+
 ## Setup
 
 1. **Create an `.env` file:**
@@ -46,11 +54,47 @@ Edit `${DATA_DIRECTORY}/Foundry/data/Config/options.json`:
 "proxySSL": true
 ```
 
+## Access
+
+FoundryVTT has two access methods:
+
+### Public Access (Players)
+- **URL:** `https://${PLAY_DOMAIN}`
+- **Auth:** Application-level (Foundry User/Pass)
+- **Route:** Cloudflare Tunnel (bypasses Tailscale)
+
+### Private Access (Admin)
+- **URL:** `https://${PLAY_DOMAIN}` (via Tailscale subnet or same URL)
+- **Auth:** Application-level + Tailscale (if accessed internally)
+
+## Data Storage
+
+FoundryVTT stores data in `${DATA_DIRECTORY}/Foundry`:
+
+| Path | Contents |
+|------|----------|
+| `data/Data/` | Worlds, systems, modules, and uploaded assets |
+| `data/Config/` | Server configuration and options |
+| `data/Logs/` | Debug logs |
+
 ## Backups
 
+### Automated Backups
+The `backups` service (Borgmatic) handles this automatically if configured.
+
+### Manual Backup
 ```bash
-# Weekly backup
-0 0 * * 4 tar -cf $DATA_DIRECTORY/Backups/Foundry/$(date +%F).tar $DATA_DIRECTORY/Foundry/data
+# Backup
+docker stop foundryvtt
+tar -czf foundry-backup-$(date +%F).tar.gz ${DATA_DIRECTORY}/Foundry/data
+docker start foundryvtt
+```
+
+### Restore
+```bash
+docker stop foundryvtt
+tar -xzf foundry-backup-YYYY-MM-DD.tar.gz -C /
+docker start foundryvtt
 ```
 
 ---
@@ -79,21 +123,7 @@ Edit `${DATA_DIRECTORY}/Foundry/data/Config/options.json`:
 
 ---
 
-## Player Access
 
-### Public Access (Recommended for Games)
-
-FoundryVTT is exposed publicly via Cloudflare Tunnel to allow players to connect without Tailscale.
-This route (`foundry.yourdomain.com`) bypasses Tailscale access controls but is protected by Foundry's built-in user authentication.
-
-Configured via `cloudflare-proto` middleware in `docker-compose.yml`.
-
-### Private Access (Admin)
-
-Admins can access via Tailscale, which routes through the `tailscale-access` middleware for extra security.
-This route uses the same domain but requires a valid Tailscale identity.
-
----
 
 ## Useful Commands
 
@@ -113,14 +143,9 @@ docker stats foundryvtt
 
 ---
 
-## Backup & Restore
+## Resources
 
-```bash
-# Backup
-cp -r $DATA_DIRECTORY/Foundry/data $BACKUP_DIR/foundry-$(date +%Y%m%d)
-
-# Restore
-docker stop foundryvtt
-cp -r $BACKUP_DIR/foundry-20250111/* $DATA_DIRECTORY/Foundry/data/
-docker start foundryvtt
-```
+- [Official Website](https://foundryvtt.com/)
+- [Knowledge Base](https://foundryvtt.com/kb/)
+- [Community Wiki](https://foundryvtt.wiki/)
+- [Docker Image Docs](https://hub.docker.com/r/felddy/foundryvtt)

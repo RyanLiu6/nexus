@@ -2,7 +2,14 @@
 
 [Sure](https://github.com/we-promise/sure) is a self-hosted personal finance and budgeting application. It's a community fork of the archived Maybe Finance project.
 
-Docker Image is from GitHub Container Registry, found [here](https://github.com/we-promise/sure/pkgs/container/sure).
+## Features
+
+- **Double-Entry Accounting** - Accurate financial tracking
+- **Investment Tracking** - Track stocks, crypto, and assets
+- **Automated Imports** - Sync via SimpleFIN
+- **AI Categorization** - Auto-categorize transactions using local (Ollama) or cloud LLMs
+- **Privacy Focused** - Self-hosted, your data stays with you
+- **Reporting** - Net worth, spending trends, and budget analysis
 
 ## Architecture
 
@@ -39,14 +46,24 @@ Sure consists of four services:
    docker compose up -d
    ```
 
-4. Access Sure at `https://${SURE_DOMAIN}`
+## Access
+
+- **URL:** `https://sure.${NEXUS_DOMAIN}`
+- **Auth:** Tailscale + tailscale-access
+
+## Data Storage
+
+Sure stores data in the `${SURE_DATA_DIR}` directory (default: `${NEXUS_DATA_DIRECTORY}/Sure`):
+
+| Path | Contents |
+|------|----------|
+| `postgres/` | PostgreSQL database files |
+| `storage/` | File uploads and attachments |
+| `redis/` | Redis cache data |
 
 ## Backups
 
-Sure stores data in three locations:
-- **Database**: PostgreSQL data at `${SURE_DATA_DIR}/postgres`
-- **Storage**: File uploads at `${SURE_DATA_DIR}/storage`
-- **Redis**: Cache data (can be regenerated)
+Ensure the data directory is included in your backup strategy.
 
 ```bash
 # Backup database
@@ -271,9 +288,7 @@ docker exec -it sure-db psql -U sure_user -d sure_production -c \
 
 ---
 
-## Notes
+## Resources
 
-- **AI Costs**: Set appropriate spend limits on your AI provider account
-- **Privacy**: Local AI (Ollama) keeps your data on your server; cloud AI sends transaction data to providers
-- **First Run**: On first startup, Sure will automatically run database migrations (may take a few minutes)
-- **Troubleshooting**: If database issues occur on initial setup, try removing the database volume: `docker volume rm nexus_sure_postgres`
+- [GitHub Repository](https://github.com/we-promise/sure)
+- [Official Website](https://sure.finance) (Note: Project is community maintained)
