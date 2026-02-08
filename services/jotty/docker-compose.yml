@@ -21,6 +21,8 @@ services:
     environment:
       - NODE_ENV=production
       - TZ=${TZ}
+      - NEXTAUTH_URL=https://jotty.${NEXUS_DOMAIN}
+      - NEXTAUTH_URL_INTERNAL=http://127.0.0.1:3000
     healthcheck:
       test:
         [
