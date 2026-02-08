@@ -15,12 +15,13 @@ from nexus.generate.dashboard import (
 
 class TestGetServiceDescription:
     def test_get_service_description(self) -> None:
-        assert get_service_description("traefik") == "Reverse proxy and SSL management"
-        assert get_service_description("dashboard") == "Homepage dashboard"
+        # Descriptions now come from service.yml manifests
+        assert get_service_description("traefik") == "Reverse proxy with automatic SSL"
+        assert get_service_description("dashboard") == "Service dashboard and homepage"
         assert get_service_description("sure-web") == "Finance and budgeting"
-        assert get_service_description("foundryvtt") == "Virtual Tabletop"
-        assert get_service_description("jellyfin") == "Media server"
-        assert get_service_description("transmission") == "Torrent client"
+        assert get_service_description("foundryvtt") == "Virtual tabletop for D&D"
+        assert get_service_description("jellyfin") == "Media server for movies and TV"
+        assert get_service_description("transmission") == "Torrent download client"
 
     def test_get_service_description_unknown(self) -> None:
         assert get_service_description("unknown") == ""
@@ -39,7 +40,7 @@ class TestGetServiceIcon:
         assert get_service_icon("alertmanager") == "si-prometheus"
 
     def test_get_service_icon_unknown(self) -> None:
-        assert get_service_icon("unknown") == "unknown.png"
+        assert get_service_icon("unknown") == "mdi-application"
 
 
 class TestCategorizeService:
@@ -52,9 +53,9 @@ class TestCategorizeService:
         assert categorize_service("plex") == "Media"
         assert categorize_service("jellyfin") == "Media"
         assert categorize_service("transmission") == "Media"
-        assert categorize_service("sure-web") == "Finance"
-        assert categorize_service("foundryvtt") == "Gaming"
-        assert categorize_service("nextcloud") == "Files"
+        assert categorize_service("sure-web") == "Apps"  # From sure service.yml
+        assert categorize_service("foundryvtt") == "Apps"  # From foundryvtt service.yml
+        assert categorize_service("nextcloud") == "Apps"  # From nextcloud service.yml
 
     def test_categorize_service_unknown(self) -> None:
         assert categorize_service("unknown") == "Other"
@@ -309,9 +310,10 @@ class TestGenerateDashboardConfig:
 
         result = generate_dashboard_config(["foundryvtt"], "my-domain.com")
 
-        gaming_category = next((item for item in result if "Gaming" in item), None)
-        assert gaming_category is not None
-        href = gaming_category["Gaming"][0]["foundryvtt"]["href"]
+        # foundryvtt is now in 'apps' category per service.yml
+        apps_category = next((item for item in result if "Apps" in item), None)
+        assert apps_category is not None
+        href = apps_category["Apps"][0]["foundryvtt"]["href"]
         assert href == "https://foundry.my-domain.com"
 
 

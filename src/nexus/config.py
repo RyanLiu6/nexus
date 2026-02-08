@@ -1,7 +1,7 @@
 import os
 from functools import cache
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 ROOT_PATH = Path(__file__).parent.parent.parent
 SERVICES_PATH = ROOT_PATH / "services"
@@ -27,17 +27,31 @@ def get_all_services() -> list[str]:
     return get_all_service_names()
 
 
-PRESETS = {
-    "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
-    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission"],
-}
+PRESETS_PATH = ROOT_PATH / "config" / "presets.yml"
+
+
+@cache
+def load_presets() -> dict[str, list[str] | dict[str, Any]]:
+    """Load presets from presets.yml file.
+
+    Returns:
+        Dictionary mapping preset names to their configuration.
+        Configuration can be a list of service names or a dict with
+        'extends' (str) and 'services' (list[str]) keys.
+
+    Raises:
+        FileNotFoundError: If presets.yml doesn't exist.
+    """
+    import yaml
+
+    with open(PRESETS_PATH) as f:
+        return yaml.safe_load(f) or {}
 
 
 def resolve_preset(name: str) -> list[str]:
-    """Resolve a preset name to its list of services, handling nested presets.
+    """Resolve a preset name to its list of services, handling extends.
 
-    Recursively expands presets that reference other presets to build the
-    complete list of services.
+    Supports the 'extends' key for preset inheritance.
 
     Args:
         name: The name of the preset to resolve.
@@ -45,12 +59,27 @@ def resolve_preset(name: str) -> list[str]:
     Returns:
         A deduplicated list of service names included in the preset.
     """
-    services = []
-    for item in PRESETS.get(name, []):
-        if item in PRESETS:
-            services.extend(resolve_preset(item))
-        else:
-            services.append(item)
+    presets = load_presets()
+    preset = presets.get(name)
+
+    if preset is None:
+        return []
+
+    services: list[str] = []
+
+    # Handle dict format with 'extends' and 'services' keys
+    if isinstance(preset, dict):
+        if "extends" in preset:
+            services.extend(resolve_preset(preset["extends"]))
+        services.extend(preset.get("services", []))
+    # Handle simple list format
+    elif isinstance(preset, list):
+        for item in preset:
+            if item in presets:
+                services.extend(resolve_preset(item))
+            else:
+                services.append(item)
+
     return list(set(services))
 
 
@@ -62,3 +91,10 @@ def get_base_domain() -> Optional[str]:
         None if not configured.
     """
     return os.environ.get("NEXUS_DOMAIN")
+
+
+# Export for CLI
+try:
+    PRESETS = load_presets()
+except FileNotFoundError:
+    PRESETS = {}

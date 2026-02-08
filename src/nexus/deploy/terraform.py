@@ -2,10 +2,11 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from nexus.config import TERRAFORM_PATH
 from nexus.services import discover_services
+from nexus.types import R2Credentials
 from nexus.utils import read_vault
 
 
@@ -122,6 +123,7 @@ def run_terraform(
 
     subdomains = sorted(list(set(subdomains)))
 
+    # tf_vars contains mixed types: str, list[str], and dict[str, list[str]]
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "tailscale_server_ip": tailscale_ip,
@@ -178,12 +180,12 @@ def _run_terraform_cmd(
     )
 
 
-def get_r2_credentials() -> dict[str, str]:
+def get_r2_credentials() -> Optional[R2Credentials]:
     """Get Foundry R2 credentials from terraform state.
 
     Returns:
         Dictionary with keys: endpoint, access_key, secret_key, bucket.
-        Empty dict if R2 is not provisioned.
+        None if R2 is not provisioned.
     """
     try:
         result = subprocess.run(
@@ -207,11 +209,11 @@ def get_r2_credentials() -> dict[str, str]:
                 "secret_key": secret_key,
                 "bucket": bucket,
             }
-        return {}
+        return None
     except (
         subprocess.CalledProcessError,
         json.JSONDecodeError,
         KeyError,
         FileNotFoundError,
     ):
-        return {}
+        return None

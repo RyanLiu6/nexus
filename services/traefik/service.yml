@@ -4,10 +4,16 @@
 name: traefik
 description: Reverse proxy with automatic SSL
 category: core
+icon: si-traefikproxy
 subdomain: traefik
 
 access:
   groups: [admins]
   public: false
+
+dashboard:
+  widget:
+    type: traefik
+    url: http://traefik:8080
 
 dependencies: []

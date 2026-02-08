@@ -4,11 +4,12 @@
 name: foundryvtt
 description: Virtual tabletop for D&D
 category: apps
+icon: si-foundryvirtualtabletop
 subdomain: foundry
 
 access:
   groups: [admins, members, finance]
-  public: true  # Exposed via Cloudflare Tunnel
+  public: true # Exposed via Cloudflare Tunnel
 
 dependencies:
   - traefik

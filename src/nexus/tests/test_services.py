@@ -11,7 +11,7 @@ from nexus.services import (
 
 
 class TestServiceManifest:
-    def test_from_yaml_basic(self, tmp_path: Path) -> None:
+    def test_from_yaml(self, tmp_path: Path) -> None:
         manifest_content = """
 name: test-service
 description: A test service
@@ -132,7 +132,7 @@ class TestDiscoverServices:
 
 
 class TestGetServicesByCategory:
-    def test_returns_dict_of_lists(self) -> None:
+    def test_get_services_by_category(self) -> None:
         by_category = get_services_by_category()
         assert isinstance(by_category, dict)
         for _category, services in by_category.items():
@@ -148,7 +148,7 @@ class TestGetServicesByCategory:
 
 
 class TestGetPublicServices:
-    def test_returns_list(self) -> None:
+    def test_get_public_services(self) -> None:
         public = get_public_services()
         assert isinstance(public, list)
 
@@ -159,7 +159,7 @@ class TestGetPublicServices:
 
 
 class TestResolveDependencies:
-    def test_resolves_simple_dependency(self) -> None:
+    def test_resolve_dependencies(self) -> None:
         all_services = discover_services()
         resolved = resolve_dependencies(["dashboard"], all_services)
 

@@ -25,6 +25,7 @@ from nexus.generate.dashboard import (
     generate_settings_config,
     generate_widgets_config,
 )
+from nexus.types import R2Credentials
 from nexus.utils import read_vault
 
 
@@ -436,7 +437,7 @@ def main(
     # =========================================================================
     # Step 7.5: Retrieve R2 credentials from Terraform (if applicable)
     # =========================================================================
-    r2_credentials: dict[str, str] = {}
+    r2_credentials: Optional[R2Credentials] = None
     if not skip_dns and "foundryvtt" in services_list:
         r2_credentials = get_r2_credentials()
         if r2_credentials:

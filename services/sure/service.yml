@@ -4,11 +4,24 @@
 name: sure
 description: Personal finance and budgeting
 category: apps
+icon: mdi-finance
 subdomain: sure
 
 access:
   groups: [admins, finance]
   public: false
+
+# Sub-services for multi-container setup
+services:
+  sure-web:
+    icon: mdi-finance
+    description: Finance and budgeting
+  sure-db:
+    exclude: true
+  sure-redis:
+    exclude: true
+  sure-worker:
+    exclude: true
 
 dependencies:
   - traefik

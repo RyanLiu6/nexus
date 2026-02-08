@@ -4,10 +4,14 @@
 name: backups
 description: Automated Borgmatic backups
 category: utils
+icon: mdi-backup-restore
 subdomain: null # No web interface
 
 access:
   groups: [] # Automated, no interactive access
   public: false
+
+dashboard:
+  exclude: true # No web interface
 
 dependencies: []

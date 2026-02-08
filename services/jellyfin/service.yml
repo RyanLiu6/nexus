@@ -4,11 +4,17 @@
 name: jellyfin
 description: Media server for movies and TV
 category: media
+icon: si-jellyfin
 subdomain: jellyfin
 
 access:
   groups: [admins]
   public: false
+
+dashboard:
+  widget:
+    type: jellyfin
+    url: http://jellyfin:8096
 
 dependencies:
   - traefik

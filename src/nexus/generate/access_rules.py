@@ -24,7 +24,9 @@ def generate_access_rules(
         output_path: Path to write the generated rules. If None, returns dict only.
 
     Returns:
-        Dictionary of generated access rules.
+        Dictionary representing the access control rules (groups,
+        tag owners, autoApprovers).
+        Structure mirrors tailscale ACL JSON format.
     """
     all_services = discover_services()
 

@@ -1,66 +1,53 @@
 import logging
+from functools import cache
 from typing import Any, Optional
 
 import yaml
 
 from nexus.config import SERVICES_PATH
-
-DESCRIPTIONS = {
-    "traefik": "Reverse proxy and SSL management",
-    "dashboard": "Homepage dashboard",
-    "plex": "Media streaming",
-    "jellyfin": "Media server",
-    "transmission": "Torrent client",
-    "sure-web": "Finance and budgeting",
-    "foundryvtt": "Virtual Tabletop",
-    "nextcloud": "File storage",
-    "prometheus": "Metrics database",
-    "grafana": "Metrics dashboards",
-    "alertmanager": "Alert management",
-    "vaultwarden": "Password manager",
-}
-
-ICONS = {
-    "traefik": "si-traefikproxy",
-    "dashboard": "si-homeassistant",
-    "plex": "si-plex",
-    "jellyfin": "si-jellyfin",
-    "transmission": "si-transmission",
-    "sure-web": "mdi-finance",
-    "foundryvtt": "si-foundryvirtualtabletop",
-    "nextcloud": "si-nextcloud",
-    "prometheus": "si-prometheus",
-    "grafana": "si-grafana",
-    "alertmanager": "si-prometheus",
-    "vaultwarden": "si-bitwarden",
-}
-
-CATEGORIES = {
-    "traefik": "Core",
-    "dashboard": "Core",
-    "plex": "Media",
-    "jellyfin": "Media",
-    "transmission": "Media",
-    "sure-web": "Finance",
-    "foundryvtt": "Gaming",
-    "nextcloud": "Files",
-    "prometheus": "Core",
-    "grafana": "Core",
-    "alertmanager": "Core",
-    "vaultwarden": "Core",
-}
-
-EXCLUDED_SERVICES = [
-    "node-exporter",
-    "tailscale-access",
-    "alert-bot",
-    "sure-db",
-    "sure-redis",
-    "sure-worker",
-]
+from nexus.services import discover_services
+from nexus.types import ServiceMetadata, TraefikConfig
 
 
-def get_service_config(service_name: str) -> list[dict[str, Any]]:
+@cache
+def _get_service_metadata() -> dict[str, ServiceMetadata]:
+    """Build metadata lookup from service manifests.
+
+    Returns a flattened dict mapping service/sub-service names to their metadata
+    (description, icon, category, dashboard_exclude, widget).
+
+    Returns:
+        Dict mapping service names to metadata dict with keys:
+        'description', 'icon', 'category', 'dashboard_exclude', 'widget'.
+    """
+    metadata: dict[str, ServiceMetadata] = {}
+    manifests = discover_services()
+
+    for manifest in manifests.values():
+        # Handle sub-services (e.g., monitoring -> grafana, prometheus)
+        if manifest.sub_services:
+            for sub_name, sub_config in manifest.sub_services.items():
+                metadata[sub_name] = {
+                    "description": sub_config.get("description", manifest.description),
+                    "icon": sub_config.get("icon", manifest.icon),
+                    "category": manifest.category,
+                    "dashboard_exclude": sub_config.get("exclude", False),
+                    "widget": sub_config.get("widget", {}),
+                }
+        else:
+            # Single service
+            metadata[manifest.name] = {
+                "description": manifest.description,
+                "icon": manifest.icon,
+                "category": manifest.category,
+                "dashboard_exclude": manifest.dashboard_exclude,
+                "widget": manifest.widget,
+            }
+
+    return metadata
+
+
+def get_service_config(service_name: str) -> list[TraefikConfig]:
     """Parse a service's docker-compose.yml to extract Traefik routing info.
 
     Reads the compose file and looks for Traefik labels to determine
@@ -83,7 +70,7 @@ def get_service_config(service_name: str) -> list[dict[str, Any]]:
     with compose_file.open() as f:
         compose_data = yaml.safe_load(f)
 
-    configs: list[dict[str, Any]] = []
+    configs: list[TraefikConfig] = []
     services = compose_data.get("services", {})
 
     for svc_name, svc_config in services.items():
@@ -130,19 +117,25 @@ def get_service_description(service_name: str) -> str:
     Returns:
         Description string for the service, or empty string if not found.
     """
-    return DESCRIPTIONS.get(service_name, "")
+    metadata = _get_service_metadata()
+    # Safe because TypedDict guarantees 'description' is str if present,
+    # or we handle missing key with default
+    meta = metadata.get(service_name)
+    return meta["description"] if meta else ""
 
 
 def get_service_icon(service_name: str) -> str:
-    """Look up the icon filename for a service.
+    """Look up the icon for a service.
 
     Args:
         service_name: Name of the service to look up.
 
     Returns:
-        Icon filename (e.g., "traefik.png"), or "unknown.png" if not found.
+        Icon identifier, or 'mdi-application' if not found.
     """
-    return ICONS.get(service_name, "unknown.png")
+    metadata = _get_service_metadata()
+    meta = metadata.get(service_name)
+    return meta["icon"] if meta else "mdi-application"
 
 
 def categorize_service(service_name: str) -> str:
@@ -152,9 +145,41 @@ def categorize_service(service_name: str) -> str:
         service_name: Name of the service to categorize.
 
     Returns:
-        Category name (e.g., "Core", "Media"), or "Other" if not found.
+        Category name (e.g., 'core', 'media'), or 'other' if not found.
     """
-    return CATEGORIES.get(service_name, "Other")
+    metadata = _get_service_metadata()
+    meta = metadata.get(service_name)
+    category = meta["category"] if meta else "other"
+    # Title-case for display
+    return category.title()
+
+
+def is_service_excluded(service_name: str) -> bool:
+    """Check if a service should be excluded from the dashboard.
+
+    Args:
+        service_name: Name of the service to check.
+
+    Returns:
+        True if service should be excluded, False otherwise.
+    """
+    metadata = _get_service_metadata()
+    meta = metadata.get(service_name)
+    return meta["dashboard_exclude"] if meta else False
+
+
+def get_service_widget(service_name: str) -> dict[str, Any]:
+    """Get the widget configuration for a service.
+
+    Args:
+        service_name: Name of the service.
+
+    Returns:
+        Widget configuration dict, or empty dict if none defined.
+    """
+    metadata = _get_service_metadata()
+    meta = metadata.get(service_name)
+    return meta["widget"] if meta else {}
 
 
 def generate_dashboard_config(
@@ -188,6 +213,8 @@ def generate_dashboard_config(
     Returns:
         List of dictionaries mapping category names to lists of service configurations,
         formatted for Homepage's services.yaml file.
+        Each service configuration is a dict with structure:
+        {service_name: {"href": str, "description": str, "icon": str, "widget": dict}}.
     """
     dashboard_config: dict[str, list[dict[str, Any]]] = {}
     secrets = secrets or {}
@@ -200,7 +227,7 @@ def generate_dashboard_config(
         for service_info in service_configs:
             svc_name = service_info["name"]
 
-            if svc_name in EXCLUDED_SERVICES:
+            if is_service_excluded(svc_name):
                 continue
 
             rule = service_info.get("rule", "")
@@ -229,44 +256,33 @@ def generate_dashboard_config(
                 }
             )
 
-            # Inject Service Widget if supported
-            widget_config = {}
-            if svc_name == "traefik":
-                widget_config = {"type": "traefik", "url": "http://traefik:8080"}
-            elif svc_name == "grafana":
-                user = secrets.get("grafana_admin_user", "admin")
-                pw = secrets.get("grafana_admin_password")
-                if pw:
-                    widget_config = {
-                        "type": "grafana",
-                        "url": "http://grafana:3000",
-                        "username": user,
-                        "password": pw,
-                    }
-            elif svc_name == "prometheus":
-                widget_config = {"type": "prometheus", "url": "http://prometheus:9090"}
-            elif svc_name == "transmission":
-                # Transmission might need auth if configured, but default often internal
-                widget_config = {
-                    "type": "transmission",
-                    "url": "http://transmission:9091",
-                }
-            elif svc_name == "jellyfin":
-                key = secrets.get("jellyfin_api_key")
-                if key:
-                    widget_config = {
-                        "type": "jellyfin",
-                        "url": "http://jellyfin:8096",
-                        "key": key,
-                    }
-            elif svc_name == "plex":
-                token = secrets.get("plex_token")
-                if token:
-                    widget_config = {
-                        "type": "plex",
-                        "url": "http://plex:32400",
-                        "key": token,
-                    }
+            # Inject widget config from manifest
+            widget_config = get_service_widget(svc_name)
+
+            # Inject secrets into widget config if needed
+            if widget_config:
+                widget_config = dict(widget_config)  # Copy to avoid mutating cached
+                widget_type = widget_config.get("type", "")
+
+                # Handle secret substitutions
+                if widget_type == "grafana":
+                    widget_config.setdefault(
+                        "username", secrets.get("grafana_admin_user", "admin")
+                    )
+                    if secrets.get("grafana_admin_password"):
+                        widget_config["password"] = secrets["grafana_admin_password"]
+                    else:
+                        widget_config = {}  # Skip if no password
+                elif widget_type == "jellyfin":
+                    if secrets.get("jellyfin_api_key"):
+                        widget_config["key"] = secrets["jellyfin_api_key"]
+                    else:
+                        widget_config = {}  # Skip if no API key
+                elif widget_type == "plex":
+                    if secrets.get("plex_token"):
+                        widget_config["key"] = secrets["plex_token"]
+                    else:
+                        widget_config = {}  # Skip if no token
 
             if widget_config:
                 dashboard_config[category][-1][svc_name]["widget"] = widget_config

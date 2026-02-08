@@ -4,11 +4,15 @@
 name: dashboard
 description: Service dashboard and homepage
 category: core
+icon: si-homeassistant
 subdomain: nexus
 
 access:
   groups: [admins, members, finance]
   public: false
+
+dashboard:
+  exclude: true # Don't show dashboard on itself
 
 dependencies:
   - traefik
