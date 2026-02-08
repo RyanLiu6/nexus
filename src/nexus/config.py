@@ -80,7 +80,7 @@ def resolve_preset(name: str) -> list[str]:
             else:
                 services.append(item)
 
-    return list(set(services))
+    return sorted(list(set(services)))
 
 
 def get_base_domain() -> Optional[str]:

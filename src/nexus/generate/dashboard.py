@@ -287,6 +287,10 @@ def generate_dashboard_config(
             if widget_config:
                 dashboard_config[category][-1][svc_name]["widget"] = widget_config
 
+    # Sort services within each category before returning
+    for category in dashboard_config:
+        dashboard_config[category].sort(key=lambda x: next(iter(x.keys())).lower())
+
     final_config = []
     for category in sorted(dashboard_config.keys()):
         final_config.append({category: dashboard_config[category]})
