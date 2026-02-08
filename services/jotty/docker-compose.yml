@@ -1,0 +1,50 @@
+services:
+  jotty:
+    image: ghcr.io/fccview/jotty:latest
+    container_name: jotty
+    restart: unless-stopped
+    user: "1000:1000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - nexus
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/jotty/data:/app/data:rw
+      - ${NEXUS_DATA_DIRECTORY}/jotty/config:/app/config:rw
+      - ${NEXUS_DATA_DIRECTORY}/jotty/cache:/app/.next/cache:rw
+    environment:
+      - NODE_ENV=production
+      - TZ=${TZ}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.jotty.loadbalancer.server.port=3000"
+      - "traefik.http.routers.jotty.rule=Host(`jotty.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.jotty.entrypoints=https"
+      - "traefik.http.routers.jotty.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.jotty.tls=true"
+      - "traefik.http.routers.jotty.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true
