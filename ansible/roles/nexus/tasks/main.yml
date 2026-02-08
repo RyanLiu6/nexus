@@ -124,6 +124,10 @@
     VAULTWARDEN_INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed | default('true') }}"
     # Donetick
     DONETICK_JWT_SECRET: "{{ donetick_jwt_secret | default('') }}"
+    DONETICK_R2_ENDPOINT: "{{ donetick_r2_endpoint | default('') }}"
+    DONETICK_R2_BUCKET: "{{ donetick_r2_bucket | default('') }}"
+    DONETICK_R2_ACCESS_KEY: "{{ donetick_r2_access_key | default('') }}"
+    DONETICK_R2_SECRET_KEY: "{{ donetick_r2_secret_key | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"
@@ -133,7 +137,7 @@
   ansible.builtin.debug:
     msg: "Docker Compose {{ 'updated' if nexus_compose_result.changed else 'unchanged' }}"
 
-- name: Wait for services to be healthy  # noqa: no-handler
+- name: Wait for services to be healthy # noqa: no-handler
   ansible.builtin.pause:
     seconds: 15
   when: nexus_compose_result.changed

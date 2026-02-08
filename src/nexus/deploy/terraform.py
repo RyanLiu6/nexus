@@ -180,12 +180,15 @@ def _run_terraform_cmd(
     )
 
 
-def get_r2_credentials() -> Optional[R2Credentials]:
-    """Get Foundry R2 credentials from terraform state.
+def get_r2_credentials(service: str) -> Optional[R2Credentials]:
+    """Get R2 credentials for a service from terraform state.
+
+    Args:
+        service: Service name prefix for R2 outputs (e.g., 'foundry', 'donetick').
 
     Returns:
         Dictionary with keys: endpoint, access_key, secret_key, bucket.
-        None if R2 is not provisioned.
+        None if R2 is not provisioned for the specified service.
     """
     try:
         result = subprocess.run(
@@ -197,10 +200,10 @@ def get_r2_credentials() -> Optional[R2Credentials]:
         )
         outputs = json.loads(result.stdout)
 
-        endpoint = outputs.get("foundry_r2_endpoint", {}).get("value", "")
-        access_key = outputs.get("foundry_r2_access_key", {}).get("value", "")
-        secret_key = outputs.get("foundry_r2_secret_key", {}).get("value", "")
-        bucket = outputs.get("foundry_r2_bucket", {}).get("value", "")
+        endpoint = outputs.get(f"{service}_r2_endpoint", {}).get("value", "")
+        access_key = outputs.get(f"{service}_r2_access_key", {}).get("value", "")
+        secret_key = outputs.get(f"{service}_r2_secret_key", {}).get("value", "")
+        bucket = outputs.get(f"{service}_r2_bucket", {}).get("value", "")
 
         if endpoint and access_key and secret_key and bucket:
             return {

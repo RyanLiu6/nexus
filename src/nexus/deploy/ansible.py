@@ -12,6 +12,7 @@ def run_ansible(
     services: list[str],
     dry_run: bool = False,
     r2_credentials: Optional[R2Credentials] = None,
+    donetick_r2_credentials: Optional[R2Credentials] = None,
 ) -> None:
     """Execute the Ansible playbook to deploy Docker services.
 
@@ -25,6 +26,8 @@ def run_ansible(
         r2_credentials: Optional R2 credentials from Terraform. If provided,
             these are passed as extra-vars to override vault values for
             Foundry S3 configuration.
+        donetick_r2_credentials: Optional R2 credentials for Donetick. If provided,
+            these are passed as extra-vars for Donetick S3/storage configuration.
 
     Raises:
         FileNotFoundError: If the Ansible playbook does not exist.
@@ -44,12 +47,23 @@ def run_ansible(
     if email := os.environ.get("ACME_EMAIL"):
         extra_vars.append(f"acme_email={email}")
 
-    # Pass R2 credentials from Terraform if provided
+    # Pass Foundry R2 credentials from Terraform if provided
     if r2_credentials:
         extra_vars.append(f"foundry_s3_endpoint={r2_credentials['endpoint']}")
         extra_vars.append(f"foundry_s3_access_key={r2_credentials['access_key']}")
         extra_vars.append(f"foundry_s3_secret_key={r2_credentials['secret_key']}")
         extra_vars.append(f"foundry_s3_bucket={r2_credentials['bucket']}")
+
+    # Pass Donetick R2 credentials from Terraform if provided
+    if donetick_r2_credentials:
+        extra_vars.append(f"donetick_r2_endpoint={donetick_r2_credentials['endpoint']}")
+        extra_vars.append(
+            f"donetick_r2_access_key={donetick_r2_credentials['access_key']}"
+        )
+        extra_vars.append(
+            f"donetick_r2_secret_key={donetick_r2_credentials['secret_key']}"
+        )
+        extra_vars.append(f"donetick_r2_bucket={donetick_r2_credentials['bucket']}")
 
     extra_vars_str = " ".join(extra_vars)
 
