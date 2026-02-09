@@ -20,7 +20,8 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/jotty/cache:/app/.next/cache:rw
     environment:
       - NODE_ENV=production
-      - TZ=${TZ}
+      - HTTPS=true
+      - APP_URL=https://jotty.${NEXUS_DOMAIN}
     healthcheck:
       test:
         [
