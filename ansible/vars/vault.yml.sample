@@ -175,12 +175,26 @@ vaultwarden_invitations_allowed: "true"
 discord_webhook_url: ""
 
 # =============================================================================
-# Backups - Borgmatic (Optional but recommended)
+# Backups - Backrest/Restic (Optional but recommended)
 # =============================================================================
-# Borg repository encryption passphrase
+# Restic repository encryption password
 # IMPORTANT: Store this securely! Without it, backups are unrecoverable
 # Generate with: openssl rand -base64 32
-borg_passphrase: "CHANGE_ME"
+restic_password: "CHANGE_ME"
+
+# Backups R2 Storage (populated from Terraform outputs)
+# TERRAFORM-MANAGED: When deploying with Terraform (default), these values are
+# automatically provisioned and passed via extra-vars. Manual configuration is
+# only needed when using --skip-dns or managing R2 buckets outside Terraform.
+#
+# To use vault values instead of Terraform:
+#   1. Deploy with --skip-dns flag
+#   2. Set the values below manually
+# Endpoint: https://<account_id>.r2.cloudflarestorage.com
+backups_r2_endpoint: "CHANGE_ME"
+backups_r2_access_key: "CHANGE_ME"
+backups_r2_secret_key: "CHANGE_ME"
+backups_r2_bucket: "nexus-backups"
 
 # =============================================================================
 # Sure - Personal Finance (Optional)

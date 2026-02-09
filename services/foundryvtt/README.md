@@ -80,7 +80,7 @@ FoundryVTT stores data in `${DATA_DIRECTORY}/Foundry`:
 ## Backups
 
 ### Automated Backups
-The `backups` service (Borgmatic) handles this automatically if configured.
+The `backups` service (Backrest) handles this automatically if configured.
 
 ### Manual Backup
 ```bash

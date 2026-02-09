@@ -7,37 +7,32 @@ from nexus.restore.backup import list_backups, restore_backup, restore_database
 
 
 class TestListBackups:
-    @patch("nexus.restore.backup.BACKUP_DIR")
-    def test_list_backups(self, mock_backup_dir: MagicMock, tmp_path: Path):
-        backup_dir = tmp_path / "backups"
-        backup_dir.mkdir()
-
-        (backup_dir / "backup-2024-01-01.tar.gz").touch()
-        (backup_dir / "backup-2024-01-02.tar.gz").touch()
-        (backup_dir / "backup-2024-01-03.tar.gz").touch()
-
-        mock_backup_dir.exists.return_value = True
-        mock_backup_dir.glob.return_value = list(backup_dir.glob("*.tar.gz"))
+    @patch("nexus.restore.backup.run_command")
+    def test_list_backups(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.return_value = MagicMock(
+            stdout=(
+                '[{"short_id": "abc123", "time": "2024-01-01T00:00:00Z", '
+                '"paths": ["/userdata"]}, {"short_id": "def456", '
+                '"time": "2024-01-02T00:00:00Z", "paths": ["/userdata"]}]'
+            )
+        )
 
         backups = list_backups()
 
-        assert len(backups) == 3
+        assert len(backups) == 2
+        assert backups == ["abc123", "def456"]
 
-    @patch("nexus.restore.backup.BACKUP_DIR")
-    def test_list_backups_empty(self, mock_backup_dir: MagicMock, tmp_path: Path):
-        backup_dir = tmp_path / "backups"
-        backup_dir.mkdir()
-
-        mock_backup_dir.exists.return_value = True
-        mock_backup_dir.glob.return_value = []
+    @patch("nexus.restore.backup.run_command")
+    def test_list_backups_empty(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.return_value = MagicMock(stdout="[]")
 
         backups = list_backups()
 
         assert backups == []
 
-    @patch("nexus.restore.backup.BACKUP_DIR")
-    def test_list_backups_dir_not_exists(self, mock_backup_dir: MagicMock):
-        mock_backup_dir.exists.return_value = False
+    @patch("nexus.restore.backup.run_command")
+    def test_list_backups_error(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.side_effect = Exception("Command failed")
 
         backups = list_backups()
 
@@ -46,35 +41,45 @@ class TestListBackups:
 
 class TestRestoreBackup:
     @patch("nexus.restore.backup.run_command")
-    def test_restore_backup(self, mock_run_command: MagicMock, tmp_path: Path):
-        backup_file = tmp_path / "backup.tar.gz"
-        backup_file.touch()
+    def test_restore_backup(self, mock_run_command: MagicMock) -> None:
+        restore_backup("abc123")
 
-        restore_backup(backup_file)
-
-        assert mock_run_command.call_count == 3
-        calls = mock_run_command.call_args_list
-
-        assert calls[0][0][0] == ["docker", "compose", "down"]
-        assert calls[1][0][0] == ["tar", "-xzf", str(backup_file), "-C", "/"]
-        assert calls[2][0][0] == ["docker", "compose", "up", "-d"]
+        mock_run_command.assert_called_once()
+        args = mock_run_command.call_args[0][0]
+        assert args == [
+            "docker",
+            "exec",
+            "backrest",
+            "restic",
+            "restore",
+            "abc123",
+            "--target",
+            "/tmp/restore",
+        ]
 
     @patch("nexus.restore.backup.run_command")
-    def test_restore_backup_with_services(
-        self, mock_run_command: MagicMock, tmp_path: Path
-    ):
-        backup_file = tmp_path / "backup.tar.gz"
-        backup_file.touch()
+    def test_restore_backup_with_services(self, mock_run_command: MagicMock) -> None:
+        restore_backup("abc123", services=["plex", "jellyfin"])
 
-        restore_backup(backup_file, services=["plex", "jellyfin"])
+        mock_run_command.assert_called_once()
+        args = mock_run_command.call_args[0][0]
+        assert args == [
+            "docker",
+            "exec",
+            "backrest",
+            "restic",
+            "restore",
+            "abc123",
+            "--target",
+            "/tmp/restore",
+            "--include",
+            "/userdata/plex",
+            "--include",
+            "/userdata/jellyfin",
+        ]
 
-        assert mock_run_command.call_count == 3
-
-    def test_restore_backup_dry_run(self, tmp_path: Path):
-        backup_file = tmp_path / "backup.tar.gz"
-        backup_file.touch()
-
-        restore_backup(backup_file, dry_run=True)
+    def test_restore_backup_dry_run(self) -> None:
+        restore_backup("abc123", dry_run=True)
 
 
 class TestRestoreDatabase:
@@ -82,7 +87,7 @@ class TestRestoreDatabase:
     @patch("nexus.restore.backup.ROOT_PATH")
     def test_restore_database_sure(
         self, mock_root_path: MagicMock, mock_run_command: MagicMock, tmp_path: Path
-    ):
+    ) -> None:
         sql_file = tmp_path / "sure.sql"
         sql_file.write_text("SELECT 1;")
         mock_root_path.return_value = tmp_path
@@ -95,13 +100,13 @@ class TestRestoreDatabase:
         assert "docker" in args
         assert "sure-db" in args
 
-    def test_restore_database_dry_run(self, tmp_path: Path):
+    def test_restore_database_dry_run(self, tmp_path: Path) -> None:
         sql_file = tmp_path / "sure.sql"
         sql_file.write_text("SELECT 1;")
 
         restore_database("sure", sql_file, dry_run=True)
 
-    def test_restore_database_unsupported_service(self, tmp_path: Path):
+    def test_restore_database_unsupported_service(self, tmp_path: Path) -> None:
         sql_file = tmp_path / "test.sql"
         sql_file.touch()
 

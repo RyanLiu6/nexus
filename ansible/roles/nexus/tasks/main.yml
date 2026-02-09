@@ -61,6 +61,38 @@
     mode: "0644"
   when: "'foundryvtt' in nexus_final_services and foundry_s3_access_key is defined"
 
+- name: Ensure Backrest config directories exist
+  ansible.builtin.file:
+    path: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/backrest/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - config
+    - data
+    - cache
+    - rclone
+  when: "'backups' in nexus_final_services"
+
+- name: Remove old borgmatic config directory
+  ansible.builtin.file:
+    path: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/borgmatic"
+    state: absent
+  when: "'backups' in nexus_final_services"
+
+- name: Render Backrest config
+  ansible.builtin.template:
+    src: "{{ nexus_root_directory }}/services/backups/config.json.j2"
+    dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/backrest/config/config.json"
+    mode: "0600"
+  when: "'backups' in nexus_final_services"
+
+- name: Render rclone config for Backrest
+  ansible.builtin.template:
+    src: "{{ nexus_root_directory }}/services/backups/rclone.conf.j2"
+    dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/backrest/rclone/rclone.conf"
+    mode: "0600"
+  when: "'backups' in nexus_final_services"
+
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
     set -o pipefail
@@ -114,7 +146,7 @@
     # Alerting
     DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
     # Backups
-    BORG_PASSPHRASE: "{{ borg_passphrase | default('') }}"
+    RESTIC_PASSWORD: "{{ restic_password | default('') }}"
     # Tailscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
     TAILSCALE_API_KEY: "{{ tailscale_api_key | default('') }}"

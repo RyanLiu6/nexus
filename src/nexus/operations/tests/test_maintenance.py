@@ -76,43 +76,46 @@ class TestCheckDiskSpace:
 
 
 class TestVerifyBackups:
-    def test_verify_backups(self, tmp_path) -> None:
-        backup_dir = tmp_path / "nexus-backups"
-        backup_dir.mkdir()
+    def test_verify_backups(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.return_value = MagicMock(
+            stdout="snapshot abc123\nsnapshot def456\nsnapshot ghi789",
+            returncode=0,
+        )
 
-        for i in range(3):
-            (backup_dir / f"nexus-backup-2024010{i}.tar.gz").touch()
-
-        with patch("nexus.operations.maintenance.Path.home", return_value=tmp_path):
-            result = verify_backups()
+        result = verify_backups()
 
         assert result is True
+        mock_run_command.assert_called_once()
 
-    def test_verify_backups_no_directory(self, tmp_path) -> None:
-        with patch("nexus.operations.maintenance.Path.home", return_value=tmp_path):
-            result = verify_backups()
+    def test_verify_backups_no_snapshots(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.return_value = MagicMock(
+            stdout="",
+            returncode=0,
+        )
+
+        result = verify_backups()
 
         assert result is False
 
-    def test_verify_backups_empty_directory(self, tmp_path) -> None:
-        backup_dir = tmp_path / "nexus-backups"
-        backup_dir.mkdir()
+    def test_verify_backups_command_failure(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.side_effect = subprocess.CalledProcessError(
+            1, "cmd", stderr="error"
+        )
 
-        with patch("nexus.operations.maintenance.Path.home", return_value=tmp_path):
-            result = verify_backups()
+        result = verify_backups()
 
         assert result is False
 
 
 class TestRunCommand:
-    def test_run_command_success(self):
+    def test_run_command_success(self) -> None:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="output", returncode=0)
             result = _run_command(["echo", "test"], "Test command")
             assert result.stdout == "output"
             mock_run.assert_called_once()
 
-    def test_run_command_failure(self):
+    def test_run_command_failure(self) -> None:
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(
                 1, "cmd", stderr="error message"
@@ -122,15 +125,15 @@ class TestRunCommand:
 
 
 class TestCheckServiceLogs:
-    def test_check_service_logs(self):
+    def test_check_service_logs(self) -> None:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="info message\nERROR something", returncode=0
             )
             check_service_logs()
-            assert mock_run.call_count == 4
+            assert mock_run.call_count == 3
 
-    def test_check_service_logs_no_errors(self):
+    def test_check_service_logs_no_errors(self) -> None:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="all good\nno issues", returncode=0
@@ -139,7 +142,7 @@ class TestCheckServiceLogs:
 
 
 class TestCleanupOldImages:
-    def test_cleanup_old_images(self, mock_run_command: MagicMock):
+    def test_cleanup_old_images(self, mock_run_command: MagicMock) -> None:
         mock_run_command.return_value = MagicMock(stdout="Total reclaimed space: 1GB")
         cleanup_old_images()
         mock_run_command.assert_called_once()
@@ -150,7 +153,7 @@ class TestCleanupOldImages:
 
 
 class TestCleanupOldVolumes:
-    def test_cleanup_old_volumes(self, mock_run_command: MagicMock):
+    def test_cleanup_old_volumes(self, mock_run_command: MagicMock) -> None:
         mock_run_command.return_value = MagicMock(stdout="Total reclaimed space: 500MB")
         cleanup_old_volumes()
         mock_run_command.assert_called_once()
@@ -161,7 +164,7 @@ class TestCleanupOldVolumes:
 
 
 class TestDailyTasks:
-    def test_daily_tasks(self, mock_run_command: MagicMock):
+    def test_daily_tasks(self, mock_run_command: MagicMock) -> None:
         mock_run_command.return_value = MagicMock(
             stdout="Filesystem      Size  Used Avail Use% Mounted on\n"
             "/dev/sda1       100G   50G   50G  50% /",
@@ -176,26 +179,23 @@ class TestDailyTasks:
 
 
 class TestWeeklyTasks:
-    def test_weekly_tasks(self, mock_run_command: MagicMock, tmp_path):
-        mock_run_command.return_value = MagicMock(stdout="reclaimed space")
+    def test_weekly_tasks(self, mock_run_command: MagicMock) -> None:
+        mock_run_command.return_value = MagicMock(
+            stdout="snapshot abc123\nreclaimed space"
+        )
 
-        backup_dir = tmp_path / "nexus-backups"
-        backup_dir.mkdir()
-        (backup_dir / "nexus-backup-20240101.tar.gz").touch()
+        weekly_tasks()
 
-        with patch("nexus.operations.maintenance.Path.home", return_value=tmp_path):
-            weekly_tasks()
-
-        assert mock_run_command.call_count == 2
+        assert mock_run_command.call_count == 3
 
 
 class TestMonthlyTasks:
-    def test_monthly_tasks(self):
+    def test_monthly_tasks(self) -> None:
         monthly_tasks()
 
 
 class TestCheckDiskSpaceCritical:
-    def test_check_disk_space_critical(self, mock_run_command: MagicMock):
+    def test_check_disk_space_critical(self, mock_run_command: MagicMock) -> None:
         mock_run_command.return_value = MagicMock(
             stdout="Filesystem      Size  Used Avail Use% Mounted on\n"
             "/dev/sda1       100G   95G   5G  95% /",
@@ -206,7 +206,7 @@ class TestCheckDiskSpaceCritical:
 
         assert result["usage_percent"] == 95
 
-    def test_check_disk_space_empty_output(self, mock_run_command: MagicMock):
+    def test_check_disk_space_empty_output(self, mock_run_command: MagicMock) -> None:
         mock_run_command.return_value = MagicMock(stdout="", returncode=0)
 
         result = check_disk_space()

@@ -1,0 +1,9 @@
+{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %}
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = {{ backups_r2_access_key }}
+secret_access_key = {{ backups_r2_secret_key }}
+endpoint = {{ backups_r2_endpoint }}
+acl = private
+{% endif %}

@@ -1,6 +1,5 @@
 import logging
 import subprocess
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -72,40 +71,35 @@ def check_disk_space() -> dict[str, str | int]:
 
 
 def verify_backups() -> bool:
-    """Check if recent backup files exist in the backup directory.
+    """Check if backup snapshots exist in restic repositories.
 
-    Looks for nexus-backup-*.tar.gz files in ~/nexus-backups and
-    reports the most recent 7 backups found.
+    Uses `docker exec backrest restic snapshots` to verify backup snapshots exist.
 
     Returns:
-        True if at least one backup is found, False otherwise.
+        True if at least one backup snapshot is found, False otherwise.
     """
-    backup_dir = Path.home() / "nexus-backups"
-
-    if not backup_dir.exists():
-        logger.error(f"Backup directory not found: {backup_dir}")
+    try:
+        result = _run_command(
+            ["docker", "exec", "backrest", "restic", "snapshots"],
+            "Check backup snapshots",
+        )
+        if result.stdout.strip():
+            logger.info("✓ Backup snapshots found")
+            return True
+        logger.warning("No backup snapshots found")
         return False
-
-    backups = sorted(backup_dir.glob("nexus-backup-*.tar.gz"), reverse=True)[:7]
-
-    if not backups:
-        logger.warning("No recent backups found")
+    except subprocess.CalledProcessError:
+        logger.error("Failed to check backup snapshots")
         return False
-
-    logger.info(f"✓ Found {len(backups)} recent backups")
-    for backup in backups:
-        logger.info(f"  - {backup.name}")
-
-    return True
 
 
 def check_service_logs() -> None:
     """Scan service logs from the last hour for error messages.
 
-    Checks traefik, tailscale-access, plex, and jellyfin container logs
+    Checks traefik, tailscale-access, and jellyfin container logs
     and logs a warning if errors are found.
     """
-    services = ["traefik", "tailscale-access", "plex", "jellyfin"]
+    services = ["traefik", "tailscale-access", "jellyfin"]
 
     for service in services:
         result = subprocess.run(

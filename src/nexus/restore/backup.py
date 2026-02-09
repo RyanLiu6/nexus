@@ -1,63 +1,76 @@
+import json
 import logging
 from pathlib import Path
 from typing import Optional
 
-from nexus.config import BACKUP_DIR, ROOT_PATH
+from nexus.config import ROOT_PATH
 from nexus.utils import run_command
 
 logger = logging.getLogger(__name__)
 
 
-def list_backups() -> list[Path]:
-    """Retrieve all available backup files from the backup directory.
+def list_backups() -> list[str]:
+    """Retrieve all available backup snapshots from restic repositories.
 
-    Scans the configured backup directory for tar.gz files and returns
-    them sorted with the most recent first.
+    Uses `docker exec backrest restic snapshots --json` to get snapshot IDs.
 
     Returns:
-        List of Path objects pointing to backup files, sorted by
-        modification time (newest first). Empty list if directory
-        doesn't exist or contains no backups.
+        List of snapshot IDs (strings). Empty list if no snapshots found
+        or command fails.
     """
-    if not BACKUP_DIR.exists():
-        logger.error(f"Backup directory not found: {BACKUP_DIR}")
+    try:
+        result = run_command(
+            ["docker", "exec", "backrest", "restic", "snapshots", "--json"]
+        )
+        snapshots_data = json.loads(result.stdout)
+        snapshots = [snapshot["short_id"] for snapshot in snapshots_data]
+        return snapshots
+    except Exception as e:
+        logger.error(f"Failed to list backups: {e}")
         return []
-
-    backups = sorted(BACKUP_DIR.glob("*.tar.gz"), reverse=True)
-    return backups
 
 
 def restore_backup(
-    backup_path: Path, services: Optional[list[str]] = None, dry_run: bool = False
+    snapshot_id: str, services: Optional[list[str]] = None, dry_run: bool = False
 ) -> None:
-    """Restore services from a backup archive.
+    """Restore services from a restic backup snapshot.
 
-    Stops all running containers, extracts the backup archive to root,
-    and restarts the containers. This is a full restoration that
-    overwrites existing data.
+    Extracts the specified snapshot using restic, optionally filtering
+    by service paths.
 
     Args:
-        backup_path: Path to the backup tar.gz file to restore from.
+        snapshot_id: ID of the backup snapshot to restore from.
         services: Optional list of specific services to restore.
-            If None, all services in the backup are restored.
+            If provided, only restores /userdata/<service> paths.
         dry_run: If True, log the restoration steps without executing.
     """
-    logger.info(f"Restoring from: {backup_path}")
+    logger.info(f"Restoring from snapshot: {snapshot_id}")
 
     if services:
         logger.info(f"Restoring services: {', '.join(services)}")
 
+    cmd = [
+        "docker",
+        "exec",
+        "backrest",
+        "restic",
+        "restore",
+        snapshot_id,
+        "--target",
+        "/tmp/restore",
+    ]
+
+    if services:
+        for service in services:
+            cmd.extend(["--include", f"/userdata/{service}"])
+
     if dry_run:
         logger.info("[DRY RUN] Would restore services from backup")
-        logger.info(f"[DRY RUN] Backup path: {backup_path}")
-        logger.info("[DRY RUN] Would run: docker compose down")
-        logger.info(f"[DRY RUN] Would run: tar -xzf {backup_path} -C /")
-        logger.info("[DRY RUN] Would run: docker compose up -d")
+        logger.info(f"[DRY RUN] Snapshot: {snapshot_id}")
+        logger.info(f"[DRY RUN] Would run: {' '.join(cmd)}")
         return
 
-    run_command(["docker", "compose", "down"])
-    run_command(["tar", "-xzf", str(backup_path), "-C", "/"])
-    run_command(["docker", "compose", "up", "-d"])
+    run_command(cmd)
 
     logger.info("Restore complete!")
 

@@ -163,25 +163,13 @@ groups:
       # Service Health Alerts
       # =========================================================================
       - alert: ServiceDown
-        expr: up{job!~"traefik|node|borgmatic|alertmanager"} == 0
+        expr: up{job!~"traefik|node|alertmanager"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "Service {{ $labels.job }} is down"
           description: "{{ $labels.instance }} has been unreachable for 2+ minutes"
-
-      # =========================================================================
-      # Backup Alerts
-      # =========================================================================
-      - alert: BackupServiceDown
-        expr: up{job="borgmatic"} == 0
-        for: 15m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Backup service is down"
-          description: "Borgmatic has been unreachable for 15+ minutes"
 
   - name: traefik_alerts
     interval: 30s

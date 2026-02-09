@@ -439,15 +439,28 @@ def main(
     # =========================================================================
     r2_credentials: Optional[R2Credentials] = None
     donetick_r2_credentials: Optional[R2Credentials] = None
+    backups_r2_credentials: Optional[R2Credentials] = None
     if not skip_dns:
         if "foundryvtt" in services_list:
             r2_credentials = get_r2_credentials("foundry")
             if r2_credentials:
                 logging.info("✅ Retrieved Foundry R2 credentials from Terraform")
+            else:
+                logging.warning("R2 credentials not available for foundryvtt")
         if "donetick" in services_list:
             donetick_r2_credentials = get_r2_credentials("donetick")
             if donetick_r2_credentials:
                 logging.info("✅ Retrieved Donetick R2 credentials from Terraform")
+            else:
+                logging.warning("R2 credentials not available for donetick")
+        if "backups" in services_list:
+            backups_r2_credentials = get_r2_credentials("backups")
+            if backups_r2_credentials:
+                logging.info("✅ Retrieved Backups R2 credentials from Terraform")
+            else:
+                logging.warning(
+                    "R2 credentials not available for backups - local backups only"
+                )
 
     # =========================================================================
     # Step 8: Deploy with Ansible
@@ -459,6 +472,7 @@ def main(
             dry_run,
             r2_credentials=r2_credentials,
             donetick_r2_credentials=donetick_r2_credentials,
+            backups_r2_credentials=backups_r2_credentials,
         )
 
     # =========================================================================

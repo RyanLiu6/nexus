@@ -1,0 +1,59 @@
+{
+  "repos": [
+    {
+      "id": "local",
+      "uri": "/repos",
+      "password": "{{ restic_password }}",
+      "autoUnlock": true,
+      "autoInitialize": true,
+      "prunePolicy": {
+        "maxUnusedBytes": "10737418240"
+      }
+    }{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %},
+    {
+      "id": "r2",
+      "uri": "rclone:r2:{{ backups_r2_bucket }}",
+      "password": "{{ restic_password }}",
+      "autoUnlock": true,
+      "autoInitialize": true,
+      "prunePolicy": {
+        "maxUnusedBytes": "10737418240"
+      }
+    }{% endif %}
+  ],
+  "plans": [
+    {
+      "id": "daily-local",
+      "repo": "local",
+      "paths": [
+        "/userdata"
+      ],
+      "schedule": {
+        "schedule": "0 2 * * *",
+        "disabled": false
+      },
+      "retention": {
+        "policyKeepLastN": 3
+      },
+      "excludes": []
+    }{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %},
+    {
+      "id": "daily-r2",
+      "repo": "r2",
+      "paths": [
+        "/userdata"
+      ],
+      "schedule": {
+        "schedule": "0 3 * * *",
+        "disabled": false
+      },
+      "retention": {
+        "policyKeepLastN": 1
+      },
+      "excludes": []
+    }{% endif %}
+  ],
+  "auth": {
+    "disabled": true
+  }
+}

@@ -10,7 +10,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Donetick (tasks)
 - **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
-- **Backups** - Automated with Borgmatic
+- **Backups** - Automated with Backrest
 
 ## Tech Stack
 

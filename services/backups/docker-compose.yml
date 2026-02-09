@@ -1,39 +1,43 @@
 services:
-  borgmatic:
-    image: ghcr.io/borgmatic-collective/borgmatic:2.1.1
-    container_name: borgmatic
+  backrest:
+    image: ghcr.io/garethgeorge/backrest:latest
+    container_name: backrest
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 512M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - nexus
     environment:
       - TZ=${TZ}
-      - BORG_PASSPHRASE=${BORG_PASSPHRASE}
-      - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
-      - NEXUS_BACKUP_DIRECTORY=${NEXUS_DATA_DIRECTORY}/Backups
+      - BACKREST_DATA=/data
+      - BACKREST_CONFIG=/config/config.json
+      - XDG_CACHE_HOME=/cache
+      - BACKREST_PORT=0.0.0.0:9898
+      - RESTIC_PASSWORD=${RESTIC_PASSWORD}
     healthcheck:
-      test: ["CMD", "borgmatic", "--version"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9898/health"]
       interval: 60s
       timeout: 10s
       retries: 3
       start_period: 10s
     volumes:
-      - ${NEXUS_ROOT_DIRECTORY}/services/backups/config:/root/.config/borgmatic.d
-      - ${NEXUS_ROOT_DIRECTORY}:/mnt/source:ro
-      - ${NEXUS_DATA_DIRECTORY}/Backups:/mnt/repo
-      - ~/.ssh:/root/.ssh:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config/backrest/config:/config
+      - ${NEXUS_DATA_DIRECTORY}/Config/backrest/data:/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/backrest/cache:/cache
+      - ${NEXUS_DATA_DIRECTORY}/Config/backrest/rclone:/root/.config/rclone:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config:/userdata:ro
+      - ${NEXUS_DATA_DIRECTORY}/Backups:/repos
     labels:
-      # Borgmatic has no web UI - disable Traefik
-      - "traefik.enable=false"
-
-# Note: This container runs on a cron schedule inside the image.
-# You need to configure the crontab in your borgmatic config.
-# See docs/runbooks/backups.md for instructions.
+      - "traefik.enable=true"
+      - "traefik.http.routers.backrest.rule=Host(`backups.${DOMAIN}`)"
+      - "traefik.http.routers.backrest.entrypoints=websecure"
+      - "traefik.http.routers.backrest.tls=true"
+      - "traefik.http.routers.backrest.tls.certresolver=cloudflare"
+      - "traefik.http.services.backrest.loadbalancer.server.port=9898"
 
 networks:
   nexus:
