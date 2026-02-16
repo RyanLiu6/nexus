@@ -1,6 +1,6 @@
 services:
   donetick:
-    image: donetick/donetick:v0.1.64
+    image: donetick/donetick:v0.1.74
     container_name: donetick
     restart: unless-stopped
     deploy:
