@@ -128,6 +128,17 @@
     DONETICK_R2_BUCKET: "{{ donetick_r2_bucket | default('') }}"
     DONETICK_R2_ACCESS_KEY: "{{ donetick_r2_access_key | default('') }}"
     DONETICK_R2_SECRET_KEY: "{{ donetick_r2_secret_key | default('') }}"
+    # Paperless-ngx
+    PAPERLESS_POSTGRES_USER: "{{ paperless_postgres_user | default('paperless') }}"
+    PAPERLESS_POSTGRES_PASSWORD: "{{ paperless_postgres_password | default('') }}"
+    PAPERLESS_POSTGRES_DB: "{{ paperless_postgres_db | default('paperless') }}"
+    PAPERLESS_SECRET_KEY: "{{ paperless_secret_key | default('') }}"
+    PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
+    PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
+    # Booklore
+    BOOKLORE_MYSQL_USER: "{{ booklore_mysql_user | default('booklore') }}"
+    BOOKLORE_MYSQL_PASSWORD: "{{ booklore_mysql_password | default('') }}"
+    BOOKLORE_MYSQL_ROOT_PASSWORD: "{{ booklore_mysql_root_password | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"

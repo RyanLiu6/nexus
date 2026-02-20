@@ -1,0 +1,95 @@
+services:
+  paperless-web:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-web
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+    networks:
+      - nexus
+      - paperless
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/paperless/data:/usr/src/paperless/data
+      - ${NEXUS_DATA_DIRECTORY}/paperless/media:/usr/src/paperless/media
+      - ${NEXUS_DATA_DIRECTORY}/paperless/export:/usr/src/paperless/export
+      - ${NEXUS_DATA_DIRECTORY}/paperless/consume:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://paperless-redis:6379
+      PAPERLESS_DBHOST: paperless-db
+      PAPERLESS_DBUSER: ${PAPERLESS_POSTGRES_USER}
+      PAPERLESS_DBPASS: ${PAPERLESS_POSTGRES_PASSWORD}
+      PAPERLESS_DBNAME: ${PAPERLESS_POSTGRES_DB}
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY}
+      PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
+      PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
+      PAPERLESS_URL: https://paperless.${NEXUS_DOMAIN}
+      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
+    depends_on:
+      paperless-db:
+        condition: service_healthy
+      paperless-redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.paperless-web.loadbalancer.server.port=8000"
+      - "traefik.http.routers.paperless-web.rule=Host(`paperless.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.paperless-web.entrypoints=https"
+      - "traefik.http.routers.paperless-web.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.paperless-web.tls=true"
+      - "traefik.http.routers.paperless-web.tls.certresolver=certchallenge"
+
+  paperless-db:
+    image: postgres:18
+    container_name: paperless-db
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - paperless
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/paperless/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${PAPERLESS_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PAPERLESS_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PAPERLESS_POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  paperless-redis:
+    image: redis:8
+    container_name: paperless-redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    networks:
+      - paperless
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/paperless/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  nexus:
+    external: true
+  paperless:
+    name: nexus_paperless
+    driver: bridge

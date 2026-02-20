@@ -243,6 +243,30 @@ donetick_r2_secret_key: "CHANGE_ME"
 donetick_r2_bucket: "donetick-storage"
 
 # =============================================================================
+# Paperless-ngx - Document Management (Optional)
+# =============================================================================
+# PostgreSQL database credentials
+paperless_postgres_user: "paperless"
+paperless_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
+paperless_postgres_db: "paperless"
+
+# Secret key for Django (application security)
+# Generate with: openssl rand -hex 64
+paperless_secret_key: "CHANGE_ME"
+
+# Admin user credentials (created on first run)
+paperless_admin_user: "admin"
+paperless_admin_password: "CHANGE_ME"  # openssl rand -base64 24
+
+# =============================================================================
+# Booklore - Book Library Manager (Optional)
+# =============================================================================
+# MariaDB database credentials
+booklore_mysql_user: "booklore"
+booklore_mysql_password: "CHANGE_ME"  # openssl rand -base64 32
+booklore_mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
+
+# =============================================================================
 # Nextcloud - File Storage (Optional)
 # =============================================================================
 # MariaDB (MySQL) database credentials
@@ -330,5 +354,14 @@ foundry_s3_bucket: "foundry-assets"
 # vaultwarden_signups_allowed -> VAULTWARDEN_SIGNUPS_ALLOWED
 # vaultwarden_invitations_allowed -> VAULTWARDEN_INVITATIONS_ALLOWED
 # donetick_jwt_secret        -> DONETICK_JWT_SECRET
+# paperless_postgres_user    -> PAPERLESS_POSTGRES_USER
+# paperless_postgres_password -> PAPERLESS_POSTGRES_PASSWORD
+# paperless_postgres_db      -> PAPERLESS_POSTGRES_DB
+# paperless_secret_key       -> PAPERLESS_SECRET_KEY
+# paperless_admin_user       -> PAPERLESS_ADMIN_USER
+# paperless_admin_password   -> PAPERLESS_ADMIN_PASSWORD
+# booklore_mysql_user        -> BOOKLORE_MYSQL_USER
+# booklore_mysql_password    -> BOOKLORE_MYSQL_PASSWORD
+# booklore_mysql_root_password -> BOOKLORE_MYSQL_ROOT_PASSWORD
 # puid                       -> PUID
 # pgid                       -> PGID
