@@ -124,6 +124,11 @@ class TestDiscoverServices:
         assert "dashboard" in services
         assert "monitoring" in services
 
+    def test_discover_services_includes_new_services(self) -> None:
+        services = discover_services()
+        assert "paperless" in services
+        assert "booklore" in services
+
     def test_get_all_service_names(self) -> None:
         names = get_all_service_names()
         assert isinstance(names, list)
