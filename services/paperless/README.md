@@ -80,32 +80,6 @@ The built-in backup service covers the data directories. For a manual database b
 docker exec paperless-db pg_dump -U ${PAPERLESS_POSTGRES_USER} ${PAPERLESS_POSTGRES_DB} > paperless-backup.sql
 ```
 
-## Configuration
-
-- **Admin User**: Created automatically on first run using `PAPERLESS_ADMIN_USER` and `PAPERLESS_ADMIN_PASSWORD`.
-- **Consumption Directory**: Files placed in the `consume/` directory are automatically imported and processed. Useful for scanner integrations.
-- **OCR Language**: Defaults to English. Configure `PAPERLESS_OCR_LANGUAGE` for other languages.
-
-## Troubleshooting
-
-### Database Connection Failed
-
-**Symptoms:** Container fails to start with DB connection errors
-
-**Solutions:**
-1. Verify vault variables are set correctly and the `.env` file was regenerated
-2. Check that `paperless-db` container is healthy: `docker ps | grep paperless-db`
-3. Confirm `PAPERLESS_POSTGRES_USER` and `PAPERLESS_POSTGRES_PASSWORD` match between containers
-
-### OCR Not Working
-
-**Symptoms:** Documents are imported but text is not extracted
-
-**Solutions:**
-1. Check container logs: `docker logs paperless-web`
-2. Verify the document format is supported (PDF, PNG, JPG, TIFF)
-3. For non-English documents, set `PAPERLESS_OCR_LANGUAGE` to the appropriate language code
-
 ## Resources
 
 - [GitHub Repository](https://github.com/paperless-ngx/paperless-ngx)

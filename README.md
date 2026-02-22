@@ -77,8 +77,7 @@ invoke ops --daily               # Daily maintenance
 | Group | Access | Auth |
 |-------|--------|------|
 | admin | All services | Tailscale + SSH |
-| members | FoundryVTT, Paperless-ngx, Booklore, Homepage | Tailscale |
-| finance | Sure, Homepage | Tailscale |
+| members | FoundryVTT, Homepage | Tailscale |
 
 ## Documentation
 

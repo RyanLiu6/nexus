@@ -131,8 +131,6 @@ tailscale_users:
   members:
     - "friend1@gmail.com"
     - "friend2@gmail.com"
-  finance:
-    - "accountant@gmail.com"
 
 # =============================================================================
 # Dashboard (Homepage)
@@ -230,7 +228,7 @@ paperless_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
 paperless_postgres_db: "paperless"
 
 # Secret key for Django (application security)
-# Generate with: openssl rand -hex 64
+# Generate with: openssl rand -base64 50
 paperless_secret_key: "CHANGE_ME"
 
 # Admin user credentials (created on first run)

@@ -27,7 +27,6 @@ services:
       PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
       PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
       PAPERLESS_URL: https://paperless.${NEXUS_DOMAIN}
-      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
     depends_on:
       paperless-db:
         condition: service_healthy

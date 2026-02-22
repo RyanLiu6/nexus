@@ -71,26 +71,6 @@ The built-in backup service covers the data directories. For a manual database b
 docker exec booklore-db mysqldump -u root -p${BOOKLORE_MYSQL_ROOT_PASSWORD} booklore > booklore-backup.sql
 ```
 
-## Troubleshooting
-
-### Database Connection Failed
-
-**Symptoms:** Container fails to start with DB connection errors
-
-**Solutions:**
-1. Verify vault variables are set correctly and the `.env` file was regenerated
-2. Check that `booklore-db` container is healthy: `docker ps | grep booklore-db`
-3. Confirm `BOOKLORE_MYSQL_USER` and `BOOKLORE_MYSQL_PASSWORD` match between containers
-
-### File Permission Issues
-
-**Symptoms:** Ebooks in `books/` or `bookdrop/` are not readable or importable
-
-**Solutions:**
-1. Ensure the data directories are owned by the correct user
-2. Check container logs: `docker logs booklore`
-3. Verify volume mounts are correctly configured in the compose file
-
 ## Resources
 
 - [GitHub Repository](https://github.com/booklore-app/booklore)

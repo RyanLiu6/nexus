@@ -142,8 +142,8 @@ PRESETS = {
 | **transmission** | Torrent client | Admin |
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |
 | **sure** | Finance tracking | Admin + Wife |
-| **paperless** | Document management | Admin + Family |
-| **booklore** | Book library | Admin + Family |
+| **paperless** | Document management | Admin |
+| **booklore** | Book library | Admin |
 | **vaultwarden** | Password manager | Admin |
 | **backups** | Borgmatic | Automated |
 

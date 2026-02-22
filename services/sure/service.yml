@@ -8,7 +8,7 @@ icon: mdi-finance
 subdomain: sure
 
 access:
-  groups: [admins, finance]
+  groups: [admins]
   public: false
 
 # Sub-services for multi-container setup

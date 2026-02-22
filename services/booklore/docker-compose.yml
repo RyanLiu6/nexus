@@ -22,7 +22,6 @@ services:
       DATABASE_PASSWORD: ${BOOKLORE_MYSQL_PASSWORD}
       DISK_TYPE: LOCAL
       TZ: ${TZ}
-      NEXUS_ROOT_DIRECTORY: ${NEXUS_ROOT_DIRECTORY}
     depends_on:
       booklore-db:
         condition: service_healthy

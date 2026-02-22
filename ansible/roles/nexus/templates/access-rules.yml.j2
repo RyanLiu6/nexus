@@ -84,28 +84,25 @@ services:
     groups: [admins]
     description: "Book library"
 
-  # ---------------------------------------------------------------------------
-  # Finance services
-  # ---------------------------------------------------------------------------
   sure:
-    groups: [admins, finance]
+    groups: [admins]
     description: "Personal finance"
 
   # ---------------------------------------------------------------------------
   # Shared services (all groups)
   # ---------------------------------------------------------------------------
   foundryvtt:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Virtual tabletop"
 
   foundry:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Virtual tabletop (alias)"
 
   homepage:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Dashboard (alias)"
 
   nexus:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Dashboard"
