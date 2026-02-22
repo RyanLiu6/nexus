@@ -122,12 +122,6 @@
     VAULTWARDEN_ADMIN_TOKEN: "{{ vaultwarden_admin_token | default('') }}"
     VAULTWARDEN_SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed | default('false') }}"
     VAULTWARDEN_INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed | default('true') }}"
-    # Donetick
-    DONETICK_JWT_SECRET: "{{ donetick_jwt_secret | default('') }}"
-    DONETICK_R2_ENDPOINT: "{{ donetick_r2_endpoint | default('') }}"
-    DONETICK_R2_BUCKET: "{{ donetick_r2_bucket | default('') }}"
-    DONETICK_R2_ACCESS_KEY: "{{ donetick_r2_access_key | default('') }}"
-    DONETICK_R2_SECRET_KEY: "{{ donetick_r2_secret_key | default('') }}"
     # Paperless-ngx
     PAPERLESS_POSTGRES_USER: "{{ paperless_postgres_user | default('paperless') }}"
     PAPERLESS_POSTGRES_PASSWORD: "{{ paperless_postgres_password | default('') }}"

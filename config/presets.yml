@@ -15,7 +15,6 @@ home:
   services:
     - backups
     - sure
-    - donetick
     - paperless
     - booklore
     - foundryvtt

@@ -26,7 +26,8 @@ Nexus is a self-hosted homelab solution that provides:
 | Gaming | ✅ | FoundryVTT for D&D |
 | Finance | ✅ | Sure for budgeting |
 | Passwords | ✅ | Vaultwarden (Bitwarden) |
-| Tasks | ✅ | Donetick for chores/tasks |
+| Documents | ✅ | Paperless-ngx for document management |
+| Books | ✅ | Booklore for book library |
 
 ## Tech Stack
 
@@ -124,7 +125,7 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 ```python
 PRESETS = {
     "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
-    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "donetick"],
+    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "paperless", "booklore"],
 }
 ```
 
@@ -141,7 +142,8 @@ PRESETS = {
 | **transmission** | Torrent client | Admin |
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |
 | **sure** | Finance tracking | Admin + Wife |
-| **donetick** | Chore tracker | Admin + Family |
+| **paperless** | Document management | Admin + Family |
+| **booklore** | Book library | Admin + Family |
 | **vaultwarden** | Password manager | Admin |
 | **backups** | Borgmatic | Automated |
 
@@ -174,7 +176,8 @@ nexus/
 │   ├── dashboard/
 │   ├── monitoring/
 │   ├── vaultwarden/
-│   ├── donetick/
+│   ├── paperless/
+│   ├── booklore/
 │   └── ...
 │
 ├── src/nexus/                # Python library
