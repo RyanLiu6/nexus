@@ -1,0 +1,20 @@
+name: booklore
+description: Book and ebook library manager
+category: apps
+icon: mdi-bookshelf
+subdomain: booklore
+
+access:
+  groups: [admins]
+  public: false
+
+services:
+  booklore:
+    icon: mdi-bookshelf
+    description: Book and ebook library manager
+  booklore-db:
+    exclude: true
+
+dependencies:
+  - traefik
+  - tailscale-access

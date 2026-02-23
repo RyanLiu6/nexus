@@ -76,28 +76,33 @@ services:
     groups: [admins]
     description: "File storage"
 
-  # ---------------------------------------------------------------------------
-  # Finance services
-  # ---------------------------------------------------------------------------
+  paperless:
+    groups: [admins]
+    description: "Document management"
+
+  booklore:
+    groups: [admins]
+    description: "Book library"
+
   sure:
-    groups: [admins, finance]
+    groups: [admins]
     description: "Personal finance"
 
   # ---------------------------------------------------------------------------
   # Shared services (all groups)
   # ---------------------------------------------------------------------------
   foundryvtt:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Virtual tabletop"
 
   foundry:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Virtual tabletop (alias)"
 
   homepage:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Dashboard (alias)"
 
   nexus:
-    groups: [admins, members, finance]
+    groups: [admins, members]
     description: "Dashboard"

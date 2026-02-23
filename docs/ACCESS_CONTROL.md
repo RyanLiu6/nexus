@@ -16,7 +16,6 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 |-------|----------|-----|
 | `admins` | Everything | Yes |
 | `members` | FoundryVTT, Homepage | No |
-| `finance` | Sure, Homepage | No |
 
 ## Architecture
 
@@ -77,8 +76,6 @@ tailscale_users:
     - your-email@gmail.com
   members:
     - friend1@gmail.com
-  finance:
-    - accountant@gmail.com
 ```
 
 ### 2. Add Tailscale API Key
@@ -105,19 +102,21 @@ sudo tailscale up --advertise-tags=tag:nexus-server
 
 ## Service Access Matrix
 
-| Service | admins | members | finance | Public |
-|---------|--------|---------|---------|--------|
-| Traefik | ✅ | ❌ | ❌ | ❌ |
-| Grafana | ✅ | ❌ | ❌ | ❌ |
-| Prometheus | ✅ | ❌ | ❌ | ❌ |
-| Alertmanager | ✅ | ❌ | ❌ | ❌ |
-| Transmission | ✅ | ❌ | ❌ | ❌ |
-| Jellyfin | ✅ | ❌ | ❌ | ❌ |
-| Plex | ✅ | ❌ | ❌ | ❌ |
-| Nextcloud | ✅ | ❌ | ❌ | ❌ |
-| Sure | ✅ | ❌ | ✅ | ❌ |
-| Homepage | ✅ | ✅ | ✅ | ❌ |
-| FoundryVTT | ✅ | ✅ | ✅ | ✅ |
+| Service | admins | members | Public |
+|---------|--------|---------|--------|
+| Traefik | ✅ | ❌ | ❌ |
+| Grafana | ✅ | ❌ | ❌ |
+| Prometheus | ✅ | ❌ | ❌ |
+| Alertmanager | ✅ | ❌ | ❌ |
+| Transmission | ✅ | ❌ | ❌ |
+| Jellyfin | ✅ | ❌ | ❌ |
+| Plex | ✅ | ❌ | ❌ |
+| Nextcloud | ✅ | ❌ | ❌ |
+| Sure | ✅ | ❌ | ❌ |
+| Paperless | ✅ | ❌ | ❌ |
+| Booklore | ✅ | ❌ | ❌ |
+| Homepage | ✅ | ✅ | ❌ |
+| FoundryVTT | ✅ | ✅ | ✅ |
 
 ---
 
@@ -142,9 +141,9 @@ services:
   grafana:
     groups: [admins]
   sure:
-    groups: [admins, finance]
+    groups: [admins]
   homepage:
-    groups: [admins, members, finance]
+    groups: [admins, members]
 ```
 
 ---

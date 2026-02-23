@@ -1,0 +1,22 @@
+name: paperless
+description: Document management system
+category: apps
+icon: mdi-file-document-outline
+subdomain: paperless
+
+access:
+  groups: [admins]
+  public: false
+
+services:
+  paperless-web:
+    icon: mdi-file-document-outline
+    description: Document management system
+  paperless-db:
+    exclude: true
+  paperless-redis:
+    exclude: true
+
+dependencies:
+  - traefik
+  - tailscale-access

@@ -22,8 +22,6 @@ tailscale_users:
     - your-email@gmail.com
   members:
     - friend1@gmail.com
-  finance:
-    - accountant@gmail.com
 ```
 
 ### 2. Add Tailscale API Key
