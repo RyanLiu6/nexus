@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def _verify_backup() -> bool:
     try:
-        run_command(["docker", "exec", "backrest", "restic", "check"])
+        run_command(["docker", "exec", "backrest", "restic", "-r", "/repos", "check"])
         logger.info("Backup repositories verified successfully")
         return True
     except Exception as e:
@@ -65,21 +65,34 @@ def main(
         _verify_backup()
         return
 
-    if snapshot:
-        if db:
-            if not service:
-                logger.error("Service must be specified when restoring database")
-                return
+    if not snapshot:
+        snapshots = list_backups()
+        if not snapshots:
+            logger.error("No backup snapshots found")
+            return
 
-            db_file = Path(db)
-            if not db_file.exists():
-                logger.error(f"Database file not found: {db_file}")
-                return
-            restore_database(service, db_file, dry_run)
-        else:
-            restore_backup(snapshot, [service] if service else None, dry_run)
+        print("\nAvailable backup snapshots:")
+        for i, snapshot_id in enumerate(snapshots, 1):
+            print(f"  {i}. {snapshot_id}")
+
+        choice = click.prompt(
+            "Select snapshot number",
+            type=click.IntRange(1, len(snapshots)),
+        )
+        snapshot = snapshots[choice - 1]
+
+    if db:
+        if not service:
+            logger.error("Service must be specified when restoring database")
+            return
+
+        db_file = Path(db)
+        if not db_file.exists():
+            logger.error(f"Database file not found: {db_file}")
+            return
+        restore_database(service, db_file, dry_run)
     else:
-        logger.error("No snapshot specified. Use --snapshot or --list")
+        restore_backup(snapshot, [service] if service else None, dry_run)
 
 
 if __name__ == "__main__":

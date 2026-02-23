@@ -80,7 +80,7 @@ def verify_backups() -> bool:
     """
     try:
         result = _run_command(
-            ["docker", "exec", "backrest", "restic", "snapshots"],
+            ["docker", "exec", "backrest", "restic", "-r", "/repos", "snapshots"],
             "Check backup snapshots",
         )
         if result.stdout.strip():

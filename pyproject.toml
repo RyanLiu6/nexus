@@ -46,6 +46,7 @@ packages = ["src/nexus"]
 [project.scripts]
 nexus-deploy = "nexus.cli.deploy:main"
 nexus-health = "nexus.cli.health:main"
+nexus-backup = "nexus.cli.backup:main"
 nexus-restore = "nexus.cli.restore:main"
 nexus-ops = "nexus.cli.operations:main"
 nexus-alert-bot = "nexus.cli.alert_bot:main"

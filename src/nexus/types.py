@@ -22,7 +22,7 @@ class ServiceMetadata(TypedDict):
 
 
 class R2Credentials(TypedDict):
-    """Cloudflare R2 storage credentials for FoundryVTT S3-compatible storage.
+    """Cloudflare R2 storage credentials for S3-compatible storage.
 
     Retrieved from Terraform outputs during deployment and passed to Ansible
     as extra-vars for configuring Foundry's S3 storage backend.

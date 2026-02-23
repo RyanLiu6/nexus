@@ -1,4 +1,5 @@
 import subprocess
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +19,7 @@ from nexus.operations.maintenance import (
 
 
 @pytest.fixture
-def mock_run_command():
+def mock_run_command() -> Generator[MagicMock, None, None]:
     with patch("nexus.operations.maintenance._run_command") as mock:
         yield mock
 

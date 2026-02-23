@@ -53,7 +53,10 @@ class TestMain:
         assert result.exit_code == 0
         mock_restore.assert_called_once()
 
-    def test_main_restore_no_snapshot(self) -> None:
+    @patch("nexus.cli.restore.list_backups")
+    def test_main_restore_no_snapshot(self, mock_list: MagicMock) -> None:
+        mock_list.return_value = []
+
         runner = CliRunner()
         result = runner.invoke(main, [])
 
@@ -126,3 +129,20 @@ class TestMain:
         result = runner.invoke(main, ["--snapshot", "abc123", "--dry-run"])
 
         assert result.exit_code == 0
+
+    @patch("nexus.cli.restore.restore_backup")
+    @patch("nexus.cli.restore.list_backups")
+    def test_main_interactive_restore(
+        self, mock_list: MagicMock, mock_restore: MagicMock
+    ) -> None:
+        mock_list.return_value = ["abc123", "def456"]
+
+        runner = CliRunner()
+        result = runner.invoke(main, [], input="1\n")
+
+        assert result.exit_code == 0
+        assert "abc123" in result.output
+        assert "def456" in result.output
+        mock_restore.assert_called_once()
+        args = mock_restore.call_args[0]
+        assert args[0] == "abc123"

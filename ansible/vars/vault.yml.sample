@@ -324,7 +324,6 @@ foundry_s3_bucket: "foundry-assets"
 # cloudflare_api_token       -> CLOUDFLARE_DNS_API_TOKEN
 # acme_email                 -> ACME_EMAIL
 # grafana_admin_password     -> GRAFANA_ADMIN_PASSWORD
-# borg_passphrase            -> BORG_PASSPHRASE
 # sure_postgres_user         -> SURE_POSTGRES_USER
 # sure_postgres_password     -> SURE_POSTGRES_PASSWORD
 # sure_postgres_db           -> SURE_POSTGRES_DB

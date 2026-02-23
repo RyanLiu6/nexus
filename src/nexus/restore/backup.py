@@ -1,12 +1,119 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from nexus.config import ROOT_PATH
 from nexus.utils import run_command
 
 logger = logging.getLogger(__name__)
+
+
+def get_backrest_config() -> dict[str, Any]:
+    """Retrieve and parse the Backrest configuration from the running container.
+
+    Reads the Backrest configuration JSON file from inside the backrest Docker
+    container, which serves as the single source of truth for repo URIs and
+    retention policies.
+
+    Returns:
+        Parsed configuration dict with structure:
+        {"repos": [{"id": str, "uri": str, ...}],
+         "plans": [{"id": str, "repo": str,
+                    "retention": {"policyKeepLastN": int}, ...}]}
+
+    Raises:
+        RuntimeError: If the docker exec command fails or output cannot be
+            parsed as JSON.
+    """
+    try:
+        result = run_command(
+            ["docker", "exec", "backrest", "cat", "/config/config.json"]
+        )
+        return dict(json.loads(result.stdout))
+    except Exception as e:
+        raise RuntimeError(f"Failed to read Backrest config: {e}") from e
+
+
+def push_backup(target: str = "all", dry_run: bool = False) -> None:
+    """Trigger a restic backup and prune for the specified target repositories.
+
+    Reads repo URIs and retention policies from the Backrest config, then runs
+    `restic backup /userdata` followed by `restic forget --keep-last N --prune`
+    for each targeted plan. Keeps manual and scheduled backups consistent.
+
+    Args:
+        target: Which repositories to back up. One of "local", "r2", or "all".
+            Defaults to "all".
+        dry_run: If True, log the commands without executing them.
+
+    Raises:
+        ValueError: If target is not one of "local", "r2", or "all".
+        RuntimeError: If the Backrest config cannot be read.
+    """
+    if target not in ("local", "r2", "all"):
+        raise ValueError(f"Invalid target '{target}'. Must be 'local', 'r2', or 'all'.")
+
+    config = get_backrest_config()
+
+    repos_by_id = {repo["id"]: repo for repo in config.get("repos", [])}
+    plans = config.get("plans", [])
+
+    for plan in plans:
+        repo_id = plan.get("repo", "")
+
+        if target != "all" and repo_id != target:
+            continue
+
+        repo = repos_by_id.get(repo_id)
+        if not repo:
+            logger.warning(
+                f"Repo '{repo_id}' not found in config, "
+                f"skipping plan '{plan.get('id')}'"
+            )
+            continue
+
+        uri = repo["uri"]
+        keep_last = plan.get("retention", {}).get("policyKeepLastN", 1)
+        plan_id = plan.get("id", repo_id)
+
+        backup_cmd = [
+            "docker",
+            "exec",
+            "backrest",
+            "restic",
+            "-r",
+            uri,
+            "backup",
+            "/userdata",
+        ]
+        forget_cmd = [
+            "docker",
+            "exec",
+            "backrest",
+            "restic",
+            "-r",
+            uri,
+            "forget",
+            "--keep-last",
+            str(keep_last),
+            "--prune",
+        ]
+
+        if dry_run:
+            logger.info(
+                f"[DRY RUN] Plan '{plan_id}': would run: {' '.join(backup_cmd)}"
+            )
+            logger.info(
+                f"[DRY RUN] Plan '{plan_id}': would run: {' '.join(forget_cmd)}"
+            )
+            continue
+
+        logger.info(f"Backing up plan '{plan_id}' to repo '{repo_id}' ({uri})")
+        run_command(backup_cmd)
+        logger.info(f"Pruning plan '{plan_id}' (keep-last={keep_last})")
+        run_command(forget_cmd)
+        logger.info(f"Plan '{plan_id}' backup complete")
 
 
 def list_backups() -> list[str]:
@@ -20,7 +127,16 @@ def list_backups() -> list[str]:
     """
     try:
         result = run_command(
-            ["docker", "exec", "backrest", "restic", "snapshots", "--json"]
+            [
+                "docker",
+                "exec",
+                "backrest",
+                "restic",
+                "-r",
+                "/repos",
+                "snapshots",
+                "--json",
+            ]
         )
         snapshots_data = json.loads(result.stdout)
         snapshots = [snapshot["short_id"] for snapshot in snapshots_data]
@@ -54,6 +170,8 @@ def restore_backup(
         "exec",
         "backrest",
         "restic",
+        "-r",
+        "/repos",
         "restore",
         snapshot_id,
         "--target",
