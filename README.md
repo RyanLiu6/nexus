@@ -47,7 +47,7 @@ invoke deploy
 
 The deploy command handles vault encryption, Terraform, cloudflared, and Ansible automatically.
 
-> **Tip:** For a complete shell setup with direnv + uv integration, see [RyanLiu6/setup](https://github.com/RyanLiu6/setup).
+> **Tip:** For a complete shell setup with direnv + uv integration, see [here](https://github.com/RyanLiu6/dotfiles).
 
 ## Invoke Commands
 
