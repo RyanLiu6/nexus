@@ -13,9 +13,9 @@ services:
       - nexus
       - booklore
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/booklore/data:/app/data
-      - ${NEXUS_DATA_DIRECTORY}/booklore/books:/books
-      - ${NEXUS_DATA_DIRECTORY}/booklore/bookdrop:/bookdrop
+      - ${NEXUS_DATA_DIRECTORY}/Config/booklore/data:/app/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/booklore/books:/books
+      - ${NEXUS_DATA_DIRECTORY}/Config/booklore/bookdrop:/bookdrop
     environment:
       DATABASE_URL: jdbc:mariadb://booklore-db:3306/booklore
       DATABASE_USERNAME: ${BOOKLORE_MYSQL_USER}
@@ -48,7 +48,7 @@ services:
     networks:
       - booklore
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/booklore/mariadb:/config
+      - ${NEXUS_DATA_DIRECTORY}/Config/booklore/mariadb:/config
     environment:
       MYSQL_ROOT_PASSWORD: ${BOOKLORE_MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: booklore

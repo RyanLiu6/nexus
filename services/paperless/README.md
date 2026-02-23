@@ -61,7 +61,7 @@ nexus deploy home
 
 ## Data Storage
 
-Paperless stores data under `${NEXUS_DATA_DIRECTORY}/paperless/`:
+Paperless stores data under `${NEXUS_DATA_DIRECTORY}/Config/paperless/`:
 
 | Path | Contents |
 |------|----------|

@@ -13,10 +13,10 @@ services:
       - nexus
       - paperless
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/paperless/data:/usr/src/paperless/data
-      - ${NEXUS_DATA_DIRECTORY}/paperless/media:/usr/src/paperless/media
-      - ${NEXUS_DATA_DIRECTORY}/paperless/export:/usr/src/paperless/export
-      - ${NEXUS_DATA_DIRECTORY}/paperless/consume:/usr/src/paperless/consume
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/data:/usr/src/paperless/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/media:/usr/src/paperless/media
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/export:/usr/src/paperless/export
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/consume:/usr/src/paperless/consume
     environment:
       PAPERLESS_REDIS: redis://paperless-redis:6379
       PAPERLESS_DBHOST: paperless-db
@@ -55,7 +55,7 @@ services:
     networks:
       - paperless
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/paperless/postgres:/var/lib/postgresql/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/postgres:/var/lib/postgresql
     environment:
       POSTGRES_USER: ${PAPERLESS_POSTGRES_USER}
       POSTGRES_PASSWORD: ${PAPERLESS_POSTGRES_PASSWORD}
@@ -79,7 +79,7 @@ services:
     networks:
       - paperless
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/paperless/redis:/data
+      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

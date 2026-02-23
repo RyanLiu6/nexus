@@ -54,7 +54,7 @@ nexus deploy home
 
 ## Data Storage
 
-Booklore stores data under `${NEXUS_DATA_DIRECTORY}/booklore/`:
+Booklore stores data under `${NEXUS_DATA_DIRECTORY}/Config/booklore/`:
 
 | Path | Contents |
 |------|----------|
