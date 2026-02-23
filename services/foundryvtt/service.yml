@@ -8,7 +8,7 @@ icon: si-foundryvirtualtabletop
 subdomain: foundry
 
 access:
-  groups: [admins, members, finance]
+  groups: [admins, members]
   public: true # Exposed via Cloudflare Tunnel
 
 dependencies:

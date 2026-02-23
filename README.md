@@ -7,7 +7,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Dashboard** - Single homepage to access all services
 - **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
-- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Donetick (tasks)
+- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Paperless-ngx (documents), Booklore (books)
 - **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
 - **Backups** - Automated with Backrest
@@ -47,7 +47,7 @@ invoke deploy
 
 The deploy command handles vault encryption, Terraform, cloudflared, and Ansible automatically.
 
-> **Tip:** For a complete shell setup with direnv + uv integration, see [RyanLiu6/setup](https://github.com/RyanLiu6/setup).
+> **Tip:** For a complete shell setup with direnv + uv integration, see [here](https://github.com/RyanLiu6/dotfiles).
 
 ## Invoke Commands
 
@@ -69,7 +69,7 @@ invoke ops --daily               # Daily maintenance
 
 **Core:** traefik, tailscale-access, dashboard, monitoring, vaultwarden
 **Media:** jellyfin, plex, transmission
-**Apps:** foundryvtt, sure, nextcloud, donetick
+**Apps:** foundryvtt, sure, nextcloud, paperless, booklore
 **Utils:** backups
 
 ## Access Control
@@ -77,8 +77,7 @@ invoke ops --daily               # Daily maintenance
 | Group | Access | Auth |
 |-------|--------|------|
 | admin | All services | Tailscale + SSH |
-| members | FoundryVTT, Donetick, Homepage | Tailscale |
-| finance | Sure, Homepage | Tailscale |
+| members | FoundryVTT, Homepage | Tailscale |
 
 ## Documentation
 

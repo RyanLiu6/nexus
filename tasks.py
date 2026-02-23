@@ -188,6 +188,29 @@ def restart(
     )
 
 
+@task
+def down(c: Context, remove_orphans: bool = True) -> None:
+    """Stop containers via docker compose down.
+
+    Runs against the generated docker-compose.yml in the project root.
+    Does not re-run Terraform or Ansible.
+    """
+    args = ["docker compose down"]
+    if remove_orphans:
+        args.append("--remove-orphans")
+    c.run(" ".join(args))
+
+
+@task
+def start(c: Context) -> None:
+    """Start containers via docker compose up -d.
+
+    Fast start — skips config generation, Ansible, and Terraform.
+    Runs against the generated docker-compose.yml in the project root.
+    """
+    c.run("docker compose up -d")
+
+
 # =============================================================================
 # Health & Operations
 # =============================================================================

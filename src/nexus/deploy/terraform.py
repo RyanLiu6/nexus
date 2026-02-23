@@ -184,7 +184,7 @@ def get_r2_credentials(service: str) -> Optional[R2Credentials]:
     """Get R2 credentials for a service from terraform state.
 
     Args:
-        service: Service name prefix for R2 outputs (e.g., 'foundry', 'donetick').
+        service: Service name prefix for R2 outputs (e.g., 'foundry').
 
     Returns:
         Dictionary with keys: endpoint, access_key, secret_key, bucket.
