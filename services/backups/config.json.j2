@@ -1,4 +1,7 @@
 {
+  "modno": 1,
+  "version": 4,
+  "instance": "nexus",
   "repos": [
     {
       "id": "local",
@@ -29,8 +32,7 @@
         "/userdata"
       ],
       "schedule": {
-        "schedule": "0 2 * * *",
-        "disabled": false
+        "cron": "0 2 * * *"
       },
       "retention": {
         "policyKeepLastN": 3
@@ -44,8 +46,7 @@
         "/userdata"
       ],
       "schedule": {
-        "schedule": "0 3 * * *",
-        "disabled": false
+        "cron": "0 3 * * *"
       },
       "retention": {
         "policyKeepLastN": 1
