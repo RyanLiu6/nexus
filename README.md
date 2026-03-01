@@ -10,7 +10,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Paperless-ngx (documents), Booklore (books)
 - **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
-- **Backups** - Automated with Borgmatic
+- **Backups** - Automated with Backrest
 
 ## Tech Stack
 

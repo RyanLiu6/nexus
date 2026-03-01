@@ -9,9 +9,6 @@ TERRAFORM_PATH = ROOT_PATH / "terraform"
 ANSIBLE_PATH = ROOT_PATH / "ansible"
 VAULT_PATH = ANSIBLE_PATH / "vars" / "vault.yml"
 TAILSCALE_PATH = ROOT_PATH / "tailscale"
-BACKUP_DIR = (
-    Path(os.environ.get("NEXUS_DATA_DIRECTORY", "~/Data")).expanduser() / "Backups"
-)
 
 
 @cache

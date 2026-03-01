@@ -268,49 +268,70 @@ def ops(
 
 
 @task
-def backup_list(c: Context) -> None:
+def backup(c: Context, target: str = "all", dry_run: bool = False) -> None:
+    """Back up all service data to restic repositories.
+
+    Args:
+        c: Invoke context.
+        target: Which repositories to back up ("local", "r2", or "all").
+        dry_run: Preview commands without executing.
+    """
+    args = [f"--target {target}"]
+    if dry_run:
+        args.append("--dry-run")
+    c.run(f"uv run python -m nexus.cli.backup {' '.join(args)}")
+
+
+@task
+def backup_list(c: Context, target: str = "local") -> None:
     """List available backups.
 
     Args:
         c: Invoke context.
+        target: Repository to list snapshots from ("local" or "r2").
     """
-    c.run("uv run python -m nexus.cli.restore --list")
+    c.run(f"uv run python -m nexus.cli.backup_list --target {target}")
 
 
 @task
-def backup_verify(c: Context, backup: Optional[str] = None) -> None:
+def backup_verify(c: Context) -> None:
     """Verify backup integrity.
 
     Args:
         c: Invoke context.
-        backup: Specific backup to verify.
     """
-    args = ["--verify"]
-    if backup:
-        args.append(f"--backup {backup}")
-    c.run(f"uv run python -m nexus.cli.restore {' '.join(args)}")
+    c.run("uv run python -m nexus.cli.backup_verify")
 
 
 @task
 def restore(
     c: Context,
-    backup: str = "",
     service: Optional[str] = None,
+    snapshot: str = "latest",
+    target: str = "local",
     dry_run: bool = False,
+    yes: bool = False,
 ) -> None:
-    """Restore from backup.
+    """Restore service data from backup.
+
+    Use --service to restore specific services; omit for all services.
 
     Args:
         c: Invoke context.
-        backup: Backup file to restore from.
-        service: Specific service to restore.
+        service: Service to restore (repeatable via comma-separation not supported;
+            run multiple times or use CLI directly for multiple services).
+        snapshot: Snapshot ID to restore from (default: latest).
+        target: Repository to restore from ("local" or "r2").
         dry_run: Preview restore without executing.
+        yes: Skip confirmation prompt.
     """
-    args = [f"--backup {backup}"]
+    args = [f"--snapshot {snapshot}", f"--target {target}"]
     if service:
         args.append(f"--service {service}")
     if dry_run:
         args.append("--dry-run")
+    if yes:
+        args.append("--yes")
     c.run(f"uv run python -m nexus.cli.restore {' '.join(args)}")
 
 

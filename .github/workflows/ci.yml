@@ -92,7 +92,7 @@ jobs:
           NEXUS_ROOT_DIRECTORY: /tmp/nexus
           NEXUS_DATA_DIRECTORY: /tmp/nexus/data
           TZ: UTC
-          BORG_PASSPHRASE: dummy
+          RESTIC_PASSWORD: dummy
         run: |
           for file in services/*/docker-compose.yml; do
             echo "Validating $file..."

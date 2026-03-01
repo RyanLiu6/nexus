@@ -1,17 +1,21 @@
-# Backups - Borgmatic
-# Automated backup of service data
+# Backups - Backrest
+# Backup management with Backrest and restic
 
 name: backups
-description: Automated Borgmatic backups
-category: utils
+description: Backup management with Backrest and restic
+category: core
 icon: mdi-backup-restore
-subdomain: null # No web interface
+subdomain: backups
+
+services:
+  backrest:
+    icon: mdi-backup-restore
+    description: Backup manager
 
 access:
-  groups: [] # Automated, no interactive access
+  groups: [admins]
   public: false
 
-dashboard:
-  exclude: true # No web interface
-
-dependencies: []
+dependencies:
+  - traefik
+  - tailscale-access

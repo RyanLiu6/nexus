@@ -255,7 +255,6 @@ class TestGenerateDashboardConfig:
             "jellyfin_api_key": "jellykey",
         }
 
-        # Test with services that have widgets
         services = ["traefik", "grafana", "jellyfin"]
         config = generate_dashboard_config(services, "example.com", secrets=secrets)
 

@@ -21,7 +21,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Health Checks | ✅ | Docker healthchecks on all services |
 | Monitoring | ✅ | Prometheus + Grafana |
 | Alerting | ✅ | Discord webhook alerts |
-| Backups | ✅ | Borgmatic automated backups |
+| Backups | ✅ | Backrest automated backups |
 | Media Server | ✅ | Jellyfin (primary), Plex (optional) |
 | Gaming | ✅ | FoundryVTT for D&D |
 | Finance | ✅ | Sure for budgeting |
@@ -145,7 +145,7 @@ PRESETS = {
 | **paperless** | Document management | Admin |
 | **booklore** | Book library | Admin |
 | **vaultwarden** | Password manager | Admin |
-| **backups** | Borgmatic | Automated |
+| **backups** | Backrest | Automated |
 
 ---
 

@@ -7,6 +7,7 @@ import pytest
 
 from nexus.deploy.terraform import (
     _get_terraform_vars_from_vault,
+    get_r2_credentials,
     run_terraform,
 )
 
@@ -251,3 +252,53 @@ class TestRunTerraform:
 
         with pytest.raises(subprocess.CalledProcessError):
             run_terraform(["plex"], "example.com")
+
+
+class TestGetR2Credentials:
+    @patch("nexus.deploy.terraform.subprocess.run")
+    def test_get_r2_credentials(self, mock_run: MagicMock) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["terraform", "output", "-json"],
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "foundry_r2_endpoint": {"value": "https://r2.example.com"},
+                    "foundry_r2_access_key": {"value": "access123"},
+                    "foundry_r2_secret_key": {"value": "secret123"},
+                    "foundry_r2_bucket": {"value": "foundry-bucket"},
+                }
+            ),
+        )
+
+        result = get_r2_credentials("foundry")
+
+        assert result is not None
+        assert result["endpoint"] == "https://r2.example.com"
+        assert result["access_key"] == "access123"
+        assert result["secret_key"] == "secret123"
+        assert result["bucket"] == "foundry-bucket"
+
+    @patch("nexus.deploy.terraform.subprocess.run")
+    def test_get_r2_credentials_missing_outputs(self, mock_run: MagicMock) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["terraform", "output", "-json"],
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "foundry_r2_endpoint": {"value": "https://r2.example.com"},
+                    "foundry_r2_access_key": {"value": ""},
+                }
+            ),
+        )
+
+        result = get_r2_credentials("foundry")
+
+        assert result is None
+
+    @patch("nexus.deploy.terraform.subprocess.run")
+    def test_get_r2_credentials_terraform_error(self, mock_run: MagicMock) -> None:
+        mock_run.side_effect = subprocess.CalledProcessError(1, "terraform")
+
+        result = get_r2_credentials("foundry")
+
+        assert result is None

@@ -212,11 +212,23 @@ def get_r2_credentials(service: str) -> Optional[R2Credentials]:
                 "secret_key": secret_key,
                 "bucket": bucket,
             }
+
+        missing = []
+        if not endpoint:
+            missing.append(f"{service}_r2_endpoint")
+        if not access_key:
+            missing.append(f"{service}_r2_access_key")
+        if not secret_key:
+            missing.append(f"{service}_r2_secret_key")
+        if not bucket:
+            missing.append(f"{service}_r2_bucket")
+        logging.debug(f"Missing R2 outputs for {service}: {', '.join(missing)}")
         return None
     except (
         subprocess.CalledProcessError,
         json.JSONDecodeError,
         KeyError,
         FileNotFoundError,
-    ):
+    ) as e:
+        logging.debug(f"Failed to retrieve R2 credentials for {service}: {e}")
         return None
