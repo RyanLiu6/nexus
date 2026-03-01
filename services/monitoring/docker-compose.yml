@@ -144,7 +144,7 @@ services:
 
   # Alertmanager
   alertmanager:
-    image: prom/alertmanager:v0.31.0
+    image: prom/alertmanager:v0.31.1
     container_name: alertmanager
     restart: unless-stopped
     deploy:
