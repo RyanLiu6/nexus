@@ -1,12 +1,114 @@
 import json
 import logging
-from pathlib import Path
+import os
 from typing import Any, Optional
 
-from nexus.config import ROOT_PATH
-from nexus.utils import run_command
+import yaml
+
+from nexus.config import SERVICES_PATH
+from nexus.utils import read_vault, run_command
 
 logger = logging.getLogger(__name__)
+
+CONFIG_DIR_OVERRIDES = {"backups": "backrest"}
+
+BACKREST_IMAGE = "ghcr.io/garethgeorge/backrest:latest"
+
+
+def _get_config_dir_name(service_name: str) -> str:
+    return CONFIG_DIR_OVERRIDES.get(service_name, service_name)
+
+
+def _get_container_names(service_name: str) -> list[str]:
+    """Parse a service's docker-compose.yml to extract container names.
+
+    Args:
+        service_name: Name of the service directory under services/.
+
+    Returns:
+        List of container_name values defined in the compose file.
+        Returns empty list if the compose file doesn't exist.
+    """
+    compose_path = SERVICES_PATH / service_name / "docker-compose.yml"
+    if not compose_path.exists():
+        return []
+    with open(compose_path) as f:
+        compose = yaml.safe_load(f)
+    services = compose.get("services", {})
+    return [
+        svc_config.get("container_name", name) for name, svc_config in services.items()
+    ]
+
+
+def _get_restore_config() -> tuple[str, str]:
+    """Read NEXUS_DATA_DIRECTORY and RESTIC_PASSWORD from vault.
+
+    Falls back to environment variables if vault is unavailable or keys
+    are missing.
+
+    Returns:
+        Tuple of (data_directory, restic_password).
+    """
+    data_dir = os.environ.get("NEXUS_DATA_DIRECTORY", "")
+    password = os.environ.get("RESTIC_PASSWORD", "")
+
+    if not data_dir or not password:
+        try:
+            vault = read_vault()
+            if not data_dir:
+                data_dir = vault.get("nexus_data_directory", "")
+            if not password:
+                password = vault.get("restic_password", "")
+        except Exception as e:
+            logger.warning(f"Could not read vault: {e}")
+
+    return (data_dir, password)
+
+
+def _get_all_backup_services() -> list[str]:
+    """Discover all services that have a docker-compose.yml.
+
+    Returns:
+        Sorted list of service names.
+    """
+    return sorted(
+        d.name
+        for d in SERVICES_PATH.iterdir()
+        if d.is_dir() and (d / "docker-compose.yml").exists()
+    )
+
+
+def _build_ephemeral_cmd(
+    data_dir: str,
+    password: str,
+    uri: str,
+    target: str,
+    extra_mounts: Optional[list[str]] = None,
+) -> list[str]:
+    cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "--entrypoint",
+        "restic",
+        "-v",
+        f"{data_dir}/Backups:/repos:ro",
+        "-e",
+        f"RESTIC_PASSWORD={password}",
+    ]
+    if target == "r2":
+        cmd.extend(
+            [
+                "-v",
+                f"{data_dir}/Config/backrest/rclone:/root/.config/rclone:ro",
+            ]
+        )
+    if extra_mounts:
+        for mount in extra_mounts:
+            cmd.extend(["-v", mount])
+    # --no-lock: repos mount is :ro so restic cannot write a lock file
+    cmd.extend([BACKREST_IMAGE, "--no-lock", "-r", uri])
+    return cmd
 
 
 def get_backrest_config() -> dict[str, Any]:
@@ -28,7 +130,8 @@ def get_backrest_config() -> dict[str, Any]:
     """
     try:
         result = run_command(
-            ["docker", "exec", "backrest", "cat", "/config/config.json"]
+            ["docker", "exec", "backrest", "cat", "/config/config.json"],
+            capture=True,
         )
         return dict(json.loads(result.stdout))
     except Exception as e:
@@ -116,123 +219,142 @@ def push_backup(target: str = "all", dry_run: bool = False) -> None:
         logger.info(f"Plan '{plan_id}' backup complete")
 
 
-def list_backups() -> list[str]:
-    """Retrieve all available backup snapshots from restic repositories.
+def list_backups(target: str = "local") -> list[dict[str, str]]:
+    """List snapshots from a restic repository.
 
-    Uses `docker exec backrest restic snapshots --json` to get snapshot IDs.
+    Uses an ephemeral docker container instead of docker exec into the running
+    backrest container, so vault secrets are used directly.
+
+    Args:
+        target: Which repository to list snapshots from. One of "local" or "r2".
 
     Returns:
-        List of snapshot IDs (strings). Empty list if no snapshots found
-        or command fails.
+        List of dicts with 'id', 'short_id', 'time' keys.
+        Returns empty list on error.
     """
     try:
-        result = run_command(
-            [
-                "docker",
-                "exec",
-                "backrest",
-                "restic",
-                "-r",
-                "/repos",
-                "snapshots",
-                "--json",
-            ]
-        )
+        data_dir, password = _get_restore_config()
+        config = get_backrest_config()
+        repos_by_id = {repo["id"]: repo for repo in config.get("repos", [])}
+        repo = repos_by_id.get(target)
+        if not repo:
+            logger.error(f"Repo '{target}' not found in Backrest config")
+            return []
+
+        uri = repo["uri"]
+        cmd = _build_ephemeral_cmd(data_dir, password, uri, target)
+        cmd.extend(["snapshots", "--json"])
+
+        result = run_command(cmd, capture=True)
         snapshots_data = json.loads(result.stdout)
-        snapshots = [snapshot["short_id"] for snapshot in snapshots_data]
-        return snapshots
+        return [
+            {"id": s["id"], "short_id": s["short_id"], "time": s["time"]}
+            for s in snapshots_data
+        ]
     except Exception as e:
         logger.error(f"Failed to list backups: {e}")
         return []
 
 
 def restore_backup(
-    snapshot_id: str, services: Optional[list[str]] = None, dry_run: bool = False
+    snapshot_id: str = "latest",
+    services: Optional[list[str]] = None,
+    target: str = "local",
+    dry_run: bool = False,
 ) -> None:
     """Restore services from a restic backup snapshot.
 
-    Extracts the specified snapshot using restic, optionally filtering
-    by service paths.
+    Stops affected containers, restores files via an ephemeral restic container,
+    then restarts containers. The start step runs in a finally block to ensure
+    containers are always brought back up.
 
     Args:
-        snapshot_id: ID of the backup snapshot to restore from.
-        services: Optional list of specific services to restore.
-            If provided, only restores /userdata/<service> paths.
+        snapshot_id: ID of the backup snapshot to restore from. Use "latest"
+            to automatically resolve the most recent snapshot.
+        services: Optional list of specific service names to restore.
+            If None, restores all discovered services.
+        target: Which repository to restore from. One of "local" or "r2".
         dry_run: If True, log the restoration steps without executing.
-    """
-    logger.info(f"Restoring from snapshot: {snapshot_id}")
-
-    if services:
-        logger.info(f"Restoring services: {', '.join(services)}")
-
-    cmd = [
-        "docker",
-        "exec",
-        "backrest",
-        "restic",
-        "-r",
-        "/repos",
-        "restore",
-        snapshot_id,
-        "--target",
-        "/tmp/restore",
-    ]
-
-    if services:
-        for service in services:
-            cmd.extend(["--include", f"/userdata/{service}"])
-
-    if dry_run:
-        logger.info("[DRY RUN] Would restore services from backup")
-        logger.info(f"[DRY RUN] Snapshot: {snapshot_id}")
-        logger.info(f"[DRY RUN] Would run: {' '.join(cmd)}")
-        return
-
-    run_command(cmd)
-
-    logger.info("Restore complete!")
-
-
-def restore_database(service: str, sql_file: Path, dry_run: bool = False) -> None:
-    """Restore a service's PostgreSQL database from an SQL dump.
-
-    Connects to the service's database container and pipes the SQL file
-    to psql for restoration. Currently only supports the 'sure' service.
-
-    Args:
-        service: Name of the service whose database to restore.
-            Only "sure" is currently implemented.
-        sql_file: Path to the SQL dump file to restore.
-        dry_run: If True, log the command without executing.
 
     Raises:
-        NotImplementedError: If database restore is not implemented for
-            the specified service.
+        ValueError: If the target repo is not found in Backrest config.
+        RuntimeError: If snapshot resolution or restore fails.
     """
-    logger.info(f"Restoring database for {service} from {sql_file}")
+    data_dir, password = _get_restore_config()
 
-    if service == "sure":
-        cmd = [
-            "docker",
-            "compose",
-            "exec",
-            "-T",
-            "sure-db",
-            "psql",
-            "-U",
-            "sure_user",
-            "-d",
-            "sure_production",
-        ]
+    config = get_backrest_config()
+    repos_by_id = {repo["id"]: repo for repo in config.get("repos", [])}
+    repo = repos_by_id.get(target)
+    if not repo:
+        raise ValueError(f"Repo '{target}' not found in Backrest config")
+    uri = repo["uri"]
 
-        if dry_run:
-            logger.info(f"[DRY RUN] Would run: {' '.join(cmd)} < {sql_file}")
-            return
+    if snapshot_id == "latest":
+        snapshot_id = _resolve_latest_snapshot(data_dir, password, uri, target)
+        logger.info(f"Resolved latest snapshot: {snapshot_id}")
 
-        with sql_file.open("r") as f:
-            run_command(cmd, cwd=ROOT_PATH, stdin=f)
+    affected_services = services or _get_all_backup_services()
 
-        logger.info(f"Database restore complete for {service}")
-    else:
-        logger.error(f"Database restore not implemented for {service}")
-        raise NotImplementedError(f"Database restore not implemented for {service}")
+    containers: list[str] = []
+    for svc in affected_services:
+        containers.extend(_get_container_names(svc))
+
+    restore_cmd = _build_ephemeral_cmd(
+        data_dir,
+        password,
+        uri,
+        target,
+        extra_mounts=[f"{data_dir}/Config:/userdata:rw"],
+    )
+    restore_cmd.extend(["restore", snapshot_id, "--target", "/"])
+    if services:
+        for svc in services:
+            restore_cmd.extend(["--include", f"/userdata/{_get_config_dir_name(svc)}"])
+
+    if dry_run:
+        logger.info(f"[DRY RUN] Snapshot: {snapshot_id}")
+        if containers:
+            logger.info(f"[DRY RUN] Would stop containers: {' '.join(containers)}")
+        logger.info(f"[DRY RUN] Would run: {' '.join(restore_cmd)}")
+        if containers:
+            logger.info(f"[DRY RUN] Would start containers: {' '.join(containers)}")
+        return
+
+    if containers:
+        logger.info(f"Stopping containers: {' '.join(containers)}")
+        run_command(["docker", "stop", *containers])
+
+    try:
+        logger.info(f"Restoring snapshot {snapshot_id} from '{target}' repo")
+        run_command(restore_cmd)
+        logger.info("Restore complete!")
+    finally:
+        if containers:
+            logger.info(f"Starting containers: {' '.join(containers)}")
+            run_command(["docker", "start", *containers])
+
+
+def _resolve_latest_snapshot(
+    data_dir: str, password: str, uri: str, target: str
+) -> str:
+    """Resolve 'latest' to an actual snapshot ID.
+
+    Args:
+        data_dir: Path to the nexus data directory.
+        password: Restic repository password.
+        uri: Repository URI.
+        target: Repository target ("local" or "r2").
+
+    Returns:
+        The full snapshot ID string.
+
+    Raises:
+        RuntimeError: If no snapshots are found in the repository.
+    """
+    cmd = _build_ephemeral_cmd(data_dir, password, uri, target)
+    cmd.extend(["snapshots", "--json", "--latest", "1"])
+    result = run_command(cmd, capture=True)
+    snapshots = json.loads(result.stdout)
+    if not snapshots:
+        raise RuntimeError("No snapshots found in repository")
+    return str(snapshots[0]["id"])

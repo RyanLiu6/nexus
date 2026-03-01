@@ -1,15 +1,16 @@
 import json
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from nexus.restore.backup import (
+    _get_config_dir_name,
+    _get_container_names,
+    _get_restore_config,
     get_backrest_config,
     list_backups,
     push_backup,
     restore_backup,
-    restore_database,
 )
 
 SAMPLE_CONFIG = {
@@ -31,6 +32,71 @@ SAMPLE_CONFIG = {
     ],
 }
 
+SAMPLE_SNAPSHOTS = [
+    {"id": "abc123full", "short_id": "abc123", "time": "2024-01-01T00:00:00Z"},
+    {"id": "def456full", "short_id": "def456", "time": "2024-01-02T00:00:00Z"},
+]
+
+
+class TestGetConfigDirName:
+    def test_get_config_dir_name(self) -> None:
+        assert _get_config_dir_name("foundryvtt") == "foundryvtt"
+
+    def test_get_config_dir_name_override(self) -> None:
+        assert _get_config_dir_name("backups") == "backrest"
+
+    def test_get_config_dir_name_unknown(self) -> None:
+        assert _get_config_dir_name("myservice") == "myservice"
+
+
+class TestGetContainerNames:
+    def test_get_container_names(self) -> None:
+        names = _get_container_names("foundryvtt")
+        assert names == ["foundryvtt"]
+
+    def test_get_container_names_multi_container(self) -> None:
+        names = _get_container_names("sure")
+        assert set(names) == {"sure-web", "sure-worker", "sure-db", "sure-redis"}
+
+    def test_get_container_names_nonexistent_service(self) -> None:
+        names = _get_container_names("nonexistent-service-xyz")
+        assert names == []
+
+
+class TestGetRestoreConfig:
+    @patch("nexus.restore.backup.read_vault")
+    @patch.dict("os.environ", {}, clear=True)
+    def test_get_restore_config(self, mock_read_vault: MagicMock) -> None:
+        mock_read_vault.return_value = {
+            "nexus_data_directory": "/data",
+            "restic_password": "secret",
+        }
+
+        data_dir, password = _get_restore_config()
+
+        assert data_dir == "/data"
+        assert password == "secret"
+
+    @patch.dict(
+        "os.environ",
+        {"NEXUS_DATA_DIRECTORY": "/env-data", "RESTIC_PASSWORD": "env-secret"},
+    )
+    def test_get_restore_config_from_env(self) -> None:
+        data_dir, password = _get_restore_config()
+
+        assert data_dir == "/env-data"
+        assert password == "env-secret"
+
+    @patch("nexus.restore.backup.read_vault")
+    @patch.dict("os.environ", {"NEXUS_DATA_DIRECTORY": "/env-data"}, clear=True)
+    def test_get_restore_config_mixed(self, mock_read_vault: MagicMock) -> None:
+        mock_read_vault.return_value = {"restic_password": "vault-secret"}
+
+        data_dir, password = _get_restore_config()
+
+        assert data_dir == "/env-data"
+        assert password == "vault-secret"
+
 
 class TestGetBackrestConfig:
     @patch("nexus.restore.backup.run_command")
@@ -41,7 +107,8 @@ class TestGetBackrestConfig:
 
         assert config == SAMPLE_CONFIG
         mock_run_command.assert_called_once_with(
-            ["docker", "exec", "backrest", "cat", "/config/config.json"]
+            ["docker", "exec", "backrest", "cat", "/config/config.json"],
+            capture=True,
         )
 
     @patch("nexus.restore.backup.run_command")
@@ -157,111 +224,218 @@ class TestPushBackup:
 
 class TestListBackups:
     @patch("nexus.restore.backup.run_command")
-    def test_list_backups(self, mock_run_command: MagicMock) -> None:
-        mock_run_command.return_value = MagicMock(
-            stdout=(
-                '[{"short_id": "abc123", "time": "2024-01-01T00:00:00Z", '
-                '"paths": ["/userdata"]}, {"short_id": "def456", '
-                '"time": "2024-01-02T00:00:00Z", "paths": ["/userdata"]}]'
-            )
-        )
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_list_backups(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(stdout=json.dumps(SAMPLE_SNAPSHOTS))
 
-        backups = list_backups()
+        result = list_backups(target="local")
 
-        assert len(backups) == 2
-        assert backups == ["abc123", "def456"]
+        assert len(result) == 2
+        assert result[0] == {
+            "id": "abc123full",
+            "short_id": "abc123",
+            "time": "2024-01-01T00:00:00Z",
+        }
+        assert result[1]["short_id"] == "def456"
+        cmd = mock_run_command.call_args[0][0]
+        assert "docker" in cmd
+        assert "run" in cmd
+        assert "--rm" in cmd
+        assert "/repos" in cmd
+        assert "snapshots" in cmd
+        assert "--json" in cmd
 
     @patch("nexus.restore.backup.run_command")
-    def test_list_backups_empty(self, mock_run_command: MagicMock) -> None:
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_list_backups_empty(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
         mock_run_command.return_value = MagicMock(stdout="[]")
 
-        backups = list_backups()
+        result = list_backups()
 
-        assert backups == []
+        assert result == []
 
     @patch("nexus.restore.backup.run_command")
-    def test_list_backups_error(self, mock_run_command: MagicMock) -> None:
-        mock_run_command.side_effect = Exception("Command failed")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_list_backups_r2_mounts_rclone(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(stdout=json.dumps(SAMPLE_SNAPSHOTS))
 
-        backups = list_backups()
+        list_backups(target="r2")
 
-        assert backups == []
+        cmd = mock_run_command.call_args[0][0]
+        assert any("rclone" in arg for arg in cmd)
+
+    @patch("nexus.restore.backup.run_command")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_list_backups_error(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.side_effect = Exception("Container not running")
+
+        result = list_backups()
+
+        assert result == []
 
 
 class TestRestoreBackup:
     @patch("nexus.restore.backup.run_command")
-    def test_restore_backup(self, mock_run_command: MagicMock) -> None:
-        restore_backup("abc123")
-
-        mock_run_command.assert_called_once()
-        args = mock_run_command.call_args[0][0]
-        assert args == [
-            "docker",
-            "exec",
-            "backrest",
-            "restic",
-            "-r",
-            "/repos",
-            "restore",
-            "abc123",
-            "--target",
-            "/tmp/restore",
-        ]
-
-    @patch("nexus.restore.backup.run_command")
-    def test_restore_backup_with_services(self, mock_run_command: MagicMock) -> None:
-        restore_backup("abc123", services=["plex", "jellyfin"])
-
-        mock_run_command.assert_called_once()
-        args = mock_run_command.call_args[0][0]
-        assert args == [
-            "docker",
-            "exec",
-            "backrest",
-            "restic",
-            "-r",
-            "/repos",
-            "restore",
-            "abc123",
-            "--target",
-            "/tmp/restore",
-            "--include",
-            "/userdata/plex",
-            "--include",
-            "/userdata/jellyfin",
-        ]
-
-    def test_restore_backup_dry_run(self) -> None:
-        restore_backup("abc123", dry_run=True)
-
-
-class TestRestoreDatabase:
-    @patch("nexus.restore.backup.run_command")
-    @patch("nexus.restore.backup.ROOT_PATH")
-    def test_restore_database_sure(
-        self, mock_root_path: MagicMock, mock_run_command: MagicMock, tmp_path: Path
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_restore_backup(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
     ) -> None:
-        sql_file = tmp_path / "sure.sql"
-        sql_file.write_text("SELECT 1;")
-        mock_root_path.return_value = tmp_path
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(
+            stdout=json.dumps([SAMPLE_SNAPSHOTS[0]])
+        )
 
-        with patch("builtins.open", mock_open(read_data="SELECT 1;")):
-            restore_database("sure", sql_file)
+        restore_backup(snapshot_id="abc123", services=["foundryvtt"], target="local")
 
-        mock_run_command.assert_called_once()
-        args = mock_run_command.call_args[0][0]
-        assert "docker" in args
-        assert "sure-db" in args
+        calls = mock_run_command.call_args_list
+        stop_call = calls[0][0][0]
+        restore_call = calls[1][0][0]
+        start_call = calls[2][0][0]
 
-    def test_restore_database_dry_run(self, tmp_path: Path) -> None:
-        sql_file = tmp_path / "sure.sql"
-        sql_file.write_text("SELECT 1;")
+        assert stop_call == ["docker", "stop", "foundryvtt"]
+        assert "docker" in restore_call
+        assert "run" in restore_call
+        assert "--rm" in restore_call
+        assert "restore" in restore_call
+        assert "abc123" in restore_call
+        assert "--target" in restore_call
+        assert "/" in restore_call
+        assert "--include" in restore_call
+        assert "/userdata/foundryvtt" in restore_call
+        assert start_call == ["docker", "start", "foundryvtt"]
 
-        restore_database("sure", sql_file, dry_run=True)
+    @patch("nexus.restore.backup.run_command")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_restore_backup_resolves_latest(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(
+            stdout=json.dumps([SAMPLE_SNAPSHOTS[0]])
+        )
 
-    def test_restore_database_unsupported_service(self, tmp_path: Path) -> None:
-        sql_file = tmp_path / "test.sql"
-        sql_file.touch()
+        restore_backup(snapshot_id="latest", services=["foundryvtt"], target="local")
 
-        with pytest.raises(NotImplementedError):
-            restore_database("unsupported", sql_file)
+        # First run_command call is the snapshots --latest 1 call
+        calls = mock_run_command.call_args_list
+        latest_cmd = calls[0][0][0]
+        assert "--latest" in latest_cmd
+        assert "1" in latest_cmd
+
+    @patch("nexus.restore.backup.run_command")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_restore_backup_starts_containers_on_failure(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.side_effect = [
+            MagicMock(),  # docker stop
+            Exception("Restore failed"),  # docker run restore
+            MagicMock(),  # docker start (finally block)
+        ]
+
+        with pytest.raises(Exception, match="Restore failed"):
+            restore_backup(snapshot_id="abc123", services=["foundryvtt"])
+
+        assert mock_run_command.call_count == 3
+        start_call = mock_run_command.call_args_list[2][0][0]
+        assert start_call == ["docker", "start", "foundryvtt"]
+
+    @patch("nexus.restore.backup.run_command")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_restore_backup_dry_run(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(
+            stdout=json.dumps([SAMPLE_SNAPSHOTS[0]])
+        )
+
+        restore_backup(snapshot_id="abc123", services=["foundryvtt"], dry_run=True)
+
+        mock_run_command.assert_not_called()
+
+    @patch("nexus.restore.backup.run_command")
+    @patch("nexus.restore.backup.get_backrest_config")
+    @patch("nexus.restore.backup._get_restore_config")
+    def test_restore_backup_r2_mounts_rclone(
+        self,
+        mock_config_fn: MagicMock,
+        mock_backrest_config: MagicMock,
+        mock_run_command: MagicMock,
+    ) -> None:
+        mock_config_fn.return_value = ("/data", "secret")
+        mock_backrest_config.return_value = SAMPLE_CONFIG
+        mock_run_command.return_value = MagicMock(
+            stdout=json.dumps([SAMPLE_SNAPSHOTS[0]])
+        )
+
+        restore_backup(snapshot_id="abc123", services=["foundryvtt"], target="r2")
+
+        restore_call = mock_run_command.call_args_list[1][0][0]
+        assert any("rclone" in arg for arg in restore_call)
+
+    def test_restore_backup_invalid_repo(self) -> None:
+        with (
+            patch(
+                "nexus.restore.backup._get_restore_config",
+                return_value=("/data", "secret"),
+            ),
+            patch(
+                "nexus.restore.backup.get_backrest_config",
+                return_value=SAMPLE_CONFIG,
+            ),
+        ):
+            with pytest.raises(ValueError, match="Repo 'unknown' not found"):
+                restore_backup(snapshot_id="abc123", target="unknown")

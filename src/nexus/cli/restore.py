@@ -1,10 +1,12 @@
 import logging
-from pathlib import Path
 from typing import Optional
 
 import click
 
-from nexus.restore.backup import list_backups, restore_backup, restore_database
+from nexus.restore.backup import (
+    _get_container_names,
+    restore_backup,
+)
 from nexus.utils import run_command
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -22,77 +24,60 @@ def _verify_backup() -> bool:
 
 
 @click.command()
-@click.option("--list", "show_list", is_flag=True, help="List available backups.")
-@click.option("--snapshot", type=str, help="Backup snapshot to restore.")
-@click.option("--service", type=str, help="Specific service to restore.")
-@click.option("--db", type=str, help="Restore database from SQL file.")
-@click.option("--verify", is_flag=True, help="Verify backup integrity.")
+@click.option(
+    "--service",
+    multiple=True,
+    help="Service to restore (repeatable). Omit for all.",
+)
+@click.option("--snapshot", default="latest", help="Snapshot ID (default: latest).")
+@click.option(
+    "--target",
+    type=click.Choice(["local", "r2"]),
+    default="local",
+    help="Repository to restore from.",
+)
 @click.option("--dry-run", is_flag=True, help="Preview restore without executing.")
+@click.option("--yes", is_flag=True, help="Skip confirmation prompt.")
 def main(
-    show_list: bool,
-    snapshot: Optional[str],
-    service: Optional[str],
-    db: Optional[str],
-    verify: bool,
+    service: tuple[str, ...],
+    snapshot: str,
+    target: str,
     dry_run: bool,
+    yes: bool,
 ) -> None:
     """Restore Nexus services from restic backup snapshots.
 
-    Lists available backups, verifies backup integrity, and restores service
-    data or databases from backup snapshots. Supports full restores or targeting
-    specific services.
+    Stops affected containers, restores data from a restic snapshot, then
+    restarts containers. Use --service to limit the restore to specific
+    services; omit it to restore all services.
 
     Args:
-        show_list: Display available backup snapshots and exit.
-        snapshot: ID of the backup snapshot to restore from.
-        service: Limit restore to a specific service name.
-        db: Path to SQL dump file for database restoration.
-        verify: Validate backup integrity without restoring.
-        dry_run: Preview restore operations without executing them.
+        service: Services to restore. Repeatable (e.g. --service foo --service bar).
+        snapshot: Snapshot ID to restore from. Defaults to "latest".
+        target: Repository target ("local" or "r2").
+        dry_run: Preview operations without executing.
+        yes: Skip the confirmation prompt.
     """
-    if show_list:
-        snapshots = list_backups()
-        if not snapshots:
-            logger.info("No backup snapshots found")
-            return
+    services: Optional[list[str]] = list(service) if service else None
 
-        print("\nAvailable backup snapshots:")
-        for i, snapshot_id in enumerate(snapshots, 1):
-            print(f"  {i}. {snapshot_id}")
-        return
+    if not dry_run and not yes:
+        affected = services or ["all services"]
+        print(f"\nAbout to restore from snapshot '{snapshot}' (repo: {target})")
+        print(f"Services: {', '.join(affected)}")
+        if services:
+            containers: list[str] = []
+            for svc in services:
+                containers.extend(_get_container_names(svc))
+            if containers:
+                print(f"Containers that will stop: {', '.join(containers)}")
+        click.confirm("\nProceed with restore?", abort=True)
 
-    if verify:
-        _verify_backup()
-        return
-
-    if not snapshot:
-        snapshots = list_backups()
-        if not snapshots:
-            logger.error("No backup snapshots found")
-            return
-
-        print("\nAvailable backup snapshots:")
-        for i, snapshot_id in enumerate(snapshots, 1):
-            print(f"  {i}. {snapshot_id}")
-
-        choice = click.prompt(
-            "Select snapshot number",
-            type=click.IntRange(1, len(snapshots)),
-        )
-        snapshot = snapshots[choice - 1]
-
-    if db:
-        if not service:
-            logger.error("Service must be specified when restoring database")
-            return
-
-        db_file = Path(db)
-        if not db_file.exists():
-            logger.error(f"Database file not found: {db_file}")
-            return
-        restore_database(service, db_file, dry_run)
-    else:
-        restore_backup(snapshot, [service] if service else None, dry_run)
+    restore_backup(
+        snapshot_id=snapshot,
+        services=services,
+        target=target,
+        dry_run=dry_run,
+    )
 
 
 if __name__ == "__main__":

@@ -3,9 +3,14 @@
 
 name: backups
 description: Backup management with Backrest and restic
-category: utils
+category: core
 icon: mdi-backup-restore
 subdomain: backups
+
+services:
+  backrest:
+    icon: mdi-backup-restore
+    description: Backup manager
 
 access:
   groups: [admins]

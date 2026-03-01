@@ -19,7 +19,7 @@ services:
       - BACKREST_PORT=0.0.0.0:9898
       - RESTIC_PASSWORD=${RESTIC_PASSWORD}
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9898/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9898/"]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -33,10 +33,10 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Backups:/repos
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backrest.rule=Host(`backups.${DOMAIN}`)"
-      - "traefik.http.routers.backrest.entrypoints=websecure"
+      - "traefik.http.routers.backrest.rule=Host(`backups.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.backrest.entrypoints=https"
       - "traefik.http.routers.backrest.tls=true"
-      - "traefik.http.routers.backrest.tls.certresolver=cloudflare"
+      - "traefik.http.routers.backrest.tls.certresolver=certchallenge"
       - "traefik.http.services.backrest.loadbalancer.server.port=9898"
 
 networks:

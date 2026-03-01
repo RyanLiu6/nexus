@@ -52,7 +52,9 @@ class TestBackupsDockerCompose:
     def test_traefik_labels_present(self, compose_config: dict[str, Any]) -> None:
         labels = compose_config["services"]["backrest"]["labels"]
         assert any("traefik.enable=true" in label for label in labels)
-        assert any("backups.${DOMAIN}" in label for label in labels)
+        assert any("backups.${NEXUS_DOMAIN}" in label for label in labels)
+        assert any("entrypoints=https" in label for label in labels)
+        assert any("certresolver=certchallenge" in label for label in labels)
 
     def test_healthcheck_configured(self, compose_config: dict[str, Any]) -> None:
         healthcheck = compose_config["services"]["backrest"]["healthcheck"]
