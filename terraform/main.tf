@@ -2,11 +2,11 @@ terraform {
   required_providers {
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 5.0"
+      version = "~> 5.18"
     }
     tailscale = {
       source  = "tailscale/tailscale"
-      version = "~> 0.25"
+      version = "~> 0.28"
     }
   }
 
