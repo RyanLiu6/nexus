@@ -1,0 +1,11 @@
+name: proton-drive-sync
+description: Proton Drive file sync for off-site backups
+category: apps
+icon: si-proton
+subdomain: protondrive
+access:
+  groups: [admins]
+  public: false
+dependencies:
+  - traefik
+  - tailscale-access
