@@ -37,7 +37,10 @@
       "retention": {
         "policyKeepLastN": 3
       },
-      "excludes": []
+      "excludes": [
+        "/userdata/paperless/media",
+        "/userdata/booklore/books"
+      ]
     }{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %},
     {
       "id": "daily-r2",
@@ -51,7 +54,10 @@
       "retention": {
         "policyKeepLastN": 1
       },
-      "excludes": []
+      "excludes": [
+        "/userdata/paperless/media",
+        "/userdata/booklore/books"
+      ]
     }{% endif %}
   ],
   "auth": {
