@@ -93,16 +93,6 @@
     mode: "0600"
   when: "'backups' in nexus_final_services"
 
-- name: Ensure Proton Drive Sync config directories exist
-  ansible.builtin.file:
-    path: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/proton-drive-sync/{{ item }}"
-    state: directory
-    mode: "0755"
-  loop:
-    - config
-    - state
-  when: "'proton-drive-sync' in nexus_final_services"
-
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
     set -o pipefail
@@ -172,8 +162,6 @@
     PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
     PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
     PAPERLESS_DOCUMENTS_DIRECTORY: "{{ paperless_documents_directory if paperless_documents_directory else (nexus_data_directory | default('/Volumes/Data')) + '/Config/paperless/media' }}"
-    # Proton Drive Sync
-    PROTON_DRIVE_KEYRING_PASSWORD: "{{ proton_drive_keyring_password | default('') }}"
     # Booklore
     BOOKLORE_MYSQL_USER: "{{ booklore_mysql_user | default('booklore') }}"
     BOOKLORE_MYSQL_PASSWORD: "{{ booklore_mysql_password | default('') }}"
