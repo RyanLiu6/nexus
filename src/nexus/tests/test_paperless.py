@@ -32,6 +32,7 @@ class TestPaperlessDockerCompose:
 
     def test_volume_paths_use_config_dir(self, compose_config: dict[str, Any]) -> None:
         volumes = compose_config["services"]["paperless-web"]["volumes"]
+        assert any("PAPERLESS_DOCUMENTS_DIRECTORY" in v for v in volumes)
         assert any("/Config/paperless/" in v for v in volumes)
 
     def test_private_bridge_network_defined(

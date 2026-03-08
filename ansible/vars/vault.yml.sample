@@ -249,6 +249,11 @@ paperless_secret_key: "CHANGE_ME"
 paperless_admin_user: "admin"
 paperless_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
+# Directory for stored documents (media). Leave empty for default (Config/paperless/media).
+# Set to a path OUTSIDE nexus_data_directory/Config/ to exclude from R2 backups.
+# Example: /Volumes/Data/Documents/paperless
+paperless_documents_directory: ""
+
 # =============================================================================
 # Booklore - Book Library Manager (Optional)
 # =============================================================================
@@ -309,6 +314,13 @@ foundry_s3_bucket: "foundry-assets"
 # No secrets required - protected by Tailscale Access
 # Uses NEXUS_DOMAIN and TZ
 
+# =============================================================================
+# Proton Drive Sync - Off-site backup to ProtonDrive (Optional)
+# =============================================================================
+# Encryption key for credential storage
+# Generate with: openssl rand -base64 32
+proton_drive_keyring_password: "CHANGE_ME"
+
 # #############################################################################
 #                           ENVIRONMENT VARIABLE MAPPING
 # #############################################################################
@@ -349,6 +361,8 @@ foundry_s3_bucket: "foundry-assets"
 # paperless_secret_key       -> PAPERLESS_SECRET_KEY
 # paperless_admin_user       -> PAPERLESS_ADMIN_USER
 # paperless_admin_password   -> PAPERLESS_ADMIN_PASSWORD
+# paperless_documents_directory -> PAPERLESS_DOCUMENTS_DIRECTORY
+# proton_drive_keyring_password -> PROTON_DRIVE_KEYRING_PASSWORD
 # booklore_mysql_user        -> BOOKLORE_MYSQL_USER
 # booklore_mysql_password    -> BOOKLORE_MYSQL_PASSWORD
 # booklore_mysql_root_password -> BOOKLORE_MYSQL_ROOT_PASSWORD

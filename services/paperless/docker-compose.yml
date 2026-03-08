@@ -14,7 +14,7 @@ services:
       - paperless
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/paperless/data:/usr/src/paperless/data
-      - ${NEXUS_DATA_DIRECTORY}/Config/paperless/media:/usr/src/paperless/media
+      - ${PAPERLESS_DOCUMENTS_DIRECTORY}:/usr/src/paperless/media
       - ${NEXUS_DATA_DIRECTORY}/Config/paperless/export:/usr/src/paperless/export
       - ${NEXUS_DATA_DIRECTORY}/Config/paperless/consume:/usr/src/paperless/consume
     environment:
