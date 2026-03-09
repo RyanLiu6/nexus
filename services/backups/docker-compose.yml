@@ -37,7 +37,8 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Config/backrest/data:/data
       - ${NEXUS_DATA_DIRECTORY}/Config/backrest/cache:/cache
       - ${NEXUS_DATA_DIRECTORY}/Config/backrest/rclone:/root/.config/rclone:ro
-      - ${NEXUS_DATA_DIRECTORY}/Config:/userdata:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config:/base_data:ro
+      - ${NEXUS_USERDATA_DIRECTORY}:/user_data:ro
       - ${NEXUS_DATA_DIRECTORY}/Backups:/repos
     labels:
       - "traefik.enable=true"

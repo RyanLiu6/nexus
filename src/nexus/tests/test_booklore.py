@@ -22,6 +22,7 @@ class TestBookloreDockerCompose:
 
     def test_volume_paths_use_config_dir(self, compose_config: dict[str, Any]) -> None:
         volumes = compose_config["services"]["booklore"]["volumes"]
+        assert any("BOOKLORE_BOOKS_DIRECTORY" in v for v in volumes)
         assert any("/Config/booklore/" in v for v in volumes)
 
     def test_db_volume_uses_config_dir(self, compose_config: dict[str, Any]) -> None:

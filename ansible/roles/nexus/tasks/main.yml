@@ -47,9 +47,36 @@
     dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
     mode: "0644"
 
+- name: Resolve base data directory
+  ansible.builtin.set_fact:
+    nexus_base_path: "{{ nexus_data_directory | default('/Volumes/Data') }}"
+
+- name: Resolve userdata-based directory paths
+  ansible.builtin.set_fact:
+    nexus_foundryvtt_dir: >-
+      {{ nexus_userdata_directory + '/foundryvtt'
+         if nexus_userdata_directory is defined and nexus_userdata_directory
+         else nexus_base_path + '/Config/foundryvtt/data' }}
+    nexus_paperless_dir: >-
+      {{ nexus_userdata_directory + '/paperless'
+         if nexus_userdata_directory is defined and nexus_userdata_directory
+         else nexus_base_path + '/Config/paperless/media' }}
+    nexus_booklore_dir: >-
+      {{ nexus_userdata_directory + '/booklore'
+         if nexus_userdata_directory is defined and nexus_userdata_directory
+         else nexus_base_path + '/Config/booklore/books' }}
+    nexus_sure_dir: >-
+      {{ nexus_userdata_directory + '/sure'
+         if nexus_userdata_directory is defined and nexus_userdata_directory
+         else nexus_base_path + '/Config/sure' }}
+    nexus_userdata_env_dir: >-
+      {{ nexus_userdata_directory
+         if nexus_userdata_directory is defined and nexus_userdata_directory
+         else nexus_base_path + '/Config' }}
+
 - name: Ensure FoundryVTT Config directory exists
   ansible.builtin.file:
-    path: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/foundryvtt/data/Config"
+    path: "{{ nexus_foundryvtt_dir }}/Config"
     state: directory
     mode: "0755"
   when: "'foundryvtt' in nexus_final_services"
@@ -57,7 +84,7 @@
 - name: Configure FoundryVTT S3/R2 storage
   ansible.builtin.template:
     src: "{{ nexus_root_directory }}/services/foundryvtt/s3.json.j2"
-    dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/foundryvtt/data/Config/s3.json"
+    dest: "{{ nexus_foundryvtt_dir }}/Config/s3.json"
     mode: "0644"
   when: "'foundryvtt' in nexus_final_services and foundry_s3_access_key is defined"
 
@@ -92,6 +119,38 @@
     dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/backrest/rclone/rclone.conf"
     mode: "0600"
   when: "'backups' in nexus_final_services"
+
+- name: Create userdata directories
+  ansible.builtin.file:
+    path: "{{ nexus_userdata_directory }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - paperless
+    - booklore
+    - foundryvtt
+    - sure
+  when: nexus_userdata_directory is defined and nexus_userdata_directory != ''
+
+# TEMPORARY: ProtonDrive rsync backup (remove when rclone supports ProtonDrive)
+- name: Install ProtonDrive rsync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-sync"
+    minute: "0"
+    hour: "4"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}"
+  when:
+    - "'backups' in nexus_final_services"
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive rsync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-sync"
+    state: absent
+  when:
+    - "'backups' in nexus_final_services"
+    - protondrive_sync_directory is not defined or protondrive_sync_directory == ''
 
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
@@ -135,17 +194,14 @@
     SURE_OPENAI_URI_BASE: "{{ sure_openai_uri_base | default('') }}"
     SURE_OPENAI_MODEL: "{{ sure_openai_model | default('') }}"
     SURE_PORT: "{{ sure_port | default('5006') }}"
-    # Nextcloud
-    MYSQL_USER: "{{ mysql_user | default('nextcloud') }}"
-    MYSQL_PASSWORD: "{{ mysql_password | default('') }}"
-    MYSQL_DATABASE: "{{ mysql_database | default('nextcloud') }}"
-    MYSQL_ROOT_PASSWORD: "{{ mysql_root_password | default('') }}"
+    SURE_DATA_DIRECTORY: "{{ nexus_sure_dir }}"
     # Monitoring
     GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
     GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"
     # Alerting
     DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
     # Backups
+    NEXUS_USERDATA_DIRECTORY: "{{ nexus_userdata_env_dir }}"
     RESTIC_PASSWORD: "{{ restic_password | default('') }}"
     # Tailscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
@@ -161,6 +217,9 @@
     PAPERLESS_SECRET_KEY: "{{ paperless_secret_key | default('') }}"
     PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
     PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
+    PAPERLESS_DOCUMENTS_DIRECTORY: "{{ nexus_paperless_dir }}"
+    BOOKLORE_BOOKS_DIRECTORY: "{{ nexus_booklore_dir }}"
+    FOUNDRYVTT_DATA_DIRECTORY: "{{ nexus_foundryvtt_dir }}"
     # Booklore
     BOOKLORE_MYSQL_USER: "{{ booklore_mysql_user | default('booklore') }}"
     BOOKLORE_MYSQL_PASSWORD: "{{ booklore_mysql_password | default('') }}"

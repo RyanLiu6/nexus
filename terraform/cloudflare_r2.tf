@@ -10,6 +10,10 @@ data "cloudflare_api_token_permission_groups_list" "all" {}
 # =============================================================================
 # Foundry VTT R2 Storage
 # =============================================================================
+# Access policy: Private by default. Cloudflare R2 buckets have no public access
+# unless an R2.dev subdomain or custom domain is explicitly enabled - neither is
+# configured here. Access is restricted to the scoped API token below.
+# No CORS or public access configured.
 
 resource "cloudflare_r2_bucket" "foundry" {
   account_id = var.cloudflare_account_id
@@ -58,6 +62,10 @@ output "foundry_r2_bucket" {
 # =============================================================================
 # Backups R2 Storage
 # =============================================================================
+# Access policy: Private by default. Cloudflare R2 buckets have no public access
+# unless an R2.dev subdomain or custom domain is explicitly enabled - neither is
+# configured here. Access is restricted to the scoped API token below.
+# No CORS or public access configured.
 
 resource "cloudflare_r2_bucket" "backups" {
   account_id = var.cloudflare_account_id

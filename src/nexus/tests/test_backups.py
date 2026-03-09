@@ -41,7 +41,8 @@ class TestBackupsDockerCompose:
         assert any("/data" in v for v in volumes)
         assert any("/cache" in v for v in volumes)
         assert any("rclone" in v and ":ro" in v for v in volumes)
-        assert any("/userdata" in v and ":ro" in v for v in volumes)
+        assert any(v.endswith("/base_data:ro") for v in volumes)
+        assert any("/user_data:ro" in v for v in volumes)
         assert any("/repos" in v for v in volumes)
 
     def test_memory_limits_set(self, compose_config: dict[str, Any]) -> None:

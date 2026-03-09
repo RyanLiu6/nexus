@@ -15,7 +15,7 @@ services:
     ports:
       - ${SURE_PORT:-5006}:3000
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/sure/storage:/rails/storage
+      - ${SURE_DATA_DIRECTORY}/storage:/rails/storage
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -61,7 +61,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/sure/storage:/rails/storage
+      - ${SURE_DATA_DIRECTORY}/storage:/rails/storage
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -97,7 +97,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/sure/postgres:/var/lib/postgresql
+      - ${SURE_DATA_DIRECTORY}/postgres:/var/lib/postgresql
     environment:
       POSTGRES_USER: ${SURE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SURE_POSTGRES_PASSWORD}
@@ -122,7 +122,7 @@ services:
     networks:
       - sure
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/sure/redis:/data
+      - ${SURE_DATA_DIRECTORY}/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

@@ -14,7 +14,7 @@ services:
       - booklore
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/booklore/data:/app/data
-      - ${NEXUS_DATA_DIRECTORY}/Config/booklore/books:/books
+      - ${BOOKLORE_BOOKS_DIRECTORY}:/books
       - ${NEXUS_DATA_DIRECTORY}/Config/booklore/bookdrop:/bookdrop
     environment:
       DATABASE_URL: jdbc:mariadb://booklore-db:3306/booklore

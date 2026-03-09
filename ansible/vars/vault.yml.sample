@@ -43,13 +43,23 @@ nexus_root_directory: "/path/to/nexus"
 #   - ${nexus_data_directory}/Media/    - media files for Plex/Jellyfin
 nexus_data_directory: "/path/to/data"
 
+# User data directory for large files excluded from R2 backups.
+# When set, services store user-facing data here instead of under Config/:
+#   - ${nexus_userdata_directory}/paperless  (documents/media)
+#   - ${nexus_userdata_directory}/booklore   (book files)
+#   - ${nexus_userdata_directory}/foundryvtt (world data, modules, assets)
+#   - ${nexus_userdata_directory}/sure (finance app data)
+# Leave empty to keep everything under nexus_data_directory/Config/ (default).
+# Example: /Volumes/Data/UserData
+nexus_userdata_directory: ""
+
 # Your domain (e.g., example.com)
 nexus_domain: "example.com"
 
 # Timezone (find yours: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
 tz: "America/Vancouver"
 
-# User/Group IDs for media services (jellyfin, plex, transmission, nextcloud)
+# User/Group IDs for media services (jellyfin, plex, transmission)
 # Find your IDs: id -u (PUID) and id -g (PGID)
 # Leave as 1000 for most single-user systems
 puid: 1000
@@ -194,6 +204,14 @@ backups_r2_access_key: "CHANGE_ME"
 backups_r2_secret_key: "CHANGE_ME"
 backups_r2_bucket: "nexus-backups"
 
+# ProtonDrive sync directory (TEMPORARY - until rclone supports ProtonDrive)
+# Mount point where Proton Drive Bridge exposes your drive.
+# When set, a daily crontab rsyncs the restic repo here at 4 AM.
+# Leave empty to skip ProtonDrive sync.
+# Migration: see scripts/sync-to-protondrive.sh header for rclone migration steps.
+# Example: /Volumes/ProtonDrive/nexus-backups
+protondrive_sync_directory: ""
+
 # =============================================================================
 # Sure - Personal Finance (Optional)
 # =============================================================================
@@ -256,15 +274,6 @@ paperless_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 booklore_mysql_user: "booklore"
 booklore_mysql_password: "CHANGE_ME"  # openssl rand -base64 32
 booklore_mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
-
-# =============================================================================
-# Nextcloud - File Storage (Optional)
-# =============================================================================
-# MariaDB (MySQL) database credentials
-mysql_user: "nextcloud"
-mysql_password: "CHANGE_ME"  # openssl rand -base64 32
-mysql_database: "nextcloud"
-mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
 
 # =============================================================================
 # FoundryVTT - Virtual Tabletop (Optional)
@@ -331,10 +340,6 @@ foundry_s3_bucket: "foundry-assets"
 # sure_openai_access_token   -> SURE_OPENAI_ACCESS_TOKEN
 # sure_openai_uri_base       -> SURE_OPENAI_URI_BASE (if set)
 # sure_openai_model          -> SURE_OPENAI_MODEL (if set)
-# mysql_user                 -> MYSQL_USER
-# mysql_password             -> MYSQL_PASSWORD
-# mysql_database             -> MYSQL_DATABASE
-# mysql_root_password        -> MYSQL_ROOT_PASSWORD
 # foundry_username           -> FOUNDRY_USERNAME
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
@@ -349,6 +354,10 @@ foundry_s3_bucket: "foundry-assets"
 # paperless_secret_key       -> PAPERLESS_SECRET_KEY
 # paperless_admin_user       -> PAPERLESS_ADMIN_USER
 # paperless_admin_password   -> PAPERLESS_ADMIN_PASSWORD
+# (derived from nexus_userdata_directory) -> PAPERLESS_DOCUMENTS_DIRECTORY
+# (derived from nexus_userdata_directory) -> BOOKLORE_BOOKS_DIRECTORY
+# (derived from nexus_userdata_directory) -> FOUNDRYVTT_DATA_DIRECTORY
+# (derived from nexus_userdata_directory) -> SURE_DATA_DIRECTORY
 # booklore_mysql_user        -> BOOKLORE_MYSQL_USER
 # booklore_mysql_password    -> BOOKLORE_MYSQL_PASSWORD
 # booklore_mysql_root_password -> BOOKLORE_MYSQL_ROOT_PASSWORD

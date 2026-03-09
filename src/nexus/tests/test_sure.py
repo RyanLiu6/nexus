@@ -61,3 +61,21 @@ class TestSureDockerCompose:
             assert "nexus" not in networks, (
                 f"{container_name}: should not be on the nexus network"
             )
+
+    @pytest.mark.parametrize(
+        "container_name,volume_path",
+        [
+            ("sure-web", "${SURE_DATA_DIRECTORY}/storage:/rails/storage"),
+            ("sure-worker", "${SURE_DATA_DIRECTORY}/storage:/rails/storage"),
+            ("sure-db", "${SURE_DATA_DIRECTORY}/postgres:/var/lib/postgresql"),
+            ("sure-redis", "${SURE_DATA_DIRECTORY}/redis:/data"),
+        ],
+    )
+    def test_volumes_use_sure_data_directory(
+        self,
+        compose_config: dict[str, Any],
+        container_name: str,
+        volume_path: str,
+    ) -> None:
+        volumes = compose_config["services"][container_name]["volumes"]
+        assert volume_path in volumes
