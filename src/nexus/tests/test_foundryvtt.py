@@ -16,6 +16,10 @@ def compose_config() -> dict[str, Any]:
 
 
 class TestFoundryvttDockerCompose:
+    def test_data_volume_uses_env_var(self, compose_config: dict[str, Any]) -> None:
+        volumes = compose_config["services"]["foundryvtt"]["volumes"]
+        assert any("FOUNDRYVTT_DATA_DIRECTORY" in v for v in volumes)
+
     def test_dual_router_setup(self, compose_config: dict[str, Any]) -> None:
         labels = compose_config["services"]["foundryvtt"]["labels"]
         has_http_router = any("entrypoints=http" in label for label in labels)
