@@ -29,35 +29,28 @@
       "id": "daily-local",
       "repo": "local",
       "paths": [
-        "/userdata"
+        "/base_data"{% if nexus_userdata_directory is defined and nexus_userdata_directory != '' %},
+        "/user_data"{% endif %}
       ],
       "schedule": {
         "cron": "0 2 * * *"
       },
       "retention": {
         "policyKeepLastN": 3
-      },
-      "excludes": [
-        "/userdata/paperless/media",
-        "/userdata/booklore/books"
-      ]
+      }
     }{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %},
     {
       "id": "daily-r2",
       "repo": "r2",
       "paths": [
-        "/userdata"
+        "/base_data"
       ],
       "schedule": {
         "cron": "0 3 * * *"
       },
       "retention": {
         "policyKeepLastN": 1
-      },
-      "excludes": [
-        "/userdata/paperless/media",
-        "/userdata/booklore/books"
-      ]
+      }
     }{% endif %}
   ],
   "auth": {

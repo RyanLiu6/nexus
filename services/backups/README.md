@@ -1,212 +1,81 @@
 # Backups - Backrest
 
-Automated backup system using [Backrest](https://github.com/garethgeorge/backrest) as a web UI and orchestrator for [restic](https://restic.net/).
+Automated backup system using [Backrest](https://github.com/garethgeorge/backrest) as a web UI for [restic](https://restic.net/).
 
 ## Overview
 
-Backrest provides:
-- **Web UI** for managing backups at `backups.<domain>` (Tailscale access only)
-- **Automated scheduling** via built-in cron (daily backups at 2 AM local, 3 AM for R2)
-- **Dual repositories**: Local backups (3-day retention) + optional Cloudflare R2 (1-day retention)
-- **restic backend**: Fast, deduplicated, encrypted backups with rclone integration
+- **Web UI** at `backups.<domain>` (Tailscale access only, auth disabled)
+- **Dual repositories**: Local (3-day retention) + optional Cloudflare R2 (1-day retention)
+- **Two data sources**: `/base_data` (service configs) and `/user_data` (large user data)
+- **R2 cost control**: R2 only backs up `/base_data` (configs). Large user data (paperless documents, booklore books, foundryvtt worlds, sure data) stays local-only via `/user_data`
 
 ## Configuration
 
 ### Repositories
 
-Two backup repositories are configured:
+| Repo | Storage | Retention | Purpose |
+|------|---------|-----------|---------|
+| **local** | `/repos` → `${NEXUS_DATA_DIRECTORY}/Backups` | 3 daily | Fast local recovery |
+| **r2** | Cloudflare R2 via rclone | 1 daily | Off-site disaster recovery |
 
-1. **local** (`/repos` in container → `${NEXUS_DATA_DIRECTORY}/Backups` on host)
-   - 3 daily snapshots retained
-   - Fast local recovery
-   - Automatic pruning
-   - Auto-initializes on first container start (`autoInitialize: true`)
-
-2. **r2** (optional, Cloudflare R2 via rclone)
-   - 1 daily snapshot retained
-   - Off-site disaster recovery
-   - Only active if `backups_r2_access_key` is configured
-   - Auto-initializes on first container start (`autoInitialize: true`)
+R2 is optional — only active when `backups_r2_access_key` is configured. Both repos auto-initialize on first start.
 
 ### Backup Plans
 
-- **daily-local**: Runs at 2:00 AM, backs up `/userdata` (container path for `Config/`)
-- **daily-r2**: Runs at 3:00 AM, backs up `/userdata` to R2 (if R2 is enabled)
+| Plan | Schedule | Repo | Paths | Purpose |
+|------|----------|------|-------|---------|
+| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | Full backup of everything |
+| **daily-r2** | 3:00 AM | r2 | `/base_data` only | Off-site configs only |
+
+### Volume Mounts
+
+| Container Path | Host Path | Description |
+|----------------|-----------|-------------|
+| `/base_data` (ro) | `Config/` | Service configurations and databases |
+| `/user_data` (ro) | `$NEXUS_USERDATA_DIRECTORY` | Large user data (documents, books, etc.) |
+| `/repos` | `Backups/` | Restic repository storage |
 
 ### Encryption
 
-All repositories use the `restic_password` from Ansible vault. **Store this securely** - backups are unrecoverable without it.
-
-## Web UI Access
-
-Navigate to `backups.<domain>` (e.g., `backups.example.com`). Access is restricted to the `admins` Tailscale group.
-
-**Authentication:** Backrest's built-in auth is disabled. Access control is handled entirely by Tailscale ACLs.
-
-From the UI you can:
-- View backup history and snapshots
-- Manually trigger backups
-- Browse and restore individual files
-- Monitor backup status and storage usage
+All repositories use `restic_password` from Ansible vault. **Store this securely** — backups are unrecoverable without it.
 
 ## CLI Operations
 
-All restic commands run inside the `backrest` container.
-
-### List Snapshots
+All commands run inside the `backrest` container:
 
 ```bash
+# List snapshots
 docker exec backrest restic -r /repos snapshots
-```
 
-### Verify Repository Integrity
-
-```bash
+# Verify integrity
 docker exec backrest restic -r /repos check
-```
-
-### Restore Specific Service
-
-```bash
-docker exec backrest restic -r /repos restore <snapshot_id> \
-  --target /tmp/restore \
-  --include /userdata/<service_name>
-```
-
-Example - restore Jellyfin config:
-
-```bash
-docker exec backrest restic -r /repos restore abc123 \
-  --target /tmp/restore \
-  --include /userdata/jellyfin
-```
-
-### Restore Entire Backup
-
-```bash
-docker exec backrest restic -r /repos restore latest \
-  --target /tmp/restore
-```
-
-Restored files appear in the container at `/tmp/restore/userdata/`. Copy them to the host:
-
-```bash
-docker cp backrest:/tmp/restore/userdata/<service> \
-  ${NEXUS_DATA_DIRECTORY}/Config/<service>
-```
-
-### Check R2 Connectivity
-
-```bash
-docker exec backrest rclone ls r2:<bucket_name>
-```
-
-### Manual Backup
-
-Trigger via Web UI or use restic directly:
-
-```bash
-docker exec backrest restic -r /repos backup /userdata
-```
-
-## Python CLI Integration
-
-The `nexus restore` command provides a higher-level interface:
-
-```bash
-# List available snapshots
-nexus restore --list
-
-# Restore a specific snapshot (extracts to /tmp/restore, requires manual docker cp)
-nexus restore --snapshot abc123
 
 # Restore specific service
-nexus restore --snapshot abc123 --service jellyfin
+docker exec backrest restic -r /repos restore <snapshot_id> \
+  --target /tmp/restore \
+  --include /base_data/<service_name>
 
-# Restore database from backup
-nexus restore --snapshot abc123 --db /path/to/dump.sql --service <service_name>
+# Manual backup
+docker exec backrest restic -r /repos backup /base_data /user_data
 
-# Verify backup integrity
-nexus restore --verify
+# Check R2 connectivity
+docker exec backrest rclone ls r2:<bucket_name>
 
-# Dry run (preview only)
-nexus restore --snapshot abc123 --dry-run
-```
-
-**Note:** The `nexus restore` command extracts files to `/tmp/restore` inside the container. You must manually copy them to the host using `docker cp` (see Recovery Scenarios below).
-
-## Troubleshooting
-
-### Backrest Won't Start
-
-Check if repos need initialization:
-
-```bash
-docker logs backrest
-```
-
-If you see "repository does not exist" errors, Backrest should auto-initialize on first run (`autoInitialize: true` is enabled). If auto-initialization fails:
-
-```bash
-docker exec backrest restic -r /repos init
-```
-
-### R2 Connection Fails
-
-Verify rclone config is mounted and valid:
-
-```bash
-docker exec backrest rclone config show
-docker exec backrest rclone ls r2:
-```
-
-Check that Terraform provisioned R2 credentials correctly in `ansible/vars/vault.yml`.
-
-### Backups Not Running
-
-Check the schedule in the Web UI under Plans → Edit. Ensure the cron expression is valid and not disabled.
-
-View logs:
-
-```bash
-docker logs backrest
-```
-
-### Out of Space
-
-Local backups retain 3 days; R2 retains 1 day. Pruning happens automatically after each backup. To manually prune:
-
-```bash
+# Manual prune
 docker exec backrest restic -r /repos forget --keep-last 3 --prune
 ```
 
-## Recovery Scenarios
+The `nexus restore` CLI provides a higher-level interface — run `nexus restore --help` for options.
 
-### Restore Single File
+## Recovery
 
-1. List snapshots: `docker exec backrest restic -r /repos snapshots`
-2. Restore to temp location:
-   ```bash
-   docker exec backrest restic -r /repos restore <snapshot_id> \
-     --target /tmp/restore \
-     --include /userdata/<service>/<filename>
-   ```
-3. Copy to host: `docker cp backrest:/tmp/restore/userdata/<service>/<filename> ...`
-
-### Full Service Restore
+### Single Service
 
 ```bash
-# Stop service
 docker compose stop <service>
-
-# Restore from backup
-nexus restore --snapshot <id> --service <service>
-
-# Copy restored files
-docker cp backrest:/tmp/restore/userdata/<service> \
-  ${NEXUS_DATA_DIRECTORY}/Config/
-
-# Start service
+docker exec backrest restic -r /repos restore <snapshot_id> \
+  --target /tmp/restore --include /base_data/<service>
+docker cp backrest:/tmp/restore/base_data/<service> ${NEXUS_DATA_DIRECTORY}/Config/
 docker compose up -d <service>
 ```
 
@@ -215,18 +84,25 @@ docker compose up -d <service>
 1. Re-deploy Nexus infrastructure
 2. Set `restic_password` in vault to original value
 3. Configure R2 credentials (Terraform outputs)
-4. List R2 snapshots:
-   ```bash
-   docker exec backrest restic -r rclone:r2:<bucket> snapshots
-   ```
-5. Restore latest:
-   ```bash
-   docker exec backrest restic -r rclone:r2:<bucket> restore latest \
-     --target /tmp/restore
-   ```
+4. Restore: `docker exec backrest restic -r rclone:r2:<bucket> restore latest --target /tmp/restore`
+
+> **Note:** R2 backups only contain service configs (`/base_data`), not user data. Large data (documents, books, worlds) must be restored from local backups or original sources.
+
+## ProtonDrive Sync (Temporary)
+
+> **Workaround** until [rclone adds ProtonDrive support](https://github.com/rclone/rclone/issues/5804). Once available, replace with a third rclone remote in `config.json.j2`.
+
+Rsyncs the entire restic repo to a ProtonDrive-mounted directory daily at 4 AM. Uses `--delete` so ProtonDrive always has exactly one copy mirroring the local repo.
+
+**Enable:** Set `protondrive_sync_directory` in vault (e.g., `/Volumes/ProtonDrive/nexus-backups`). The crontab is installed/removed automatically on deploy.
+
+**Migrate to rclone:**
+1. Add a ProtonDrive rclone remote (`rclone config`)
+2. Add a third repo in `config.json.j2` pointing to the rclone remote
+3. Clear `protondrive_sync_directory` in vault — deploy removes the crontab
+4. Delete `scripts/sync-to-protondrive.sh`
 
 ## Maintenance
 
-- **Daily**: Automated backups run at 2 AM (local) and 3 AM (R2)
+- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM (ProtonDrive rsync if enabled)
 - **Weekly**: `nexus maintenance weekly` verifies backups exist
-- **Monthly**: Rotate `restic_password` if using a password rotation policy
