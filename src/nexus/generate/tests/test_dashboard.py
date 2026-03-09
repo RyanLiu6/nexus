@@ -65,7 +65,6 @@ class TestCategorizeService:
             ("transmission", "Media"),
             ("sure-web", "Apps"),
             ("foundryvtt", "Apps"),
-            ("nextcloud", "Apps"),
             ("unknown", "Other"),
         ],
     )

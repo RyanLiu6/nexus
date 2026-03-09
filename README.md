@@ -7,7 +7,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Dashboard** - Single homepage to access all services
 - **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
-- **Apps** - FoundryVTT (D&D), Sure (finance), Nextcloud (files), Paperless-ngx (documents), Booklore (books)
+- **Apps** - FoundryVTT (D&D), Sure (finance), Paperless-ngx (documents), Booklore (books)
 - **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
 - **Backups** - Automated with Backrest
@@ -69,7 +69,7 @@ invoke ops --daily               # Daily maintenance
 
 **Core:** traefik, tailscale-access, dashboard, monitoring, vaultwarden
 **Media:** jellyfin, plex, transmission
-**Apps:** foundryvtt, sure, nextcloud, paperless, booklore
+**Apps:** foundryvtt, sure, paperless, booklore
 **Utils:** backups
 
 ## Access Control

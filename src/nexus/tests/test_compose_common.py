@@ -13,7 +13,6 @@ ALL_SERVICES = [
     "foundryvtt",
     "jellyfin",
     "monitoring",
-    "nextcloud",
     "paperless",
     "plex",
     "sure",

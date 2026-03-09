@@ -111,7 +111,6 @@ sudo tailscale up --advertise-tags=tag:nexus-server
 | Transmission | ✅ | ❌ | ❌ |
 | Jellyfin | ✅ | ❌ | ❌ |
 | Plex | ✅ | ❌ | ❌ |
-| Nextcloud | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
 | Booklore | ✅ | ❌ | ❌ |
@@ -167,7 +166,6 @@ For services that do **not** support header-based auth easily, `tailscale-access
 |---------|----------|-------|
 | Grafana | ✅ Header Auth | Auto-login & Role mapping |
 | Jellyfin | 🔒 Gatekeeper | Manual login required |
-| Nextcloud | 🔒 Gatekeeper | Manual login required |
 | FoundryVTT | 🔒 Gatekeeper | Manual login required |
 | Transmission | 🔒 Gatekeeper | No auth (protected by Gatekeeper) |
 
