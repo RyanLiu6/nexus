@@ -49,34 +49,34 @@
 
 - name: Resolve base data directory
   ansible.builtin.set_fact:
-    _nexus_base: "{{ nexus_data_directory | default('/Volumes/Data') }}"
+    nexus_base_path: "{{ nexus_data_directory | default('/Volumes/Data') }}"
 
 - name: Resolve userdata-based directory paths
   ansible.builtin.set_fact:
-    _foundryvtt_dir: >-
+    nexus_foundryvtt_dir: >-
       {{ nexus_userdata_directory + '/foundryvtt'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else _nexus_base + '/Config/foundryvtt/data' }}
-    _paperless_dir: >-
+         else nexus_base_path + '/Config/foundryvtt/data' }}
+    nexus_paperless_dir: >-
       {{ nexus_userdata_directory + '/paperless'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else _nexus_base + '/Config/paperless/media' }}
-    _booklore_dir: >-
+         else nexus_base_path + '/Config/paperless/media' }}
+    nexus_booklore_dir: >-
       {{ nexus_userdata_directory + '/booklore'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else _nexus_base + '/Config/booklore/books' }}
-    _sure_dir: >-
+         else nexus_base_path + '/Config/booklore/books' }}
+    nexus_sure_dir: >-
       {{ nexus_userdata_directory + '/sure'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else _nexus_base + '/Config/sure' }}
-    _userdata_dir: >-
+         else nexus_base_path + '/Config/sure' }}
+    nexus_userdata_env_dir: >-
       {{ nexus_userdata_directory
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else _nexus_base + '/Config' }}
+         else nexus_base_path + '/Config' }}
 
 - name: Ensure FoundryVTT Config directory exists
   ansible.builtin.file:
-    path: "{{ _foundryvtt_dir }}/Config"
+    path: "{{ nexus_foundryvtt_dir }}/Config"
     state: directory
     mode: "0755"
   when: "'foundryvtt' in nexus_final_services"
@@ -84,7 +84,7 @@
 - name: Configure FoundryVTT S3/R2 storage
   ansible.builtin.template:
     src: "{{ nexus_root_directory }}/services/foundryvtt/s3.json.j2"
-    dest: "{{ _foundryvtt_dir }}/Config/s3.json"
+    dest: "{{ nexus_foundryvtt_dir }}/Config/s3.json"
     mode: "0644"
   when: "'foundryvtt' in nexus_final_services and foundry_s3_access_key is defined"
 
@@ -138,7 +138,7 @@
     name: "nexus-protondrive-sync"
     minute: "0"
     hour: "4"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ _nexus_base }}/Backups {{ protondrive_sync_directory }}"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}"
   when:
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is defined
@@ -194,14 +194,14 @@
     SURE_OPENAI_URI_BASE: "{{ sure_openai_uri_base | default('') }}"
     SURE_OPENAI_MODEL: "{{ sure_openai_model | default('') }}"
     SURE_PORT: "{{ sure_port | default('5006') }}"
-    SURE_DATA_DIRECTORY: "{{ _sure_dir }}"
+    SURE_DATA_DIRECTORY: "{{ nexus_sure_dir }}"
     # Monitoring
     GRAFANA_ADMIN_USER: "{{ grafana_admin_user | default('admin') }}"
     GRAFANA_ADMIN_PASSWORD: "{{ grafana_admin_password | default('') }}"
     # Alerting
     DISCORD_WEBHOOK_URL: "{{ discord_webhook_url | default('') }}"
     # Backups
-    NEXUS_USERDATA_DIRECTORY: "{{ _userdata_dir }}"
+    NEXUS_USERDATA_DIRECTORY: "{{ nexus_userdata_env_dir }}"
     RESTIC_PASSWORD: "{{ restic_password | default('') }}"
     # Tailscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
@@ -217,9 +217,9 @@
     PAPERLESS_SECRET_KEY: "{{ paperless_secret_key | default('') }}"
     PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
     PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
-    PAPERLESS_DOCUMENTS_DIRECTORY: "{{ _paperless_dir }}"
-    BOOKLORE_BOOKS_DIRECTORY: "{{ _booklore_dir }}"
-    FOUNDRYVTT_DATA_DIRECTORY: "{{ _foundryvtt_dir }}"
+    PAPERLESS_DOCUMENTS_DIRECTORY: "{{ nexus_paperless_dir }}"
+    BOOKLORE_BOOKS_DIRECTORY: "{{ nexus_booklore_dir }}"
+    FOUNDRYVTT_DATA_DIRECTORY: "{{ nexus_foundryvtt_dir }}"
     # Booklore
     BOOKLORE_MYSQL_USER: "{{ booklore_mysql_user | default('booklore') }}"
     BOOKLORE_MYSQL_PASSWORD: "{{ booklore_mysql_password | default('') }}"

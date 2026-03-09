@@ -92,6 +92,10 @@ jobs:
           NEXUS_ROOT_DIRECTORY: /tmp/nexus
           NEXUS_DATA_DIRECTORY: /tmp/nexus/data
           NEXUS_USERDATA_DIRECTORY: /tmp/nexus/userdata
+          BOOKLORE_BOOKS_DIRECTORY: /tmp/nexus/books
+          FOUNDRYVTT_DATA_DIRECTORY: /tmp/nexus/foundryvtt
+          PAPERLESS_DOCUMENTS_DIRECTORY: /tmp/nexus/paperless
+          SURE_DATA_DIRECTORY: /tmp/nexus/sure
           TZ: UTC
           RESTIC_PASSWORD: dummy
         run: |
