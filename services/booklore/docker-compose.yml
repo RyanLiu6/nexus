@@ -36,7 +36,7 @@ services:
       - "traefik.http.routers.booklore.tls.certresolver=certchallenge"
 
   booklore-db:
-    image: lscr.io/linuxserver/mariadb:11.4.5
+    image: lscr.io/linuxserver/mariadb:11.4.9
     container_name: booklore-db
     restart: unless-stopped
     deploy:
