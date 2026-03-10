@@ -86,23 +86,32 @@ docker compose up -d <service>
 3. Configure R2 credentials (Terraform outputs)
 4. Restore: `docker exec backrest restic -r rclone:r2:<bucket> restore latest --target /tmp/restore`
 
-> **Note:** R2 backups only contain service configs (`/base_data`), not user data. Large data (documents, books, worlds) must be restored from local backups or original sources.
+> **Note:** R2 backups only contain service configs (`/base_data`), not user data. Documents and books can be restored directly from ProtonDrive if `protondrive_sync_directory` is configured. Other large data (foundryvtt worlds, sure data) must be restored from local backups or original sources.
 
 ## ProtonDrive Sync (Temporary)
 
-> **Workaround** until [rclone adds ProtonDrive support](https://github.com/rclone/rclone/issues/5804). Once available, replace with a third rclone remote in `config.json.j2`.
+> **Workaround** until [rclone adds ProtonDrive support](https://github.com/rclone/rclone/issues/5804). Once available, replace with rclone remotes.
 
-Rsyncs the entire restic repo to a ProtonDrive-mounted directory daily at 4 AM. Uses `--delete` so ProtonDrive always has exactly one copy mirroring the local repo.
+Three daily rsyncs to a ProtonDrive-mounted directory. All use `--delete` so ProtonDrive always mirrors the source exactly.
 
-**Enable:** Set `protondrive_sync_directory` in vault (e.g., `/Volumes/ProtonDrive/nexus-backups`). The crontab is installed/removed automatically on deploy.
+| Crontab | Schedule | Source | Destination | Purpose |
+|---------|----------|--------|-------------|---------|
+| `nexus-protondrive-sync` | 4 AM | `Backups/` (restic repos) | `protondrive_sync_directory/Containers` | Restic repos mirrored to ProtonDrive |
+| `nexus-protondrive-paperless-sync` | 4 AM | `$NEXUS_USERDATA_DIRECTORY/paperless` | `protondrive_sync_directory/paperless` | Raw documents, no restic dependency |
+| `nexus-protondrive-booklore-sync` | 4 AM | `$NEXUS_USERDATA_DIRECTORY/booklore` | `protondrive_sync_directory/booklore` | Raw books, no restic dependency |
+
+The raw data syncs (paperless, booklore) mean documents and books are recoverable directly from ProtonDrive without needing restic at all.
+
+**Enable:** Set `protondrive_sync_directory` to the root backup directory (e.g. `.../ProtonDrive/Backups`) and `nexus_userdata_directory` in vault. All crontabs are installed/removed automatically on deploy. Destination subdirectories are created automatically on first run.
 
 **Migrate to rclone:**
 1. Add a ProtonDrive rclone remote (`rclone config`)
-2. Add a third repo in `config.json.j2` pointing to the rclone remote
-3. Clear `protondrive_sync_directory` in vault — deploy removes the crontab
-4. Delete `scripts/sync-to-protondrive.sh`
+2. For restic repos: add a third repo in `config.json.j2`
+3. For raw data: replace crontabs with `rclone sync` tasks in Ansible
+4. Clear `protondrive_sync_directory` in vault — deploy removes all crontabs
+5. Delete `scripts/sync-to-protondrive.sh`
 
 ## Maintenance
 
-- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM (ProtonDrive rsync if enabled)
+- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM (ProtonDrive rsync if enabled: restic repos + raw paperless/booklore)
 - **Weekly**: `nexus maintenance weekly` verifies backups exist

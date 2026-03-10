@@ -138,7 +138,7 @@
     name: "nexus-protondrive-sync"
     minute: "0"
     hour: "4"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}/Containers"
   when:
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is defined
@@ -151,6 +151,48 @@
   when:
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+
+# Raw user data ProtonDrive sync — paperless documents and booklore books
+# Syncs raw files directly (not via restic) so recovery is never coupled to restic.
+- name: Install ProtonDrive paperless raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-paperless-sync"
+    minute: "0"
+    hour: "4"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/paperless {{ protondrive_sync_directory }}/paperless"
+  when:
+    - nexus_userdata_directory is defined
+    - nexus_userdata_directory != ''
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive paperless raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-paperless-sync"
+    state: absent
+  when: >
+    nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+    protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+
+- name: Install ProtonDrive booklore raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-booklore-sync"
+    minute: "0"
+    hour: "4"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/booklore {{ protondrive_sync_directory }}/booklore"
+  when:
+    - nexus_userdata_directory is defined
+    - nexus_userdata_directory != ''
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive booklore raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-booklore-sync"
+    state: absent
+  when: >
+    nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+    protondrive_sync_directory is not defined or protondrive_sync_directory == ''
 
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
