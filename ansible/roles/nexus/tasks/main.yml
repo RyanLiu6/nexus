@@ -137,7 +137,7 @@
   ansible.builtin.cron:
     name: "nexus-protondrive-sync"
     minute: "0"
-    hour: "4"
+    hour: "2"
     job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}/Containers"
   when:
     - "'backups' in nexus_final_services"
@@ -157,9 +157,9 @@
 - name: Install ProtonDrive paperless raw sync crontab
   ansible.builtin.cron:
     name: "nexus-protondrive-paperless-sync"
-    minute: "0"
-    hour: "4"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/paperless {{ protondrive_sync_directory }}/paperless"
+    minute: "15"
+    hour: "2"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/paperless {{ protondrive_sync_directory }}/paperless paperless-web paperless-redis paperless-db"
   when:
     - nexus_userdata_directory is defined
     - nexus_userdata_directory != ''
@@ -177,9 +177,9 @@
 - name: Install ProtonDrive booklore raw sync crontab
   ansible.builtin.cron:
     name: "nexus-protondrive-booklore-sync"
-    minute: "0"
-    hour: "4"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/booklore {{ protondrive_sync_directory }}/booklore"
+    minute: "30"
+    hour: "2"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/booklore {{ protondrive_sync_directory }}/booklore booklore booklore-db"
   when:
     - nexus_userdata_directory is defined
     - nexus_userdata_directory != ''

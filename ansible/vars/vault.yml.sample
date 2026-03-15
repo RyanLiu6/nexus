@@ -206,10 +206,10 @@ backups_r2_bucket: "nexus-backups"
 
 # ProtonDrive sync directory (TEMPORARY - until rclone supports ProtonDrive)
 # Mount point where Proton Drive Bridge exposes your drive.
-# When set, three daily crontabs run (set this to the root backup directory):
-#   4 AM — rsyncs restic repos  → protondrive_sync_directory/Containers/
-#   5 AM — rsyncs raw paperless → protondrive_sync_directory/paperless/
-#   5 AM — rsyncs raw booklore  → protondrive_sync_directory/booklore/
+# When set, three daily crontabs run staggered from 2 AM (set this to the root backup directory):
+#   2:00 AM — rsyncs restic repos  → protondrive_sync_directory/Containers/
+#   2:15 AM — rsyncs raw paperless → protondrive_sync_directory/paperless/ (stops paperless containers)
+#   2:30 AM — rsyncs raw booklore  → protondrive_sync_directory/booklore/  (stops booklore containers)
 # Subdirectories are created automatically on first run.
 # Leave empty to skip all ProtonDrive syncs.
 # Migration: see scripts/sync-to-protondrive.sh header for rclone migration steps.

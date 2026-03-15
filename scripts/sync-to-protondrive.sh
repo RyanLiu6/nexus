@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # TEMPORARY WORKAROUND - ProtonDrive Backup via rsync
 # =============================================================================
@@ -13,18 +13,27 @@
 #   4. Clear protondrive_sync_directory in vault — deploy removes the crontabs
 #   5. Delete this script
 #
-# Usage: sync-to-protondrive.sh <source_dir> <dest_dir>
-# Crontab: 0 4 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
+# Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]
+#   Containers (optional): stopped before sync, restarted after (even on failure).
+# Crontab: 0 2 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
 # =============================================================================
 
 set -euo pipefail
 
-SOURCE_DIR="${1:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir>}"
-DEST_DIR="${2:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir>}"
+SOURCE_DIR="${1:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
+DEST_DIR="${2:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
+shift 2
+CONTAINERS=("$@")
+TAG="$(basename "$SOURCE_DIR")"
 LOG_FILE="/tmp/protondrive-sync.log"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$TAG] $*" | tee -a "$LOG_FILE"
+}
+
+start_containers() {
+    log "Starting containers: ${CONTAINERS[*]}"
+    docker start "${CONTAINERS[@]}" || log "WARNING: Some containers failed to start"
 }
 
 # Validate paths
@@ -39,8 +48,19 @@ if ! mkdir -p "$DEST_DIR"; then
     exit 1
 fi
 
+# If containers were specified, stop them before sync and restart on exit.
+# The EXIT trap ensures containers always restart even if rsync fails.
+if [ ${#CONTAINERS[@]} -gt 0 ]; then
+    trap start_containers EXIT
+
+    log "Stopping containers: ${CONTAINERS[*]}"
+    docker stop "${CONTAINERS[@]}"
+fi
+
 log "Starting rsync: $SOURCE_DIR -> $DEST_DIR"
 
-rsync --archive --delete --quiet "$SOURCE_DIR/" "$DEST_DIR/"
+# --no-owner --no-group: ProtonDrive Bridge is a FUSE mount and does not support
+# chown, so rsync must not attempt to preserve ownership/group.
+rsync --archive --no-owner --no-group --delete --quiet "$SOURCE_DIR/" "$DEST_DIR/"
 
 log "Sync complete"
