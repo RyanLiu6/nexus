@@ -20,6 +20,8 @@
 
 set -euo pipefail
 
+export PATH="/Users/ryanliu6/.local/bin:$PATH"
+
 SOURCE_DIR="${1:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 DEST_DIR="${2:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 shift 2
