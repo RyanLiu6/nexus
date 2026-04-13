@@ -163,7 +163,7 @@
       - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
       - "{{ nexus_base_path }}/Backups"
       - "{{ protondrive_sync_directory }}/Containers"
-  notify: reload protondrive launchagents
+  notify: Reload protondrive launchagents
   when:
     - ansible_system == "Darwin"
     - "'backups' in nexus_final_services"
@@ -223,7 +223,7 @@
       - paperless-web
       - paperless-redis
       - paperless-db
-  notify: reload protondrive launchagents
+  notify: Reload protondrive launchagents
   when:
     - ansible_system == "Darwin"
     - nexus_userdata_directory is defined
@@ -250,7 +250,11 @@
     name: "nexus-protondrive-paperless-sync"
     minute: "30"
     hour: "4"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/paperless {{ protondrive_sync_directory }}/paperless paperless-web paperless-redis paperless-db"
+    job: >-
+      {{ nexus_root_directory }}/scripts/sync-to-protondrive.sh
+      {{ nexus_userdata_directory }}/paperless
+      {{ protondrive_sync_directory }}/paperless
+      paperless-web paperless-redis paperless-db
   when:
     - ansible_system != "Darwin"
     - nexus_userdata_directory is defined
@@ -282,7 +286,7 @@
       - "{{ protondrive_sync_directory }}/grimmory"
       - grimmory
       - grimmory-db
-  notify: reload protondrive launchagents
+  notify: Reload protondrive launchagents
   when:
     - ansible_system == "Darwin"
     - nexus_userdata_directory is defined
@@ -309,7 +313,11 @@
     name: "nexus-protondrive-grimmory-sync"
     minute: "0"
     hour: "5"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/grimmory {{ protondrive_sync_directory }}/grimmory grimmory grimmory-db"
+    job: >-
+      {{ nexus_root_directory }}/scripts/sync-to-protondrive.sh
+      {{ nexus_userdata_directory }}/grimmory
+      {{ protondrive_sync_directory }}/grimmory
+      grimmory grimmory-db
   when:
     - ansible_system != "Darwin"
     - nexus_userdata_directory is defined
