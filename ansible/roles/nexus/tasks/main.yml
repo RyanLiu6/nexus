@@ -61,10 +61,10 @@
       {{ nexus_userdata_directory + '/paperless'
          if nexus_userdata_directory is defined and nexus_userdata_directory
          else nexus_base_path + '/Config/paperless/media' }}
-    nexus_booklore_dir: >-
-      {{ nexus_userdata_directory + '/booklore'
+    nexus_grimmory_dir: >-
+      {{ nexus_userdata_directory + '/grimmory'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else nexus_base_path + '/Config/booklore/books' }}
+         else nexus_base_path + '/Config/grimmory/books' }}
     nexus_sure_dir: >-
       {{ nexus_userdata_directory + '/sure'
          if nexus_userdata_directory is defined and nexus_userdata_directory
@@ -260,12 +260,12 @@
     PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
     PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
     PAPERLESS_DOCUMENTS_DIRECTORY: "{{ nexus_paperless_dir }}"
-    BOOKLORE_BOOKS_DIRECTORY: "{{ nexus_booklore_dir }}"
+    GRIMMORY_BOOKS_DIRECTORY: "{{ nexus_grimmory_dir }}"
     FOUNDRYVTT_DATA_DIRECTORY: "{{ nexus_foundryvtt_dir }}"
-    # Booklore
-    BOOKLORE_MYSQL_USER: "{{ booklore_mysql_user | default('booklore') }}"
-    BOOKLORE_MYSQL_PASSWORD: "{{ booklore_mysql_password | default('') }}"
-    BOOKLORE_MYSQL_ROOT_PASSWORD: "{{ booklore_mysql_root_password | default('') }}"
+    # Grimmory
+    GRIMMORY_MYSQL_USER: "{{ grimmory_mysql_user | default('grimmory') }}"
+    GRIMMORY_MYSQL_PASSWORD: "{{ grimmory_mysql_password | default('') }}"
+    GRIMMORY_MYSQL_ROOT_PASSWORD: "{{ grimmory_mysql_root_password | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"

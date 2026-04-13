@@ -46,7 +46,7 @@ nexus_data_directory: "/path/to/data"
 # User data directory for large files excluded from R2 backups.
 # When set, services store user-facing data here instead of under Config/:
 #   - ${nexus_userdata_directory}/paperless  (documents/media)
-#   - ${nexus_userdata_directory}/booklore   (book files)
+#   - ${nexus_userdata_directory}/grimmory   (book files)
 #   - ${nexus_userdata_directory}/foundryvtt (world data, modules, assets)
 #   - ${nexus_userdata_directory}/sure (finance app data)
 # Leave empty to keep everything under nexus_data_directory/Config/ (default).
@@ -272,12 +272,12 @@ paperless_admin_user: "admin"
 paperless_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
 # =============================================================================
-# Booklore - Book Library Manager (Optional)
+# Grimmory - Book Library Manager (Optional)
 # =============================================================================
 # MariaDB database credentials
-booklore_mysql_user: "booklore"
-booklore_mysql_password: "CHANGE_ME"  # openssl rand -base64 32
-booklore_mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
+grimmory_mysql_user: "grimmory"
+grimmory_mysql_password: "CHANGE_ME"  # openssl rand -base64 32
+grimmory_mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
 
 # =============================================================================
 # FoundryVTT - Virtual Tabletop (Optional)
@@ -359,11 +359,11 @@ foundry_s3_bucket: "foundry-assets"
 # paperless_admin_user       -> PAPERLESS_ADMIN_USER
 # paperless_admin_password   -> PAPERLESS_ADMIN_PASSWORD
 # (derived from nexus_userdata_directory) -> PAPERLESS_DOCUMENTS_DIRECTORY
-# (derived from nexus_userdata_directory) -> BOOKLORE_BOOKS_DIRECTORY
+# (derived from nexus_userdata_directory) -> GRIMMORY_BOOKS_DIRECTORY
 # (derived from nexus_userdata_directory) -> FOUNDRYVTT_DATA_DIRECTORY
 # (derived from nexus_userdata_directory) -> SURE_DATA_DIRECTORY
-# booklore_mysql_user        -> BOOKLORE_MYSQL_USER
-# booklore_mysql_password    -> BOOKLORE_MYSQL_PASSWORD
-# booklore_mysql_root_password -> BOOKLORE_MYSQL_ROOT_PASSWORD
+# grimmory_mysql_user        -> GRIMMORY_MYSQL_USER
+# grimmory_mysql_password    -> GRIMMORY_MYSQL_PASSWORD
+# grimmory_mysql_root_password -> GRIMMORY_MYSQL_ROOT_PASSWORD
 # puid                       -> PUID
 # pgid                       -> PGID

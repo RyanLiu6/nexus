@@ -7,7 +7,7 @@ from nexus.config import SERVICES_PATH
 
 ALL_SERVICES = [
     "backups",
-    "booklore",
+    "grimmory",
     "cloudflared",
     "dashboard",
     "foundryvtt",
@@ -34,7 +34,7 @@ _TRAEFIK_HTTPS_SERVICES = [s for s in ALL_SERVICES if s not in _TRAEFIK_HTTPS_SK
 
 # (service, container) pairs with DB/redis containers that must have healthchecks
 _DB_REDIS_CONTAINERS = [
-    ("booklore", "booklore-db"),
+    ("grimmory", "grimmory-db"),
     ("paperless", "paperless-db"),
     ("paperless", "paperless-redis"),
     ("sure", "sure-db"),

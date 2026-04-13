@@ -1,6 +1,6 @@
-# Booklore
+# Grimmory
 
-Booklore is a self-hosted book library manager for organizing and reading your ebook collection. It supports metadata fetching, reading progress tracking, and a bookdrop directory for importing new books.
+Grimmory is a self-hosted book library manager for organizing and reading your ebook collection. It supports metadata fetching, reading progress tracking, device sync (Kobo, OPDS), and a bookdrop directory for importing new books. Grimmory is an independent community fork of Booklore.
 
 ## Features
 
@@ -8,7 +8,7 @@ Booklore is a self-hosted book library manager for organizing and reading your e
 - **Metadata Fetching** - Automatically fetch covers, descriptions, and details from online sources
 - **Reading Progress** - Track reading progress across your library
 - **Bookdrop** - Drop ebooks into a folder for automatic import into the library
-- **Multi-format Support** - EPUB, PDF, and other common ebook formats
+- **Multi-format Support** - EPUB, PDF, CBZ, CBR, audiobooks (M4B, MP3), and more
 
 ## Setup
 
@@ -33,28 +33,28 @@ ansible-vault edit ansible/vars/vault.yml
 Add the secrets:
 
 ```yaml
-# Booklore
-booklore_mysql_user: booklore
-booklore_mysql_password: "<mysql-password>"
-booklore_mysql_root_password: "<mysql-root-password>"
+# Grimmory
+grimmory_mysql_user: grimmory
+grimmory_mysql_password: "<mysql-password>"
+grimmory_mysql_root_password: "<mysql-root-password>"
 ```
 
 ### 3. Deploy
 
 ```bash
-nexus deploy booklore
+nexus deploy grimmory
 # or
 nexus deploy home
 ```
 
 ### Access
 
-- **URL:** `https://booklore.${NEXUS_DOMAIN}`
+- **URL:** `https://grimmory.${NEXUS_DOMAIN}`
 - **Auth:** Tailscale + tailscale-access (admins)
 
 ## Data Storage
 
-Booklore stores data under `${NEXUS_DATA_DIRECTORY}/Config/booklore/`:
+Grimmory stores data under `${NEXUS_DATA_DIRECTORY}/Config/grimmory/`:
 
 | Path | Contents |
 |------|----------|
@@ -68,9 +68,9 @@ Booklore stores data under `${NEXUS_DATA_DIRECTORY}/Config/booklore/`:
 The built-in backup service covers the data directories. For a manual database backup:
 
 ```bash
-docker exec booklore-db mysqldump -u root -p${BOOKLORE_MYSQL_ROOT_PASSWORD} booklore > booklore-backup.sql
+docker exec grimmory-db mysqldump -u root -p${GRIMMORY_MYSQL_ROOT_PASSWORD} grimmory > grimmory-backup.sql
 ```
 
 ## Resources
 
-- [GitHub Repository](https://github.com/booklore-app/booklore)
+- [GitHub Repository](https://github.com/grimmory-tools/grimmory)

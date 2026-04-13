@@ -1,0 +1,70 @@
+services:
+  grimmory:
+    image: grimmory/grimmory:latest
+    container_name: grimmory
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    networks:
+      - nexus
+      - grimmory
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/grimmory/data:/app/data
+      - ${GRIMMORY_BOOKS_DIRECTORY}:/books
+      - ${NEXUS_DATA_DIRECTORY}/Config/grimmory/bookdrop:/bookdrop
+    environment:
+      DATABASE_URL: jdbc:mariadb://grimmory-db:3306/grimmory
+      DATABASE_USERNAME: ${GRIMMORY_MYSQL_USER}
+      DATABASE_PASSWORD: ${GRIMMORY_MYSQL_PASSWORD}
+      DISK_TYPE: LOCAL
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
+      TZ: ${TZ}
+    depends_on:
+      grimmory-db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.grimmory.loadbalancer.server.port=6060"
+      - "traefik.http.routers.grimmory.rule=Host(`grimmory.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.grimmory.entrypoints=https"
+      - "traefik.http.routers.grimmory.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.grimmory.tls=true"
+      - "traefik.http.routers.grimmory.tls.certresolver=certchallenge"
+
+  grimmory-db:
+    image: lscr.io/linuxserver/mariadb:11.4.9
+    container_name: grimmory-db
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - grimmory
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/grimmory/mariadb:/config
+    environment:
+      MYSQL_ROOT_PASSWORD: ${GRIMMORY_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: grimmory
+      MYSQL_USER: ${GRIMMORY_MYSQL_USER}
+      MYSQL_PASSWORD: ${GRIMMORY_MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  nexus:
+    external: true
+  grimmory:
+    name: nexus_grimmory
+    driver: bridge
