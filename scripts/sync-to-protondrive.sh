@@ -3,7 +3,7 @@
 # TEMPORARY WORKAROUND - ProtonDrive Backup via rsync
 # =============================================================================
 # Rsyncs a local directory to a ProtonDrive-mounted destination.
-# Used for both restic backup repos and raw user data (paperless, booklore).
+# Used for both restic backup repos and raw user data (paperless, grimmory).
 # This is a workaround until rclone adds ProtonDrive support.
 #
 # Migration to rclone (when available):
@@ -15,54 +15,98 @@
 #
 # Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]
 #   Containers (optional): stopped before sync, restarted after (even on failure).
-# Crontab: 0 2 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
+# Schedule: 0 4 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
+#
+# Failures fire a critical alert to Alertmanager with the failure reason.
+# Override the Alertmanager URL via ALERTMANAGER_URL (default: http://localhost:9093).
 # =============================================================================
 
 set -euo pipefail
 
-export PATH="/Users/ryanliu6/.local/bin:$PATH"
+# macOS: extend PATH to cover Docker Desktop (/usr/local/bin), Homebrew (/opt/homebrew/bin),
+# and OrbStack (~/.orbstack/bin). On Linux, docker is on system PATH via package manager.
+if [[ "$(uname)" == "Darwin" ]]; then
+    export PATH="/usr/local/bin:/opt/homebrew/bin:$HOME/.orbstack/bin:$HOME/.local/bin:$PATH"
+fi
 
 SOURCE_DIR="${1:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 DEST_DIR="${2:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 shift 2
 CONTAINERS=("$@")
 TAG="$(basename "$SOURCE_DIR")"
-LOG_FILE="/tmp/protondrive-sync.log"
+ALERTMANAGER_URL="${ALERTMANAGER_URL:-http://localhost:9093}"
+FAILURE_REASON=""
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$TAG] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$TAG] $*"
 }
 
-start_containers() {
-    log "Starting containers: ${CONTAINERS[*]}"
-    docker start "${CONTAINERS[@]}" || log "WARNING: Some containers failed to start"
+fire_failed_alert() {
+    local reason="$1"
+    local ends_at
+    # Resolve expires 25h from now so the alert auto-clears if the next run succeeds
+    ends_at=$(date -u -d '+25 hours' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
+        || date -u -v+25H '+%Y-%m-%dT%H:%M:%SZ')
+
+    # Basic JSON escaping: backslashes first, then quotes, then collapse newlines
+    local escaped="${reason//\\/\\\\}"
+    escaped="${escaped//\"/\\\"}"
+    escaped="${escaped//$'\n'/ }"
+
+    curl --silent --max-time 10 \
+        --request POST "${ALERTMANAGER_URL}/api/v2/alerts" \
+        --header "Content-Type: application/json" \
+        --data "[{
+            \"labels\": {
+                \"alertname\": \"ProtonDriveSyncFailed\",
+                \"severity\": \"critical\",
+                \"job\": \"${TAG}\"
+            },
+            \"annotations\": {
+                \"summary\": \"ProtonDrive sync failed (${TAG})\",
+                \"description\": \"${escaped}\"
+            },
+            \"endsAt\": \"${ends_at}\"
+        }]" || log "WARNING: Failed to reach Alertmanager at ${ALERTMANAGER_URL}"
 }
 
-# Validate paths
+on_exit() {
+    local exit_code=$?
+    set +e
+    if [ ${#CONTAINERS[@]} -gt 0 ]; then
+        log "Starting containers: ${CONTAINERS[*]}"
+        docker start "${CONTAINERS[@]}" || log "WARNING: Some containers failed to start"
+    fi
+    if [ $exit_code -ne 0 ]; then
+        local reason="${FAILURE_REASON:-exited with code $exit_code}"
+        log "FAILED: $reason"
+        fire_failed_alert "$reason"
+    fi
+}
+
+trap on_exit EXIT
+
 if [ ! -d "$SOURCE_DIR" ]; then
-    log "ERROR: Source directory does not exist: $SOURCE_DIR"
+    FAILURE_REASON="source directory does not exist: $SOURCE_DIR"
     exit 1
 fi
 
 if ! mkdir -p "$DEST_DIR"; then
-    log "ERROR: Could not create destination directory: $DEST_DIR"
-    log "Is Proton Drive Bridge running and mounted?"
+    FAILURE_REASON="could not create destination $DEST_DIR — is Proton Drive Bridge running and mounted?"
     exit 1
 fi
 
-# If containers were specified, stop them before sync and restart on exit.
-# The EXIT trap ensures containers always restart even if rsync fails.
 if [ ${#CONTAINERS[@]} -gt 0 ]; then
-    trap start_containers EXIT
-
     log "Stopping containers: ${CONTAINERS[*]}"
     docker stop "${CONTAINERS[@]}"
 fi
 
 log "Starting rsync: $SOURCE_DIR -> $DEST_DIR"
 
-# --no-owner --no-group: ProtonDrive Bridge is a FUSE mount and does not support
-# chown, so rsync must not attempt to preserve ownership/group.
-rsync --archive --no-owner --no-group --delete --quiet "$SOURCE_DIR/" "$DEST_DIR/"
+rsync_out=""
+if ! rsync_out=$(rsync --archive --no-owner --no-group --delete "$SOURCE_DIR/" "$DEST_DIR/" 2>&1); then
+    FAILURE_REASON="rsync failed: ${rsync_out:-no output}"
+    exit 1
+fi
 
 log "Sync complete"

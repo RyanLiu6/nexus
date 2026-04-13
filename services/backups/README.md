@@ -7,7 +7,7 @@ Automated backup system using [Backrest](https://github.com/garethgeorge/backres
 - **Web UI** at `backups.<domain>` (Tailscale access only, auth disabled)
 - **Dual repositories**: Local (3-day retention) + optional Cloudflare R2 (1-day retention)
 - **Two data sources**: `/base_data` (service configs) and `/user_data` (large user data)
-- **R2 cost control**: R2 only backs up `/base_data` (configs). Large user data (paperless documents, booklore books, foundryvtt worlds, sure data) stays local-only via `/user_data`
+- **R2 cost control**: R2 only backs up `/base_data` (configs). Large user data (paperless documents, grimmory books, foundryvtt worlds, sure data) stays local-only via `/user_data`
 
 ## Configuration
 
@@ -94,24 +94,24 @@ docker compose up -d <service>
 
 Three daily rsyncs to a ProtonDrive-mounted directory. All use `--delete` so ProtonDrive always mirrors the source exactly.
 
-| Crontab | Schedule | Source | Destination | Purpose |
+| Job | Schedule | Source | Destination | Purpose |
 |---------|----------|--------|-------------|---------|
 | `nexus-protondrive-sync` | 4 AM | `Backups/` (restic repos) | `protondrive_sync_directory/Containers` | Restic repos mirrored to ProtonDrive |
-| `nexus-protondrive-paperless-sync` | 4 AM | `$NEXUS_USERDATA_DIRECTORY/paperless` | `protondrive_sync_directory/paperless` | Raw documents, no restic dependency |
-| `nexus-protondrive-booklore-sync` | 4 AM | `$NEXUS_USERDATA_DIRECTORY/booklore` | `protondrive_sync_directory/booklore` | Raw books, no restic dependency |
+| `nexus-protondrive-paperless-sync` | 4:30 AM | `$NEXUS_USERDATA_DIRECTORY/paperless` | `protondrive_sync_directory/paperless` | Raw documents, no restic dependency |
+| `nexus-protondrive-grimmory-sync` | 5:00 AM | `$NEXUS_USERDATA_DIRECTORY/grimmory` | `protondrive_sync_directory/grimmory` | Raw books, no restic dependency |
 
-The raw data syncs (paperless, booklore) mean documents and books are recoverable directly from ProtonDrive without needing restic at all.
+The raw data syncs (paperless, grimmory) mean documents and books are recoverable directly from ProtonDrive without needing restic at all.
 
-**Enable:** Set `protondrive_sync_directory` to the root backup directory (e.g. `.../ProtonDrive/Backups`) and `nexus_userdata_directory` in vault. All crontabs are installed/removed automatically on deploy. Destination subdirectories are created automatically on first run.
+**Enable:** Set `protondrive_sync_directory` to the root backup directory (e.g. `.../ProtonDrive/Backups`) and `nexus_userdata_directory` in vault. All sync jobs are installed/removed automatically on deploy (LaunchAgents on macOS, crontabs on Linux). Destination subdirectories are created automatically on first run.
 
 **Migrate to rclone:**
 1. Add a ProtonDrive rclone remote (`rclone config`)
 2. For restic repos: add a third repo in `config.json.j2`
 3. For raw data: replace crontabs with `rclone sync` tasks in Ansible
-4. Clear `protondrive_sync_directory` in vault — deploy removes all crontabs
+4. Clear `protondrive_sync_directory` in vault — deploy removes all sync jobs
 5. Delete `scripts/sync-to-protondrive.sh`
 
 ## Maintenance
 
-- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM (ProtonDrive rsync if enabled: restic repos + raw paperless/booklore)
+- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM–5 AM (ProtonDrive rsync if enabled: restic repos at 4:00, paperless at 4:30, grimmory at 5:00)
 - **Weekly**: `nexus maintenance weekly` verifies backups exist

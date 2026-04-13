@@ -1,0 +1,9 @@
+---
+- name: reload protondrive launchagents
+  ansible.builtin.shell: |
+    for plist in {{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-*.plist; do
+      [ -f "$plist" ] || continue
+      launchctl bootout gui/$(id -u) "$plist" 2>/dev/null || true
+      launchctl bootstrap gui/$(id -u) "$plist"
+    done
+  changed_when: true

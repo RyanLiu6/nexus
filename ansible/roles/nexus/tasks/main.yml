@@ -127,19 +127,71 @@
     mode: "0755"
   loop:
     - paperless
-    - booklore
+    - grimmory
     - foundryvtt
     - sure
   when: nexus_userdata_directory is defined and nexus_userdata_directory != ''
 
 # TEMPORARY: ProtonDrive rsync backup (remove when rclone supports ProtonDrive)
+# macOS: LaunchAgents (launchd) — no TCC/crontab permissions needed
+# Linux: cron
+
+- name: Ensure LaunchAgents directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
+    state: directory
+    mode: '0755'
+  when: ansible_system == "Darwin"
+
+- name: Ensure nexus log directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/Library/Logs/nexus"
+    state: directory
+    mode: '0755'
+  when: ansible_system == "Darwin"
+
+- name: Install ProtonDrive rsync LaunchAgent
+  ansible.builtin.template:
+    src: protondrive-sync.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-sync.plist"
+    mode: '0644'
+  vars:
+    plist_label: com.nexus.protondrive-sync
+    plist_hour: 4
+    plist_minute: 0
+    plist_args:
+      - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
+      - "{{ nexus_base_path }}/Backups"
+      - "{{ protondrive_sync_directory }}/Containers"
+  notify: reload protondrive launchagents
+  when:
+    - ansible_system == "Darwin"
+    - "'backups' in nexus_final_services"
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive rsync LaunchAgent
+  ansible.builtin.shell: |
+    launchctl bootout gui/$(id -u) "{{ plist_path }}" 2>/dev/null || true
+    rm -f "{{ plist_path }}"
+  vars:
+    plist_path: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-sync.plist"
+  args:
+    removes: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-sync.plist"
+  changed_when: true
+  when:
+    - ansible_system == "Darwin"
+    - "'backups' in nexus_final_services"
+    - protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+
 - name: Install ProtonDrive rsync crontab
   ansible.builtin.cron:
     name: "nexus-protondrive-sync"
     minute: "0"
-    hour: "2"
+    hour: "4"
     job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_base_path }}/Backups {{ protondrive_sync_directory }}/Containers"
   when:
+    - ansible_system != "Darwin"
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is defined
     - protondrive_sync_directory != ''
@@ -149,18 +201,58 @@
     name: "nexus-protondrive-sync"
     state: absent
   when:
+    - ansible_system != "Darwin"
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is not defined or protondrive_sync_directory == ''
 
-# Raw user data ProtonDrive sync — paperless documents and booklore books
+# Raw user data ProtonDrive sync — paperless documents and grimmory books
 # Syncs raw files directly (not via restic) so recovery is never coupled to restic.
+- name: Install ProtonDrive paperless raw sync LaunchAgent
+  ansible.builtin.template:
+    src: protondrive-sync.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-paperless-sync.plist"
+    mode: '0644'
+  vars:
+    plist_label: com.nexus.protondrive-paperless-sync
+    plist_hour: 4
+    plist_minute: 30
+    plist_args:
+      - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
+      - "{{ nexus_userdata_directory }}/paperless"
+      - "{{ protondrive_sync_directory }}/paperless"
+      - paperless-web
+      - paperless-redis
+      - paperless-db
+  notify: reload protondrive launchagents
+  when:
+    - ansible_system == "Darwin"
+    - nexus_userdata_directory is defined
+    - nexus_userdata_directory != ''
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive paperless raw sync LaunchAgent
+  ansible.builtin.shell: |
+    launchctl bootout gui/$(id -u) "{{ plist_path }}" 2>/dev/null || true
+    rm -f "{{ plist_path }}"
+  vars:
+    plist_path: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-paperless-sync.plist"
+  args:
+    removes: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-paperless-sync.plist"
+  changed_when: true
+  when:
+    - ansible_system == "Darwin"
+    - nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+      protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+
 - name: Install ProtonDrive paperless raw sync crontab
   ansible.builtin.cron:
     name: "nexus-protondrive-paperless-sync"
-    minute: "15"
-    hour: "2"
+    minute: "30"
+    hour: "4"
     job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/paperless {{ protondrive_sync_directory }}/paperless paperless-web paperless-redis paperless-db"
   when:
+    - ansible_system != "Darwin"
     - nexus_userdata_directory is defined
     - nexus_userdata_directory != ''
     - protondrive_sync_directory is defined
@@ -171,28 +263,68 @@
     name: "nexus-protondrive-paperless-sync"
     state: absent
   when: >
-    nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
-    protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+    ansible_system != "Darwin" and
+    (nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+    protondrive_sync_directory is not defined or protondrive_sync_directory == '')
 
-- name: Install ProtonDrive booklore raw sync crontab
-  ansible.builtin.cron:
-    name: "nexus-protondrive-booklore-sync"
-    minute: "30"
-    hour: "2"
-    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/booklore {{ protondrive_sync_directory }}/booklore booklore booklore-db"
+- name: Install ProtonDrive grimmory raw sync LaunchAgent
+  ansible.builtin.template:
+    src: protondrive-sync.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-grimmory-sync.plist"
+    mode: '0644'
+  vars:
+    plist_label: com.nexus.protondrive-grimmory-sync
+    plist_hour: 5
+    plist_minute: 0
+    plist_args:
+      - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
+      - "{{ nexus_userdata_directory }}/grimmory"
+      - "{{ protondrive_sync_directory }}/grimmory"
+      - grimmory
+      - grimmory-db
+  notify: reload protondrive launchagents
   when:
+    - ansible_system == "Darwin"
     - nexus_userdata_directory is defined
     - nexus_userdata_directory != ''
     - protondrive_sync_directory is defined
     - protondrive_sync_directory != ''
 
-- name: Remove ProtonDrive booklore raw sync crontab
+- name: Remove ProtonDrive grimmory raw sync LaunchAgent
+  ansible.builtin.shell: |
+    launchctl bootout gui/$(id -u) "{{ plist_path }}" 2>/dev/null || true
+    rm -f "{{ plist_path }}"
+  vars:
+    plist_path: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-grimmory-sync.plist"
+  args:
+    removes: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-grimmory-sync.plist"
+  changed_when: true
+  when:
+    - ansible_system == "Darwin"
+    - nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+      protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+
+- name: Install ProtonDrive grimmory raw sync crontab
   ansible.builtin.cron:
-    name: "nexus-protondrive-booklore-sync"
+    name: "nexus-protondrive-grimmory-sync"
+    minute: "0"
+    hour: "5"
+    job: "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh {{ nexus_userdata_directory }}/grimmory {{ protondrive_sync_directory }}/grimmory grimmory grimmory-db"
+  when:
+    - ansible_system != "Darwin"
+    - nexus_userdata_directory is defined
+    - nexus_userdata_directory != ''
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive grimmory raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-grimmory-sync"
     state: absent
   when: >
-    nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
-    protondrive_sync_directory is not defined or protondrive_sync_directory == ''
+    ansible_system != "Darwin" and
+    (nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
+    protondrive_sync_directory is not defined or protondrive_sync_directory == '')
 
 - name: Stop and remove existing containers
   ansible.builtin.shell: |
