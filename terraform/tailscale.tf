@@ -18,8 +18,8 @@ variable "enable_tailscale" {
 # =============================================================================
 
 locals {
-  # Only enable if API key is configured
-  tailscale_enabled = var.enable_tailscale && var.tailscale_api_key != "" && length(var.tailscale_users) > 0
+  # Only enable if OAuth credentials are configured
+  tailscale_enabled = var.enable_tailscale && var.tailscale_oauth_client_id != "" && length(var.tailscale_users) > 0
 
   # Build groups with "group:" prefix
   acl_groups = {

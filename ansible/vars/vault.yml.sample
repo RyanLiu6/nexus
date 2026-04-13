@@ -115,16 +115,17 @@ tailscale_server_ip: ""
 # Your Tailnet ID (Unique ID found under Settings -> General)
 tailnet_id: "your-tailnet-id"
 
-# Tailscale API key for ACL and DNS management (required)
+# Tailscale OAuth client credentials for ACL and DNS management (required)
 #
-# To create an API key:
-#   1. Go to https://login.tailscale.com/admin/settings/keys
-#   2. Click "Generate API key..."
-#   3. Set expiration (max 90 days) - you'll need to rotate periodically
-#   4. Copy the key (starts with "tskey-api-")
+# To create an OAuth client:
+#   1. Go to https://login.tailscale.com/admin/settings/trust-credentials
+#   2. Click "Add a credential..." and choose Custom scopes
+#   3. Enable: DNS (Read + Write), Policy File (Read + Write)
+#   4. Save the client_id and client_secret below
 #
-# The key grants full admin access to your tailnet. Keep it secure.
-tailscale_api_key: ""
+# OAuth credentials do not expire (unlike API keys).
+tailscale_oauth_client_id: ""
+tailscale_oauth_client_secret: ""
 
 # =============================================================================
 # Tailscale Users & Groups
@@ -206,10 +207,10 @@ backups_r2_bucket: "nexus-backups"
 
 # ProtonDrive sync directory (TEMPORARY - until rclone supports ProtonDrive)
 # Mount point where Proton Drive Bridge exposes your drive.
-# When set, three daily crontabs run staggered from 2 AM (set this to the root backup directory):
-#   2:00 AM — rsyncs restic repos  → protondrive_sync_directory/Containers/
-#   2:15 AM — rsyncs raw paperless → protondrive_sync_directory/paperless/ (stops paperless containers)
-#   2:30 AM — rsyncs raw booklore  → protondrive_sync_directory/booklore/  (stops booklore containers)
+# When set, three daily scheduled syncs run staggered from 4 AM (set this to the root backup directory):
+#   4:00 AM — rsyncs restic repos  → protondrive_sync_directory/Containers/
+#   4:30 AM — rsyncs raw paperless → protondrive_sync_directory/paperless/ (stops paperless containers)
+#   5:00 AM — rsyncs raw grimmory  → protondrive_sync_directory/grimmory/  (stops grimmory containers)
 # Subdirectories are created automatically on first run.
 # Leave empty to skip all ProtonDrive syncs.
 # Migration: see scripts/sync-to-protondrive.sh header for rclone migration steps.
@@ -348,7 +349,6 @@ foundry_s3_bucket: "foundry-assets"
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
 # tailnet_id                 -> TAILNET_ID
-# tailscale_api_key          -> TAILSCALE_API_KEY
 # vaultwarden_admin_token    -> VAULTWARDEN_ADMIN_TOKEN
 # vaultwarden_signups_allowed -> VAULTWARDEN_SIGNUPS_ALLOWED
 # vaultwarden_invitations_allowed -> VAULTWARDEN_INVITATIONS_ALLOWED

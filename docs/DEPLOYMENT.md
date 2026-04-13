@@ -126,11 +126,12 @@ tailscale_users:
     - friend@gmail.com
 ```
 
-**Add Tailscale API key (required):**
+**Add Tailscale OAuth credentials (required):**
 
-1. Go to [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
-2. Click **"Generate API key..."** (max 90 days, rotate periodically)
-3. Add to vault.yml: `tailscale_api_key: "tskey-api-..."`
+1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
+2. Click **"Add a credential..."**, choose **Custom scopes**
+3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
+4. Add to vault.yml: `tailscale_oauth_client_id` and `tailscale_oauth_client_secret`
 
 Deploy will automatically configure ACL and DNS via Terraform.
 

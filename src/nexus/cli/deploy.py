@@ -473,13 +473,13 @@ def main(
     if dry_run:
         logging.info("\n[Dry Run Complete] No changes were made.")
     else:
-        # Check if Tailscale API key was configured
+        # Check if Tailscale OAuth credentials are configured
         tailscale_configured = False
         try:
             vault = read_vault()
-            tailscale_api_key = vault.get("tailscale_api_key", "")
+            tailscale_oauth_id = vault.get("tailscale_oauth_client_id", "")
             tailscale_configured = bool(
-                tailscale_api_key and tailscale_api_key != "CHANGE_ME"
+                tailscale_oauth_id and tailscale_oauth_id != "CHANGE_ME"
             )
         except Exception:
             pass
@@ -495,8 +495,10 @@ def main(
             print("\n✅ Tailscale ACL and DNS configured via Terraform")
         else:
             print("\n⚠️  Tailscale ACL/DNS not configured!")
-            print("   Add tailscale_api_key to vault.yml and redeploy.")
-            print("   Get key: https://login.tailscale.com/admin/settings/keys")
+            print("   Add tailscale_oauth_client_id/secret to vault.yml.")
+            print(
+                "   Create: https://login.tailscale.com/admin/settings/trust-credentials"
+            )
 
         print("\n⚠️  One-time setup (if not done already):")
         print("   tailscale up --advertise-tags=tag:nexus-server")

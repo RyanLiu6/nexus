@@ -78,13 +78,14 @@ tailscale_users:
     - friend1@gmail.com
 ```
 
-### 2. Add Tailscale API Key
+### 2. Add Tailscale OAuth Credentials
 
 **Required** for ACL and DNS management:
 
-1. Go to [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
-2. Click **"Generate API key..."** (max 90 days, rotate periodically)
-3. Add to vault.yml: `tailscale_api_key: "tskey-api-..."`
+1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
+2. Click **"Add a credential..."**, choose **Custom scopes**
+3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
+4. Add to vault.yml: `tailscale_oauth_client_id` and `tailscale_oauth_client_secret`
 
 ### 3. Deploy
 
@@ -113,7 +114,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server
 | Plex | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
-| Booklore | ✅ | ❌ | ❌ |
+| Grimmory | ✅ | ❌ | ❌ |
 | Homepage | ✅ | ✅ | ❌ |
 | FoundryVTT | ✅ | ✅ | ✅ |
 

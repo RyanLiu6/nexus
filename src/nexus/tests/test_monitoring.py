@@ -14,7 +14,6 @@ _EXPECTED_CONTAINERS = {
     "grafana",
     "alertmanager",
     "alert-bot",
-    "tailscale-exporter",
 }
 
 _NAMED_VOLUMES = ["prometheus-data", "grafana-data", "alertmanager-data"]
@@ -27,7 +26,7 @@ def compose_config() -> dict[str, Any]:
 
 
 class TestMonitoringDockerCompose:
-    def test_all_six_containers_present(self, compose_config: dict[str, Any]) -> None:
+    def test_all_five_containers_present(self, compose_config: dict[str, Any]) -> None:
         assert set(compose_config["services"].keys()) == _EXPECTED_CONTAINERS
 
     @pytest.mark.parametrize("volume_name", _NAMED_VOLUMES)
@@ -42,12 +41,3 @@ class TestMonitoringDockerCompose:
         alert_bot = compose_config["services"]["alert-bot"]
         assert "build" in alert_bot, "alert-bot should use build directive, not image"
         assert "image" not in alert_bot
-
-    def test_tailscale_exporter_uses_build(
-        self, compose_config: dict[str, Any]
-    ) -> None:
-        exporter = compose_config["services"]["tailscale-exporter"]
-        assert "build" in exporter, (
-            "tailscale-exporter should use build directive, not image"
-        )
-        assert "image" not in exporter
