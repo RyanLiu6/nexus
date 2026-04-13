@@ -39,10 +39,15 @@ def _get_terraform_vars_from_vault() -> dict[str, str]:
         "tunnel_secret": "TF_VAR_tunnel_secret",
     }
 
-    # Optional Tailscale API key
-    tailscale_api_key = vault.get("tailscale_api_key", "")
-    if tailscale_api_key and tailscale_api_key != "CHANGE_ME":
-        key_mapping["tailscale_api_key"] = "TF_VAR_tailscale_api_key"
+    # Optional Tailscale OAuth credentials
+    tailscale_oauth_id = vault.get("tailscale_oauth_client_id", "")
+    tailscale_oauth_secret = vault.get("tailscale_oauth_client_secret", "")
+    if tailscale_oauth_id and tailscale_oauth_id != "CHANGE_ME":
+        key_mapping["tailscale_oauth_client_id"] = "TF_VAR_tailscale_oauth_client_id"
+    if tailscale_oauth_secret and tailscale_oauth_secret != "CHANGE_ME":
+        key_mapping["tailscale_oauth_client_secret"] = (
+            "TF_VAR_tailscale_oauth_client_secret"
+        )
 
     # Check for missing keys and build env vars
     missing = []

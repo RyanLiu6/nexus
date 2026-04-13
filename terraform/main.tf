@@ -18,8 +18,9 @@ provider "cloudflare" {
 }
 
 provider "tailscale" {
-  api_key = var.tailscale_api_key
-  tailnet = var.tailnet_id
+  oauth_client_id     = var.tailscale_oauth_client_id
+  oauth_client_secret = var.tailscale_oauth_client_secret
+  tailnet             = var.tailnet_id
 }
 
 # =============================================================================
@@ -64,8 +65,15 @@ variable "tunnel_secret" {
 # Tailscale Configuration
 # =============================================================================
 
-variable "tailscale_api_key" {
-  description = "Tailscale API key for managing ACLs and DNS"
+variable "tailscale_oauth_client_id" {
+  description = "Tailscale OAuth client ID for managing ACLs and DNS"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tailscale_oauth_client_secret" {
+  description = "Tailscale OAuth client secret"
   type        = string
   sensitive   = true
   default     = ""

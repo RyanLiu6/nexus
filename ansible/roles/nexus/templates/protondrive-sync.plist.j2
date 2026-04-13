@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{{ plist_label }}</string>
+    <key>ProgramArguments</key>
+    <array>
+        {% for arg in plist_args %}
+        <string>{{ arg }}</string>
+        {% endfor %}
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{{ plist_hour }}</integer>
+        <key>Minute</key>
+        <integer>{{ plist_minute }}</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{{ ansible_env.HOME }}/Library/Logs/nexus/{{ plist_label }}.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{ ansible_env.HOME }}/Library/Logs/nexus/{{ plist_label }}.log</string>
+</dict>
+</plist>

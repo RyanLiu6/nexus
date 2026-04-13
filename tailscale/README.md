@@ -24,17 +24,18 @@ tailscale_users:
     - friend1@gmail.com
 ```
 
-### 2. Add Tailscale API Key
+### 2. Add Tailscale OAuth Credentials
 
 **Required** for ACL and DNS management:
 
-1. Go to [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
-2. Click **"Generate API key..."**
-3. Set expiration (max 90 days - you'll need to rotate periodically)
+1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
+2. Click **"Add a credential..."**, choose **Custom scopes**
+3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
 4. Add to vault.yml:
 
 ```yaml
-tailscale_api_key: "tskey-api-..."
+tailscale_oauth_client_id: "<client_id>"
+tailscale_oauth_client_secret: "<client_secret>"
 ```
 
 ### 3. Deploy
@@ -123,17 +124,9 @@ sudo tailscale up --advertise-tags=tag:nexus-server
 
 3. Run `inv deploy`
 
-## API Key Rotation
-
-Tailscale API keys expire (max 90 days). To rotate:
-
-1. Generate new key at [Tailscale Admin → Settings → Keys](https://login.tailscale.com/admin/settings/keys)
-2. Update `tailscale_api_key` in vault.yml
-3. Run `inv deploy`
-
 ## Important Notes
 
 - **Single source of truth**: Edit users only in `vault.yml`
-- **API key required**: Terraform manages all Tailscale configuration
+- **OAuth credentials**: Do not expire (unlike API keys) — no rotation needed
 - **Default deny**: Services not listed in `access-rules.yml` are denied
 - **SSH is admin-only**: Only `admins` group can SSH

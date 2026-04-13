@@ -30,18 +30,20 @@ class TestGetTerraformVarsFromVault:
         assert result["TF_VAR_tunnel_secret"] == "secret123"
 
     @patch("nexus.deploy.terraform.read_vault")
-    def test_with_tailscale_api_key(self, mock_read_vault: MagicMock) -> None:
+    def test_with_tailscale_oauth(self, mock_read_vault: MagicMock) -> None:
         mock_read_vault.return_value = {
             "cloudflare_api_token": "token123",
             "cloudflare_zone_id": "zone123",
             "cloudflare_account_id": "account123",
             "tunnel_secret": "secret123",
-            "tailscale_api_key": "tskey-api-123",
+            "tailscale_oauth_client_id": "client-id-123",
+            "tailscale_oauth_client_secret": "client-secret-456",
         }
 
         result = _get_terraform_vars_from_vault()
 
-        assert result["TF_VAR_tailscale_api_key"] == "tskey-api-123"
+        assert result["TF_VAR_tailscale_oauth_client_id"] == "client-id-123"
+        assert result["TF_VAR_tailscale_oauth_client_secret"] == "client-secret-456"
 
     @patch("nexus.deploy.terraform.read_vault")
     def test_missing_vault_values(self, mock_read_vault: MagicMock) -> None:

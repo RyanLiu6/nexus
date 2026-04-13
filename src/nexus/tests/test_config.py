@@ -31,7 +31,7 @@ class TestPresets:
         assert "transmission" in services
         assert "backups" in services
         assert "paperless" in services
-        assert "booklore" in services
+        assert "grimmory" in services
 
     def test_resolve_preset_invalid_returns_empty(self) -> None:
         services = resolve_preset("invalid")

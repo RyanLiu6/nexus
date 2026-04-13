@@ -127,7 +127,7 @@ class TestDiscoverServices:
     def test_discover_services_includes_new_services(self) -> None:
         services = discover_services()
         assert "paperless" in services
-        assert "booklore" in services
+        assert "grimmory" in services
 
     def test_get_all_service_names(self) -> None:
         names = get_all_service_names()

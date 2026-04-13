@@ -1,18 +1,18 @@
-name: booklore
+name: grimmory
 description: Book and ebook library manager
 category: apps
 icon: mdi-bookshelf
-subdomain: booklore
+subdomain: grimmory
 
 access:
   groups: [admins]
   public: false
 
 services:
-  booklore:
+  grimmory:
     icon: mdi-bookshelf
     description: Book and ebook library manager
-  booklore-db:
+  grimmory-db:
     exclude: true
 
 dependencies:
