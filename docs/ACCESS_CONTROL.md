@@ -128,7 +128,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 
 All access control is configured in `ansible/vars/vault.yml` and applied automatically.
 
-### Tailscale ACL (via Terraform)
+### Tailscale ACL (via OpenTofu)
 
 Network-level access control applied directly to your tailnet:
 - **Groups**: Who belongs to which role
@@ -241,7 +241,7 @@ works immediately — no re-auth prompt.
        - friend1@gmail.com
        - newuser@gmail.com  # Add new user
    ```
-2. Run `inv deploy` (Terraform updates ACL automatically)
+2. Run `inv deploy` (OpenTofu updates ACL automatically)
 3. Invite user to your tailnet
 
 ---

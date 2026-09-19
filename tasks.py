@@ -122,7 +122,7 @@ def deploy(
     --services         Comma-separated list of services to deploy
     --preset           Service preset to deploy (core, home)
     --all              Deploy all services
-    --skip-dns         Skip Terraform DNS/tunnel management
+    --skip-dns         Skip OpenTofu DNS/tunnel management
     --skip-ansible     Skip Ansible deployment
     --skip-cloudflared Skip starting cloudflared
     --no-tunnel        Use legacy A records instead of Cloudflare Tunnel
@@ -193,7 +193,7 @@ def down(c: Context, remove_orphans: bool = True) -> None:
     """Stop containers via docker compose down.
 
     Runs against the generated docker-compose.yml in the project root.
-    Does not re-run Terraform or Ansible.
+    Does not re-run OpenTofu or Ansible.
     """
     args = ["docker compose down"]
     if remove_orphans:
@@ -205,7 +205,7 @@ def down(c: Context, remove_orphans: bool = True) -> None:
 def start(c: Context) -> None:
     """Start containers via docker compose up -d.
 
-    Fast start — skips config generation, Ansible, and Terraform.
+    Fast start — skips config generation, Ansible, and OpenTofu.
     Runs against the generated docker-compose.yml in the project root.
     """
     c.run("docker compose up -d")

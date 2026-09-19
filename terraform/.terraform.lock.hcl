@@ -1,9 +1,9 @@
-# This file is maintained automatically by "terraform init".
+# This file is maintained automatically by "tofu init".
 # Manual edits may be lost in future updates.
 
-provider "registry.terraform.io/cloudflare/cloudflare" {
+provider "registry.opentofu.org/cloudflare/cloudflare" {
   version     = "5.25.0"
-  constraints = "~> 5.0"
+  constraints = "~> 5.18"
   hashes = [
     "h1:+GkpgNYiwEwYBCXgZbA2W+d05oeqOkfbOsOBj9xB9Vs=",
     "h1:0pPlocP3yA/YEXZhwMbBmubccCEBPTms1MmaQBfzfRU=",
@@ -25,7 +25,7 @@ provider "registry.terraform.io/cloudflare/cloudflare" {
   ]
 }
 
-provider "registry.terraform.io/tailscale/tailscale" {
+provider "registry.opentofu.org/tailscale/tailscale" {
   version     = "0.29.2"
   constraints = "~> 0.29"
   hashes = [

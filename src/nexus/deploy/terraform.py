@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 from typing import Any, Optional
 
@@ -69,12 +70,24 @@ def _get_terraform_vars_from_vault() -> dict[str, str]:
     return env_vars
 
 
+def get_tofu_cmd() -> str:
+    """Return the IaC executable command ('tofu' or 'terraform').
+
+    Prefers 'tofu' (OpenTofu) and falls back to 'terraform'.
+    """
+    if shutil.which("tofu"):
+        return "tofu"
+    if shutil.which("terraform"):
+        return "terraform"
+    return "tofu"
+
+
 def run_terraform(
     services: list[str],
     domain: str,
     dry_run: bool = False,
 ) -> None:
-    """Execute Terraform to manage Cloudflare Tunnel and DNS for services.
+    """Execute OpenTofu or Terraform to manage Cloudflare Tunnel and DNS for services.
 
     Creates a Cloudflare Tunnel and configures DNS records.
     Reads Cloudflare credentials from vault.yml (decrypted via ansible-vault).
@@ -85,11 +98,16 @@ def run_terraform(
         dry_run: If True, show plan without applying.
 
     Raises:
-        subprocess.CalledProcessError: If terraform init or apply fails.
+        subprocess.CalledProcessError: If init or apply fails.
         ValueError: If required vault values are missing.
     """
+    cmd = get_tofu_cmd()
+    tool_name = "OpenTofu" if cmd == "tofu" else "Terraform"
+
     if not (TERRAFORM_PATH / "main.tf").exists():
-        logging.warning("Terraform configuration not found. Skipping DNS management.")
+        logging.warning(
+            f"{tool_name} configuration not found. Skipping DNS management."
+        )
         return
 
     # Get Cloudflare credentials from vault.yml
@@ -143,15 +161,15 @@ def run_terraform(
         logging.info("[DRY RUN] Configuration:")
         logging.info(f"  Domain: {domain}")
         logging.info(json.dumps(tf_vars, indent=2))
-        logging.info("[DRY RUN] Would run: terraform plan")
+        logging.info(f"[DRY RUN] Would run: {cmd} plan")
 
         try:
             with open(tf_vars_path, "w") as f:
                 json.dump(tf_vars, f, indent=2)
-            _run_terraform_cmd(["terraform", "init"], env, capture=True)
-            _run_terraform_cmd(["terraform", "plan"], env)
+            _run_terraform_cmd([cmd, "init"], env, capture=True)
+            _run_terraform_cmd([cmd, "plan"], env)
         except subprocess.CalledProcessError:
-            logging.warning("Terraform plan failed. Check configuration.")
+            logging.warning(f"{tool_name} plan failed. Check configuration.")
         return
 
     logging.info(f"Configuring Cloudflare Tunnel for {domain}...")
@@ -159,13 +177,13 @@ def run_terraform(
     with open(tf_vars_path, "w") as f:
         json.dump(tf_vars, f, indent=2)
 
-    logging.info("Applying Cloudflare configuration...")
+    logging.info(f"Applying Cloudflare configuration with {tool_name}...")
     try:
-        _run_terraform_cmd(["terraform", "init"], env, capture=True)
-        _run_terraform_cmd(["terraform", "apply", "-auto-approve"], env)
+        _run_terraform_cmd([cmd, "init"], env, capture=True)
+        _run_terraform_cmd([cmd, "apply", "-auto-approve"], env)
         logging.info("✅ Tunnel and DNS configured!")
     except subprocess.CalledProcessError:
-        logging.error("Terraform failed. Check configuration.")
+        logging.error(f"{tool_name} failed. Check configuration.")
         raise
 
 
@@ -186,7 +204,7 @@ def _run_terraform_cmd(
 
 
 def get_r2_credentials(service: str) -> Optional[R2Credentials]:
-    """Get R2 credentials for a service from terraform state.
+    """Get R2 credentials for a service from OpenTofu / Terraform state.
 
     Args:
         service: Service name prefix for R2 outputs (e.g., 'foundry').
@@ -195,9 +213,10 @@ def get_r2_credentials(service: str) -> Optional[R2Credentials]:
         Dictionary with keys: endpoint, access_key, secret_key, bucket.
         None if R2 is not provisioned for the specified service.
     """
+    cmd = get_tofu_cmd()
     try:
         result = subprocess.run(
-            ["terraform", "output", "-json"],
+            [cmd, "output", "-json"],
             cwd=TERRAFORM_PATH,
             capture_output=True,
             text=True,
@@ -237,3 +256,8 @@ def get_r2_credentials(service: str) -> Optional[R2Credentials]:
     ) as e:
         logging.debug(f"Failed to retrieve R2 credentials for {service}: {e}")
         return None
+
+
+# Aliases for OpenTofu naming
+run_tofu = run_terraform
+_run_tofu_cmd = _run_terraform_cmd

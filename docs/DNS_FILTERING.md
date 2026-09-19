@@ -61,8 +61,8 @@ Optionally, override Gateway defaults in `terraform/terraform.tfvars.json`:
 
 ```bash
 inv deploy
-# Or just terraform:
-cd terraform && terraform apply
+# Or just OpenTofu:
+cd terraform && tofu apply
 ```
 
 This creates:
@@ -115,7 +115,7 @@ nslookup yourdomain.com
 
 | Problem | Solution |
 |---------|----------|
-| Subdomains not resolving | Check `tailscale_server_ip` in tfvars, run `terraform apply` |
+| Subdomains not resolving | Check `tailscale_server_ip` in tfvars, run `tofu apply` |
 | Ads still showing | Verify Gateway policies are enabled in Zero Trust dashboard |
 | Apex domain broken | Ensure policy only matches `*.domain`, not `domain` itself |
 

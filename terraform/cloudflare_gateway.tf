@@ -68,6 +68,12 @@ resource "cloudflare_zero_trust_dns_location" "tailscale" {
       enabled = true
     }
   }
+
+  # Explicitly set to prevent provider crash on unknown values (v5.25.0 bug).
+  # See: cloudflare/terraform-provider-cloudflare ZeroTrustDNSLocationMaxTTLModel
+  max_ttl = {
+    mode = "inherit"
+  }
 }
 
 # =============================================================================

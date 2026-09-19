@@ -1,6 +1,7 @@
 import json
 import subprocess
 from pathlib import Path
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,8 +9,39 @@ import pytest
 from nexus.deploy.terraform import (
     _get_terraform_vars_from_vault,
     get_r2_credentials,
+    get_tofu_cmd,
     run_terraform,
+    run_tofu,
 )
+
+
+class TestGetTofuCmd:
+    def test_prefers_tofu_when_available(self) -> None:
+        def side_effect(cmd: str) -> Optional[str]:
+            if cmd == "tofu":
+                return "/opt/homebrew/bin/tofu"
+            if cmd == "terraform":
+                return "/opt/homebrew/bin/terraform"
+            return None
+
+        with patch("shutil.which", side_effect=side_effect):
+            assert get_tofu_cmd() == "tofu"
+
+    def test_falls_back_to_terraform(self) -> None:
+        def side_effect(cmd: str) -> Optional[str]:
+            if cmd == "terraform":
+                return "/opt/homebrew/bin/terraform"
+            return None
+
+        with patch("shutil.which", side_effect=side_effect):
+            assert get_tofu_cmd() == "terraform"
+
+    def test_defaults_to_tofu_when_neither_found(self) -> None:
+        with patch("shutil.which", return_value=None):
+            assert get_tofu_cmd() == "tofu"
+
+    def test_run_tofu_alias(self) -> None:
+        assert run_tofu is run_terraform
 
 
 class TestGetTerraformVarsFromVault:

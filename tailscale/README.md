@@ -1,14 +1,14 @@
 # Tailscale Configuration
 
-Tailscale ACL and DNS are managed automatically via Terraform.
+Tailscale ACL and DNS are managed automatically via OpenTofu.
 
 ## Files
 
 | File | Purpose | Managed By |
 |------|---------|------------|
 | `access-rules.yml` | Per-service access rules | Ansible (from vault.yml) |
-| ACL Policy | Network-level ACLs | Terraform (from vault.yml) |
-| DNS Nameservers | Cloudflare Gateway | Terraform |
+| ACL Policy | Network-level ACLs | OpenTofu (from vault.yml) |
+| DNS Nameservers | Cloudflare Gateway | OpenTofu |
 
 ## Setup
 
@@ -44,7 +44,7 @@ tailscale_oauth_client_secret: "<client_secret>"
 inv deploy
 ```
 
-Terraform will automatically:
+OpenTofu will automatically:
 - Apply ACL policy (groups, access rules, SSH)
 - Configure DNS nameservers (Cloudflare Gateway)
 - Enable MagicDNS
@@ -79,7 +79,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 ```
                     ┌──────────────────────┐
                     │   Tailscale ACLs     │
-                    │   (via Terraform)    │
+                    │   (via OpenTofu)     │
                     │                      │
                     │  Network-level:      │
                     │  Can user reach      │

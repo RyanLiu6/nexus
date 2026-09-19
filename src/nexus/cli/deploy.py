@@ -17,7 +17,11 @@ from nexus.config import (
     resolve_preset,
 )
 from nexus.deploy.ansible import run_ansible
-from nexus.deploy.terraform import get_r2_credentials, run_terraform
+from nexus.deploy.terraform import (
+    get_r2_credentials,
+    get_tofu_cmd,
+    run_terraform,
+)
 from nexus.generate.access_rules import sync_access_rules
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
@@ -30,12 +34,15 @@ from nexus.utils import read_vault
 
 
 def _check_dependencies() -> list[str]:
-    required = ["docker", "terraform", "ansible-vault", "cloudflared"]
+    required = ["docker", "ansible-vault", "cloudflared"]
     missing = []
 
     for tool in required:
         if not shutil.which(tool):
             missing.append(tool)
+
+    if not shutil.which("tofu") and not shutil.which("terraform"):
+        missing.append("tofu")
 
     return missing
 
@@ -78,9 +85,10 @@ def _encrypt_vault() -> None:
 
 
 def _get_tunnel_token() -> Optional[str]:
+    cmd = get_tofu_cmd()
     try:
         result = subprocess.run(
-            ["terraform", "output", "-raw", "tunnel_token"],
+            [cmd, "output", "-raw", "tunnel_token"],
             cwd=TERRAFORM_PATH,
             capture_output=True,
             text=True,
@@ -294,7 +302,7 @@ def main(
         logging.info("\nInstall missing tools:")
         install_hints = {
             "docker": "  brew install --cask docker / https://get.docker.com",
-            "terraform": "  brew install terraform / apt install terraform",
+            "tofu": "  brew install opentofu / https://opentofu.org/docs/intro/install/",
             "ansible-vault": "  brew install ansible / apt install ansible",
             "cloudflared": "  brew install cloudflare/cloudflare/cloudflared",
         }
@@ -501,7 +509,7 @@ def main(
             )
 
         print("\n⚠️  One-time setup (if not done already):")
-        print("   tailscale up --advertise-tags=tag:nexus-server")
+        print("   tailscale up --advertise-tags=tag:nexus-server --ssh")
         print("\nUseful commands:")
         print("  inv logs --service traefik  # View logs")
         print("  inv ps                      # Show containers")

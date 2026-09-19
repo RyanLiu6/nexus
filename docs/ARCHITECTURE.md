@@ -6,7 +6,7 @@ Nexus is a self-hosted homelab solution that provides:
 
 - **Centralized access** to all services via a single dashboard
 - **Secure authentication** with Tailscale (Network & Service level)
-- **Automated DNS** via Terraform + Cloudflare
+- **Automated DNS** via OpenTofu + Cloudflare
 - **Containerized services** managed by Ansible + Docker Compose
 
 ## Features Checklist
@@ -17,7 +17,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Tailscale Auth | ✅ | Network and service-level access control |
 | User Groups | ✅ | Access control via Tailscale ACLs |
 | Auto SSL | ✅ | Let's Encrypt via Traefik |
-| DNS Management | ✅ | Terraform + Cloudflare |
+| DNS Management | ✅ | OpenTofu + Cloudflare |
 | Health Checks | ✅ | Docker healthchecks on all services |
 | Monitoring | ✅ | Prometheus + Grafana |
 | Alerting | ✅ | Discord webhook alerts |
@@ -36,7 +36,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Runtime | Docker + Docker Compose | Container orchestration |
 | Proxy | Traefik | Reverse proxy, SSL, routing |
 | Auth | Tailscale + Header Auth | Network security & Identity |
-| DNS | Terraform + Cloudflare | DNS record management |
+| DNS | OpenTofu + Cloudflare | DNS record management |
 | Config | Ansible | Docker Compose generation |
 | Secrets | Ansible Vault | Encrypted credentials |
 | VPN | Tailscale | Secure remote access |
@@ -51,7 +51,7 @@ User runs: invoke deploy --preset home
     │
     ├── 1. Python validates config and services
     │
-    ├── 2. Terraform updates Cloudflare DNS
+    ├── 2. OpenTofu updates Cloudflare DNS
     │       └── Creates A/CNAME records for each service
     │
     ├── 3. Ansible runs playbook
@@ -183,14 +183,14 @@ nexus/
 ├── src/nexus/                # Python library
 │   ├── cli/                  # CLI entry points
 │   ├── config.py             # Presets and configuration
-│   ├── deploy/               # Ansible, Terraform, Docker
+│   ├── deploy/               # Ansible, OpenTofu, Docker
 │   ├── generate/             # Config generation
 │   ├── health/               # Health checks
 │   ├── operations/           # Maintenance tasks
 │   ├── alerts/               # Discord alert bot
 │   └── restore/              # Backup restoration
 │
-├── terraform/                # DNS and Cloudflare management
+├── terraform/                # DNS and Cloudflare management (OpenTofu)
 │   ├── main.tf
 │   ├── cloudflare_dns.tf
 │   └── cloudflare_gateway.tf # Zero Trust Gateway policies

@@ -133,7 +133,7 @@ tailscale_users:
 3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
 4. Add to vault.yml: `tailscale_oauth_client_id` and `tailscale_oauth_client_secret`
 
-Deploy will automatically configure ACL and DNS via Terraform.
+Deploy will automatically configure ACL and DNS via OpenTofu.
 
 ---
 
