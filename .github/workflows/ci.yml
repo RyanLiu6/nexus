@@ -104,16 +104,17 @@ jobs:
             docker compose -f "$file" config --quiet
           done
 
-  terraform-validate:
+  opentofu-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
 
-      - name: Terraform Init
-        run: terraform -chdir=terraform init -backend=false
+      - name: OpenTofu Init
+        run: tofu -chdir=terraform init -backend=false
 
-      - name: Terraform Validate
-        run: terraform -chdir=terraform validate
+      - name: OpenTofu Validate
+        run: tofu -chdir=terraform validate
+

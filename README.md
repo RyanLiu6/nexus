@@ -19,7 +19,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 | Runtime | Docker Compose |
 | Proxy | Traefik (SSL, routing) |
 | Auth | Tailscale + tailscale-access |
-| DNS | Terraform + Cloudflare |
+| DNS | OpenTofu + Cloudflare |
 | Config | Ansible (generates docker-compose.yml) |
 | Secrets | Ansible Vault |
 | CLI | Python + Invoke |
@@ -45,7 +45,7 @@ nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, and Tailscale
 invoke deploy
 ```
 
-The deploy command handles vault encryption, Terraform, cloudflared, and Ansible automatically.
+The deploy command handles vault encryption, OpenTofu, cloudflared, and Ansible automatically.
 
 > **Tip:** For a complete shell setup with direnv + uv integration, see [here](https://github.com/RyanLiu6/dotfiles).
 
@@ -98,7 +98,7 @@ nexus/
 ├── scripts/            # Bootstrap script
 ├── services/           # Docker Compose per service
 ├── src/nexus/          # Python library
-├── terraform/          # Cloudflare DNS
+├── terraform/          # Cloudflare DNS (OpenTofu)
 ├── tasks.py            # Invoke tasks
 └── pyproject.toml      # Python config
 ```

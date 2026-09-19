@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
@@ -12,6 +13,7 @@ class TestCheckDependencies:
             mock_which.return_value = "/usr/bin/tool"
             missing = _check_dependencies()
             assert missing == []
+            # 3 required tools + tofu check (found, so no terraform fallback)
             assert mock_which.call_count == 4
 
     def test_check_dependencies_missing_docker(self) -> None:
@@ -24,15 +26,25 @@ class TestCheckDependencies:
             missing = _check_dependencies()
             assert "docker" in missing
 
-    def test_check_dependencies_missing_terraform(self) -> None:
-        def side_effect(cmd):
-            if cmd == "terraform":
+    def test_check_dependencies_missing_tofu(self) -> None:
+        def side_effect(cmd: str) -> Optional[str]:
+            if cmd in ("tofu", "terraform"):
                 return None
             return "/usr/bin/" + cmd
 
         with patch("shutil.which", side_effect=side_effect):
             missing = _check_dependencies()
-            assert "terraform" in missing
+            assert "tofu" in missing
+
+    def test_check_dependencies_with_terraform_fallback(self) -> None:
+        def side_effect(cmd: str) -> Optional[str]:
+            if cmd == "tofu":
+                return None
+            return "/usr/bin/" + cmd
+
+        with patch("shutil.which", side_effect=side_effect):
+            missing = _check_dependencies()
+            assert "tofu" not in missing
 
     def test_check_dependencies_missing_ansible_vault(self) -> None:
         def side_effect(cmd):
@@ -281,7 +293,7 @@ class TestMain:
         with (
             patch(
                 "nexus.cli.deploy._check_dependencies",
-                return_value=["docker", "terraform"],
+                return_value=["docker", "tofu"],
             ),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
