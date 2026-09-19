@@ -18,6 +18,7 @@ services:
       - XDG_CACHE_HOME=/cache
       - BACKREST_PORT=0.0.0.0:9898
       - RESTIC_PASSWORD=${RESTIC_PASSWORD}
+      - ISSUE_1139_FIX_PASSWORDS=1
     healthcheck:
       test:
         [

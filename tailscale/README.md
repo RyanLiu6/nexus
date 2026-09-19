@@ -49,11 +49,23 @@ Terraform will automatically:
 - Configure DNS nameservers (Cloudflare Gateway)
 - Enable MagicDNS
 
-### 4. Tag Your Server (one-time)
+### 4. Tag Your Server & Enable Tailscale SSH (one-time)
 
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server
+sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 ```
+
+> **`--ssh` is required.** SSH into the server is handled by **Tailscale SSH**
+> (authenticated via the tailnet identity + the `ssh` block in the ACL policy),
+> not by the host's `sshd`/`authorized_keys`. Without `--ssh`, the node's
+> `RunSSH` pref is `false`, connections fall through to the host `sshd`, and you
+> get `Permission denied (publickey)` even though the ACL allows you.
+>
+> `tailscale up` **resets any pref you don't pass on the command line**, so
+> re-running it without `--ssh` silently disables Tailscale SSH. Always include
+> `--ssh` when re-running `up`, or change a single pref non-destructively with
+> `sudo tailscale set --ssh`. Verify with `tailscale debug prefs | grep RunSSH`
+> (should be `true`).
 
 ## Access Levels
 

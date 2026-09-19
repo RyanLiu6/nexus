@@ -147,10 +147,13 @@ You'll be prompted for a vault password (save it somewhere secure).
 
 ## Step 9: Post-Deployment (one-time)
 
-**Tag your server:**
+**Tag your server & enable Tailscale SSH:**
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server
+sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 ```
+> `--ssh` is required for SSH access. `tailscale up` resets any pref you omit, so
+> re-running this without `--ssh` disables Tailscale SSH and breaks SSH with
+> `Permission denied (publickey)`. See [Access Control → SSH Access](ACCESS_CONTROL.md#ssh-access).
 
 **Access your services:**
 - Dashboard: `https://nexus.yourdomain.com` (Tailscale only)
