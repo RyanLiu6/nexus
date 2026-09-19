@@ -93,11 +93,15 @@ tailscale_users:
 invoke deploy --preset home
 ```
 
-### 4. Tag Your Server (one-time)
+### 4. Tag Your Server & Enable Tailscale SSH (one-time)
 
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server
+sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 ```
+
+> `--ssh` is required — SSH is authenticated by **Tailscale SSH** (tailnet
+> identity + the ACL `ssh` block), not the host `sshd`. See
+> [SSH Access](#ssh-access) for details and troubleshooting.
 
 ---
 
@@ -186,6 +190,44 @@ ssh user@100.x.y.z
 
 Only `admins` group has SSH access (configured in ACL policy).
 
+### How SSH auth actually works
+
+Authentication is handled by **Tailscale SSH**, not the host's `sshd`:
+
+- `tailscaled` intercepts port 22 on the Tailscale (`100.x`) interface and
+  authenticates you against your tailnet identity plus the `ssh` block in the
+  ACL policy (`terraform/tailscale.tf` → `local.ssh_rules`).
+- This requires the server to run with Tailscale SSH enabled (`RunSSH: true`),
+  set via `--ssh` on `tailscale up` (or `tailscale set --ssh`).
+- The host `~/.ssh/authorized_keys` and its SSH keys are **not** used for
+  Tailscale connections. They only matter for direct (non-Tailscale) SSH.
+
+### Troubleshooting: `Permission denied (publickey)` over Tailscale
+
+This almost always means **Tailscale SSH got disabled** and the connection fell
+through to the host `sshd`, which then rejects the key.
+
+Root cause: `tailscale up` resets any pref not passed on the command line.
+Re-running the tag command **without** `--ssh` (e.g. after a reinstall,
+restart, or `up` re-run) silently flips `RunSSH` back to `false`.
+
+Diagnose and fix on the server (needs an existing session — direct/local SSH,
+or physical access):
+
+```bash
+# 1. Confirm the cause — should print "true"; if "false", that's the bug
+tailscale debug prefs | grep RunSSH
+
+# 2. Re-enable Tailscale SSH without disturbing other prefs
+sudo tailscale set --ssh
+
+# 3. Confirm the node is still tagged and the ACL allows you
+tailscale status --json | grep -A2 '"Tags"'   # expect tag:nexus-server
+```
+
+Because the ACL rule uses `action = "accept"` (not `"check"`), reconnecting
+works immediately — no re-auth prompt.
+
 ---
 
 ## Adding Users
@@ -213,6 +255,7 @@ Only `admins` group has SSH access (configured in ACL policy).
 | Legitimate site blocked | Check Cloudflare Gateway allowlist (see [DNS Filtering](DNS_FILTERING.md)) |
 | 403 Forbidden | Check your group has access in `access-rules.yml` |
 | SSH denied | Verify you're in `admins` group |
+| SSH `Permission denied (publickey)` over Tailscale | Tailscale SSH is off — `tailscale debug prefs \| grep RunSSH`, fix with `sudo tailscale set --ssh` (see [SSH Access](#ssh-access)) |
 
 ### Debug Commands
 

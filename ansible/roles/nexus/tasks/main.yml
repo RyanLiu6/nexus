@@ -133,7 +133,7 @@
   when: nexus_userdata_directory is defined and nexus_userdata_directory != ''
 
 # TEMPORARY: ProtonDrive rsync backup (remove when rclone supports ProtonDrive)
-# macOS: LaunchAgents (launchd) — no TCC/crontab permissions needed
+# macOS: LaunchAgents (launchd) — requires Full Disk Access for /bin/bash and /usr/bin/rsync
 # Linux: cron
 
 - name: Ensure LaunchAgents directory exists
@@ -160,6 +160,7 @@
     plist_hour: 4
     plist_minute: 0
     plist_args:
+      - /bin/bash
       - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
       - "{{ nexus_base_path }}/Backups"
       - "{{ protondrive_sync_directory }}/Containers"
@@ -217,6 +218,7 @@
     plist_hour: 4
     plist_minute: 30
     plist_args:
+      - /bin/bash
       - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
       - "{{ nexus_userdata_directory }}/paperless"
       - "{{ protondrive_sync_directory }}/paperless"
@@ -281,6 +283,7 @@
     plist_hour: 5
     plist_minute: 0
     plist_args:
+      - /bin/bash
       - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
       - "{{ nexus_userdata_directory }}/grimmory"
       - "{{ protondrive_sync_directory }}/grimmory"
