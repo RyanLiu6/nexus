@@ -27,7 +27,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Finance | ✅ | Sure for budgeting |
 | Passwords | ✅ | Vaultwarden (Bitwarden) |
 | Documents | ✅ | Paperless-ngx for document management |
-| Books | ✅ | Grimmory for book library |
+| Books | ✅ | BookOrbit for book library |
 
 ## Tech Stack
 
@@ -125,7 +125,7 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 ```python
 PRESETS = {
     "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
-    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "paperless", "grimmory"],
+    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "paperless", "bookorbit"],
 }
 ```
 
@@ -143,7 +143,7 @@ PRESETS = {
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |
 | **sure** | Finance tracking | Admin + Wife |
 | **paperless** | Document management | Admin |
-| **grimmory** | Book library | Admin |
+| **bookorbit** | Book library | Admin |
 | **vaultwarden** | Password manager | Admin |
 | **backups** | Backrest | Automated |
 
@@ -177,7 +177,7 @@ nexus/
 │   ├── monitoring/
 │   ├── vaultwarden/
 │   ├── paperless/
-│   ├── grimmory/
+│   ├── bookorbit/
 │   └── ...
 │
 ├── src/nexus/                # Python library

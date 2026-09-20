@@ -3,7 +3,7 @@
 # TEMPORARY WORKAROUND - ProtonDrive Backup via rsync
 # =============================================================================
 # Rsyncs a local directory to a ProtonDrive-mounted destination.
-# Used for both restic backup repos and raw user data (paperless, grimmory).
+# Used for both restic backup repos and raw user data (paperless, bookorbit).
 # This is a workaround until rclone adds ProtonDrive support.
 #
 # Migration to rclone (when available):

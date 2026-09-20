@@ -61,10 +61,10 @@
       {{ nexus_userdata_directory + '/paperless'
          if nexus_userdata_directory is defined and nexus_userdata_directory
          else nexus_base_path + '/Config/paperless/media' }}
-    nexus_grimmory_dir: >-
-      {{ nexus_userdata_directory + '/grimmory'
+    nexus_bookorbit_dir: >-
+      {{ nexus_userdata_directory + '/bookorbit'
          if nexus_userdata_directory is defined and nexus_userdata_directory
-         else nexus_base_path + '/Config/grimmory/books' }}
+         else nexus_base_path + '/Config/bookorbit/books' }}
     nexus_sure_dir: >-
       {{ nexus_userdata_directory + '/sure'
          if nexus_userdata_directory is defined and nexus_userdata_directory
@@ -127,7 +127,7 @@
     mode: "0755"
   loop:
     - paperless
-    - grimmory
+    - bookorbit
     - foundryvtt
     - sure
   when: nexus_userdata_directory is defined and nexus_userdata_directory != ''
@@ -206,7 +206,7 @@
     - "'backups' in nexus_final_services"
     - protondrive_sync_directory is not defined or protondrive_sync_directory == ''
 
-# Raw user data ProtonDrive sync — paperless documents and grimmory books
+# Raw user data ProtonDrive sync — paperless documents and bookorbit books
 # Syncs raw files directly (not via restic) so recovery is never coupled to restic.
 - name: Install ProtonDrive paperless raw sync LaunchAgent
   ansible.builtin.template:
@@ -273,31 +273,7 @@
     (nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
     protondrive_sync_directory is not defined or protondrive_sync_directory == '')
 
-- name: Install ProtonDrive grimmory raw sync LaunchAgent
-  ansible.builtin.template:
-    src: protondrive-sync.plist.j2
-    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-grimmory-sync.plist"
-    mode: '0644'
-  vars:
-    plist_label: com.nexus.protondrive-grimmory-sync
-    plist_hour: 5
-    plist_minute: 0
-    plist_args:
-      - /bin/bash
-      - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
-      - "{{ nexus_userdata_directory }}/grimmory"
-      - "{{ protondrive_sync_directory }}/grimmory"
-      - grimmory
-      - grimmory-db
-  notify: Reload protondrive launchagents
-  when:
-    - ansible_system == "Darwin"
-    - nexus_userdata_directory is defined
-    - nexus_userdata_directory != ''
-    - protondrive_sync_directory is defined
-    - protondrive_sync_directory != ''
-
-- name: Remove ProtonDrive grimmory raw sync LaunchAgent
+- name: Remove legacy ProtonDrive grimmory raw sync LaunchAgent
   ansible.builtin.shell: |
     launchctl bootout gui/$(id -u) "{{ plist_path }}" 2>/dev/null || true
     rm -f "{{ plist_path }}"
@@ -306,21 +282,62 @@
   args:
     removes: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-grimmory-sync.plist"
   changed_when: true
+  when: ansible_system == "Darwin"
+
+- name: Remove legacy ProtonDrive grimmory raw sync crontab
+  ansible.builtin.cron:
+    name: "nexus-protondrive-grimmory-sync"
+    state: absent
+  when: ansible_system != "Darwin"
+
+- name: Install ProtonDrive bookorbit raw sync LaunchAgent
+  ansible.builtin.template:
+    src: protondrive-sync.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-bookorbit-sync.plist"
+    mode: '0644'
+  vars:
+    plist_label: com.nexus.protondrive-bookorbit-sync
+    plist_hour: 5
+    plist_minute: 0
+    plist_args:
+      - /bin/bash
+      - "{{ nexus_root_directory }}/scripts/sync-to-protondrive.sh"
+      - "{{ nexus_userdata_directory }}/bookorbit"
+      - "{{ protondrive_sync_directory }}/bookorbit"
+      - bookorbit
+      - bookorbit-db
+  notify: Reload protondrive launchagents
+  when:
+    - ansible_system == "Darwin"
+    - nexus_userdata_directory is defined
+    - nexus_userdata_directory != ''
+    - protondrive_sync_directory is defined
+    - protondrive_sync_directory != ''
+
+- name: Remove ProtonDrive bookorbit raw sync LaunchAgent
+  ansible.builtin.shell: |
+    launchctl bootout gui/$(id -u) "{{ plist_path }}" 2>/dev/null || true
+    rm -f "{{ plist_path }}"
+  vars:
+    plist_path: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-bookorbit-sync.plist"
+  args:
+    removes: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.nexus.protondrive-bookorbit-sync.plist"
+  changed_when: true
   when:
     - ansible_system == "Darwin"
     - nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
       protondrive_sync_directory is not defined or protondrive_sync_directory == ''
 
-- name: Install ProtonDrive grimmory raw sync crontab
+- name: Install ProtonDrive bookorbit raw sync crontab
   ansible.builtin.cron:
-    name: "nexus-protondrive-grimmory-sync"
+    name: "nexus-protondrive-bookorbit-sync"
     minute: "0"
     hour: "5"
     job: >-
       {{ nexus_root_directory }}/scripts/sync-to-protondrive.sh
-      {{ nexus_userdata_directory }}/grimmory
-      {{ protondrive_sync_directory }}/grimmory
-      grimmory grimmory-db
+      {{ nexus_userdata_directory }}/bookorbit
+      {{ protondrive_sync_directory }}/bookorbit
+      bookorbit bookorbit-db
   when:
     - ansible_system != "Darwin"
     - nexus_userdata_directory is defined
@@ -328,9 +345,9 @@
     - protondrive_sync_directory is defined
     - protondrive_sync_directory != ''
 
-- name: Remove ProtonDrive grimmory raw sync crontab
+- name: Remove ProtonDrive bookorbit raw sync crontab
   ansible.builtin.cron:
-    name: "nexus-protondrive-grimmory-sync"
+    name: "nexus-protondrive-bookorbit-sync"
     state: absent
   when: >
     ansible_system != "Darwin" and
@@ -402,12 +419,14 @@
     PAPERLESS_ADMIN_USER: "{{ paperless_admin_user | default('admin') }}"
     PAPERLESS_ADMIN_PASSWORD: "{{ paperless_admin_password | default('') }}"
     PAPERLESS_DOCUMENTS_DIRECTORY: "{{ nexus_paperless_dir }}"
-    GRIMMORY_BOOKS_DIRECTORY: "{{ nexus_grimmory_dir }}"
+    BOOKORBIT_BOOKS_DIRECTORY: "{{ nexus_bookorbit_dir }}"
     FOUNDRYVTT_DATA_DIRECTORY: "{{ nexus_foundryvtt_dir }}"
-    # Grimmory
-    GRIMMORY_MYSQL_USER: "{{ grimmory_mysql_user | default('grimmory') }}"
-    GRIMMORY_MYSQL_PASSWORD: "{{ grimmory_mysql_password | default('') }}"
-    GRIMMORY_MYSQL_ROOT_PASSWORD: "{{ grimmory_mysql_root_password | default('') }}"
+    # Bookorbit
+    BOOKORBIT_POSTGRES_USER: "{{ bookorbit_postgres_user | default('bookorbit') }}"
+    BOOKORBIT_POSTGRES_PASSWORD: "{{ bookorbit_postgres_password | default('') }}"
+    BOOKORBIT_POSTGRES_DB: "{{ bookorbit_postgres_db | default('bookorbit') }}"
+    BOOKORBIT_JWT_SECRET: "{{ bookorbit_jwt_secret | default('') }}"
+    BOOKORBIT_SETUP_BOOTSTRAP_TOKEN: "{{ bookorbit_setup_bootstrap_token | default('') }}"
     # User/Group IDs for media containers
     PUID: "{{ puid | default('1000') }}"
     PGID: "{{ pgid | default('1000') }}"
