@@ -46,7 +46,7 @@ nexus_data_directory: "/path/to/data"
 # User data directory for large files excluded from R2 backups.
 # When set, services store user-facing data here instead of under Config/:
 #   - ${nexus_userdata_directory}/paperless  (documents/media)
-#   - ${nexus_userdata_directory}/grimmory   (book files)
+#   - ${nexus_userdata_directory}/bookorbit   (book files)
 #   - ${nexus_userdata_directory}/foundryvtt (world data, modules, assets)
 #   - ${nexus_userdata_directory}/sure (finance app data)
 # Leave empty to keep everything under nexus_data_directory/Config/ (default).
@@ -210,7 +210,7 @@ backups_r2_bucket: "nexus-backups"
 # When set, three daily scheduled syncs run staggered from 4 AM (set this to the root backup directory):
 #   4:00 AM — rsyncs restic repos  → protondrive_sync_directory/Containers/
 #   4:30 AM — rsyncs raw paperless → protondrive_sync_directory/paperless/ (stops paperless containers)
-#   5:00 AM — rsyncs raw grimmory  → protondrive_sync_directory/grimmory/  (stops grimmory containers)
+#   5:00 AM — rsyncs raw bookorbit  → protondrive_sync_directory/bookorbit/  (stops bookorbit containers)
 # Subdirectories are created automatically on first run.
 # Leave empty to skip all ProtonDrive syncs.
 # Migration: see scripts/sync-to-protondrive.sh header for rclone migration steps.
@@ -273,12 +273,19 @@ paperless_admin_user: "admin"
 paperless_admin_password: "CHANGE_ME"  # openssl rand -base64 24
 
 # =============================================================================
-# Grimmory - Book Library Manager (Optional)
+# BookOrbit - Book Library Manager (Optional)
 # =============================================================================
-# MariaDB database credentials
-grimmory_mysql_user: "grimmory"
-grimmory_mysql_password: "CHANGE_ME"  # openssl rand -base64 32
-grimmory_mysql_root_password: "CHANGE_ME"  # openssl rand -base64 32
+# PostgreSQL database credentials
+bookorbit_postgres_user: "bookorbit"
+bookorbit_postgres_password: "CHANGE_ME"  # openssl rand -base64 32
+bookorbit_postgres_db: "bookorbit"
+
+# App secrets
+# Generate with: openssl rand -base64 32
+bookorbit_jwt_secret: "CHANGE_ME"
+# Required for the initial /auth/setup endpoint
+# Generate with: openssl rand -base64 32
+bookorbit_setup_bootstrap_token: "CHANGE_ME"
 
 # =============================================================================
 # FoundryVTT - Virtual Tabletop (Optional)
@@ -359,11 +366,13 @@ foundry_s3_bucket: "foundry-assets"
 # paperless_admin_user       -> PAPERLESS_ADMIN_USER
 # paperless_admin_password   -> PAPERLESS_ADMIN_PASSWORD
 # (derived from nexus_userdata_directory) -> PAPERLESS_DOCUMENTS_DIRECTORY
-# (derived from nexus_userdata_directory) -> GRIMMORY_BOOKS_DIRECTORY
+# (derived from nexus_userdata_directory) -> BOOKORBIT_BOOKS_DIRECTORY
 # (derived from nexus_userdata_directory) -> FOUNDRYVTT_DATA_DIRECTORY
 # (derived from nexus_userdata_directory) -> SURE_DATA_DIRECTORY
-# grimmory_mysql_user        -> GRIMMORY_MYSQL_USER
-# grimmory_mysql_password    -> GRIMMORY_MYSQL_PASSWORD
-# grimmory_mysql_root_password -> GRIMMORY_MYSQL_ROOT_PASSWORD
+# bookorbit_postgres_user       -> BOOKORBIT_POSTGRES_USER
+# bookorbit_postgres_password   -> BOOKORBIT_POSTGRES_PASSWORD
+# bookorbit_postgres_db         -> BOOKORBIT_POSTGRES_DB
+# bookorbit_jwt_secret          -> BOOKORBIT_JWT_SECRET
+# bookorbit_setup_bootstrap_token -> BOOKORBIT_SETUP_BOOTSTRAP_TOKEN
 # puid                       -> PUID
 # pgid                       -> PGID

@@ -118,7 +118,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 | Plex | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
-| Grimmory | ✅ | ❌ | ❌ |
+| BookOrbit | ✅ | ❌ | ❌ |
 | Homepage | ✅ | ✅ | ❌ |
 | FoundryVTT | ✅ | ✅ | ✅ |
 

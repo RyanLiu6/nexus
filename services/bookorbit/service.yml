@@ -1,18 +1,18 @@
-name: grimmory
+name: bookorbit
 description: Book and ebook library manager
 category: apps
 icon: mdi-bookshelf
-subdomain: grimmory
+subdomain: bookorbit
 
 access:
   groups: [admins]
   public: false
 
 services:
-  grimmory:
+  bookorbit:
     icon: mdi-bookshelf
     description: Book and ebook library manager
-  grimmory-db:
+  bookorbit-db:
     exclude: true
 
 dependencies:
