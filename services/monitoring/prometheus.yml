@@ -28,6 +28,11 @@ scrape_configs:
       - targets: ['traefik:8080']
     metrics_path: '/metrics'
 
+  # HAVM (Home Assistant VM runner)
+  - job_name: 'havm'
+    static_configs:
+      - targets: ['host.docker.internal:9210']
+
   # Docker containers (via cAdvisor - optional)
   # - job_name: 'docker'
   #   static_configs:

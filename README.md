@@ -5,10 +5,10 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 ## What It Does
 
 - **Dashboard** - Single homepage to access all services
+- **Smart Home** - Home Assistant OS with Matter/Thread via HAVM (Apple Silicon Virtualization)
 - **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
 - **Apps** - FoundryVTT (D&D), Sure (finance), Paperless-ngx (documents), BookOrbit (books)
-- **Security** - Vaultwarden (Bitwarden) password manager
 - **Monitoring** - Prometheus + Grafana + Discord alerts
 - **Backups** - Automated with Backrest
 
@@ -16,8 +16,8 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 
 | Component | Technology |
 |-----------|------------|
-| Runtime | Docker Compose |
-| Proxy | Traefik (SSL, routing) |
+| Runtime | Docker Compose + macOS Virtualization (HAVM) |
+| Proxy | Traefik (HTTP→HTTPS redirect, SSL, routing) |
 | Auth | Tailscale + tailscale-access |
 | DNS | OpenTofu + Cloudflare |
 | Config | Ansible (generates docker-compose.yml) |
@@ -67,7 +67,7 @@ invoke ops --daily               # Daily maintenance
 
 ## Services
 
-**Core:** traefik, tailscale-access, dashboard, monitoring, vaultwarden
+**Core:** traefik, tailscale-access, dashboard, monitoring, homeassistant
 **Media:** jellyfin, plex, transmission
 **Apps:** foundryvtt, sure, paperless, bookorbit
 **Utils:** backups
@@ -86,6 +86,7 @@ invoke ops --daily               # Daily maintenance
 | [Deployment](docs/DEPLOYMENT.md) | Step-by-step setup guide, invoke tasks, maintenance |
 | [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, monitoring & alerting |
 | [Access Control](docs/ACCESS_CONTROL.md) | Tailscale ACLs, Gatekeeper, Header Auth |
+| [Home Assistant OS](docs/haos-havm-setup.md) | HAOS on Apple Silicon (HAVM), Matter/Thread, and Prometheus |
 
 Each service also has its own README in `services/<name>/README.md`.
 
@@ -96,7 +97,7 @@ nexus/
 ├── ansible/            # Playbooks, roles, vault.yml
 ├── docs/               # Documentation
 ├── scripts/            # Bootstrap script
-├── services/           # Docker Compose per service
+├── services/           # Service definitions (Docker Compose & HAVM)
 ├── src/nexus/          # Python library
 ├── terraform/          # Cloudflare DNS (OpenTofu)
 ├── tasks.py            # Invoke tasks

@@ -25,7 +25,7 @@ class TestPresets:
 
     def test_resolve_preset_home_includes_additional_services(self) -> None:
         services = resolve_preset("home")
-        assert "sure" in services
+        assert "sure" not in services
         assert "foundryvtt" in services
         assert "jellyfin" in services
         assert "transmission" in services

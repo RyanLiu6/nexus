@@ -225,4 +225,5 @@ sure_openai_model: "ena"
 - [Architecture](ARCHITECTURE.md) - System design
 - [Access Control](ACCESS_CONTROL.md) - Tailscale & SSH
 - [DNS Filtering](DNS_FILTERING.md) - Cloudflare Zero Trust ad-blocking & malware protection
+- [Home Assistant OS (HAVM)](haos-havm-setup.md) - Virtualizing HAOS on Apple Silicon alongside Nexus
 - Service READMEs in `services/*/README.md`

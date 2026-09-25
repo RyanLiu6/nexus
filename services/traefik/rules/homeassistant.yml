@@ -1,0 +1,26 @@
+http:
+  routers:
+    homeassistant:
+      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      entryPoints:
+        - "https"
+      middlewares:
+        - "tailscale-chain@file"
+      service: "homeassistant"
+      tls:
+        certResolver: "certchallenge"
+
+    homeassistant-http:
+      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      entryPoints:
+        - "http"
+      middlewares:
+        - "redirect-to-https@file"
+      service: "homeassistant"
+
+  services:
+    homeassistant:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.50.161:80"
+        passHostHeader: true

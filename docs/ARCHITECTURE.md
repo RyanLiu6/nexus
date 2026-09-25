@@ -25,16 +25,16 @@ Nexus is a self-hosted homelab solution that provides:
 | Media Server | ✅ | Jellyfin (primary), Plex (optional) |
 | Gaming | ✅ | FoundryVTT for D&D |
 | Finance | ✅ | Sure for budgeting |
-| Passwords | ✅ | Vaultwarden (Bitwarden) |
 | Documents | ✅ | Paperless-ngx for document management |
 | Books | ✅ | BookOrbit for book library |
+| Smart Home | ✅ | Home Assistant OS (HAVM) |
 
 ## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| Runtime | Docker + Docker Compose | Container orchestration |
-| Proxy | Traefik | Reverse proxy, SSL, routing |
+| Runtime | Docker Compose + macOS Virtualization (HAVM) | Container & VM orchestration |
+| Proxy | Traefik | HTTP→HTTPS redirect, reverse proxy, SSL, routing |
 | Auth | Tailscale + Header Auth | Network security & Identity |
 | DNS | OpenTofu + Cloudflare | DNS record management |
 | Config | Ansible | Docker Compose generation |
@@ -85,9 +85,11 @@ This allows:
 ```
 Internet → Cloudflare DNS → Cloudflare Tunnel → FoundryVTT (Public)
 
-Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Service
-                                                 ↓
-                                         Check Group Access
+Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Docker Services
+                                   │              ↓
+                                   │      Check Group Access
+                                   │
+                                   └── File Provider (rules/) → HAVM (Home Assistant OS)
 ```
 
 ---
@@ -98,8 +100,8 @@ Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Service
 
 | Component | Purpose |
 |-----------|---------|
-| **Prometheus** | Metrics collection and storage |
-| **Grafana** | Dashboards and visualization |
+| **Prometheus** | Metrics collection and storage (Docker services + HAVM at `:9210`) |
+| **Grafana** | Dashboards and visualization (includes dedicated HAVM dashboard) |
 | **Alertmanager** | Alert routing and deduplication |
 | **Discord Bot** | Receives alerts, posts to Discord |
 
@@ -124,8 +126,8 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 
 ```python
 PRESETS = {
-    "core": ["traefik", "tailscale-access", "dashboard", "monitoring", "vaultwarden"],
-    "home": ["core", "backups", "sure", "foundryvtt", "jellyfin", "transmission", "paperless", "bookorbit"],
+    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
+    "home": ["core", "backups", "foundryvtt", "jellyfin", "transmission", "paperless", "bookorbit"],
 }
 ```
 
@@ -144,7 +146,7 @@ PRESETS = {
 | **sure** | Finance tracking | Admin + Wife |
 | **paperless** | Document management | Admin |
 | **bookorbit** | Book library | Admin |
-| **vaultwarden** | Password manager | Admin |
+| **homeassistant** | Smart home hub (HAVM) | Admin |
 | **backups** | Backrest | Automated |
 
 ---
@@ -165,17 +167,18 @@ nexus/
 │   ├── ARCHITECTURE.md       # This file
 │   ├── DEPLOYMENT.md         # Setup instructions
 │   ├── ACCESS_CONTROL.md     # Auth, Tailscale, SSH
-│   └── DNS_FILTERING.md      # Cloudflare Gateway setup
+│   ├── DNS_FILTERING.md      # Cloudflare Gateway setup
+│   └── haos-havm-setup.md    # Home Assistant OS with HAVM setup
 │
 ├── scripts/
 │   └── bootstrap             # Initial setup script
 │
 ├── services/                 # Service definitions
-│   ├── traefik/
+│   ├── traefik/              # Reverse proxy & dynamic rules
 │   ├── tailscale-access/     # Auth middleware
 │   ├── dashboard/
 │   ├── monitoring/
-│   ├── vaultwarden/
+│   ├── homeassistant/        # HAVM config & LaunchAgents
 │   ├── paperless/
 │   ├── bookorbit/
 │   └── ...

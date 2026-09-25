@@ -347,6 +347,25 @@ def main(
         services_list = resolve_preset("home")
         logging.info("No services specified, using 'home' preset")
 
+    # NOTE: Home Assistant flow via UTM is commented out pending migration
+    # to another tool.
+    # try:
+    #     import subprocess
+    #     utm_check = subprocess.run(
+    #         ["osascript", "-e", 'application "UTM" is running'],
+    #         capture_output=True, text=True, check=False
+    #     )
+    #     if (
+    #         "true" in utm_check.stdout.lower()
+    #         and "homeassistant" not in services_list
+    #     ):
+    #         services_list.append("homeassistant")
+    #         logging.info(
+    #             "🔌 UTM is running, automatically including 'homeassistant'"
+    #         )
+    # except Exception:
+    #     pass
+
     # Get domain from vault if not specified
     if not domain:
         domain = os.environ.get("NEXUS_DOMAIN")
