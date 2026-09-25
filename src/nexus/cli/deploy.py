@@ -29,6 +29,7 @@ from nexus.generate.dashboard import (
     generate_settings_config,
     generate_widgets_config,
 )
+from nexus.services import discover_services, resolve_dependencies
 from nexus.types import R2Credentials
 from nexus.utils import read_vault
 
@@ -341,7 +342,8 @@ def main(
     elif preset:
         services_list = resolve_preset(preset)
     elif services:
-        services_list = list(services)
+        services_list = resolve_dependencies(list(services), discover_services())
+        logging.info(f"Resolved services with dependencies: {services_list}")
     else:
         # Default to home preset
         services_list = resolve_preset("home")

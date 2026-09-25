@@ -131,11 +131,21 @@ def run_terraform(
         logging.debug("Could not read Tailscale configuration from vault")
         pass
 
-    # Build subdomains from service manifests
-    subdomains = []
+    # Build subdomains from service manifests.
+    # Always include core services so deploying an individual service never
+    # destroys DNS records for core infrastructure or Home Assistant.
     all_manifests = discover_services()
+    try:
+        from nexus.config import resolve_preset
 
-    for svc in services:
+        core_services = resolve_preset("core")
+    except Exception:
+        core_services = []
+
+    effective_services = set(services) | set(core_services)
+
+    subdomains = []
+    for svc in effective_services:
         if svc in all_manifests:
             manifest = all_manifests[svc]
             if manifest.is_public:
