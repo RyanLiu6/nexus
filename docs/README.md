@@ -9,6 +9,7 @@
 - **[Architecture](ARCHITECTURE.md)** - System design and tech stack
 - **[Access Control](ACCESS_CONTROL.md)** - Tailscale, SSH
 - **[DNS Filtering](DNS_FILTERING.md)** - Ad-blocking and malware protection via Cloudflare Gateway
+- **[Home Assistant OS (HAVM)](haos-havm-setup.md)** - Virtualizing HAOS on Apple Silicon alongside Nexus
 
 ## Service Documentation
 
@@ -20,8 +21,14 @@ Each service has its own README in `services/<name>/README.md`:
 | tailscale-access | Auth middleware |
 | dashboard | Homepage |
 | monitoring | Prometheus + Grafana |
+| homeassistant | Home automation platform (HAVM) |
+| backups | Automated backups (Backrest) |
 | sure | Finance tracking |
 | jellyfin | Media server |
+| plex | Media streaming |
+| transmission | BitTorrent client |
+| paperless | Document management |
+| bookorbit | Book library |
 | foundryvtt | Virtual tabletop (public) |
 
 ## Troubleshooting

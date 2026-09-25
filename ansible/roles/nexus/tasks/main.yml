@@ -407,10 +407,6 @@
     RESTIC_PASSWORD: "{{ restic_password | default('') }}"
     # Tailscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
-    # Vaultwarden
-    VAULTWARDEN_ADMIN_TOKEN: "{{ vaultwarden_admin_token | default('') }}"
-    VAULTWARDEN_SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed | default('false') }}"
-    VAULTWARDEN_INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed | default('true') }}"
     # Paperless-ngx
     PAPERLESS_POSTGRES_USER: "{{ paperless_postgres_user | default('paperless') }}"
     PAPERLESS_POSTGRES_PASSWORD: "{{ paperless_postgres_password | default('') }}"

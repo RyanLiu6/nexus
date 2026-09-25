@@ -22,10 +22,13 @@ R2 is optional — only active when `backups_r2_access_key` is configured. Both 
 
 ### Backup Plans
 
-| Plan | Schedule | Repo | Paths | Purpose |
-|------|----------|------|-------|---------|
-| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | Full backup of everything |
-| **daily-r2** | 3:00 AM | r2 | `/base_data` only | Off-site configs only |
+| Plan | Schedule | Repo | Paths | Excludes | Purpose |
+|------|----------|------|-------|----------|---------|
+| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | `/base_data/homeassistant/vm` | Full backup of everything |
+| **daily-r2** | 3:00 AM | r2 | `/base_data` only | `/base_data/homeassistant/vm` | Off-site configs only |
+
+> [!NOTE]
+> **Home Assistant VM Exclusion:** The 32GB raw virtual disk at `/base_data/homeassistant/vm/` is excluded to prevent disk bloat and avoid crash-inconsistent VM snapshots. Instead, Home Assistant creates native, clean `.tar` backups inside the VM, which are synced every 6 hours by `sync-backups.sh` to `/base_data/homeassistant/backups/`. Backrest includes these compact `.tar` files in both backup plans automatically.
 
 ### Volume Mounts
 

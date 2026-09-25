@@ -136,6 +136,8 @@ class TestRunTerraform:
 
         assert config["domain"] == "example.com"
         assert "subdomains" in config
+        assert "plex" in config["subdomains"]
+        assert "homeassistant" in config["subdomains"]
         assert mock_run_cmd.call_count == 2
 
     @patch("nexus.deploy.terraform.TERRAFORM_PATH")

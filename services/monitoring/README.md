@@ -16,6 +16,7 @@ Services → Prometheus (scrape) → Grafana (visualize)
 | **Grafana** | Dashboards | 3000 | The "face" of monitoring. Connects to Prometheus to visualize data in beautiful, customizable dashboards. |
 | **Alertmanager** | Alert routing | 9093 | Receives alerts from Prometheus (e.g., "CPU > 90%"), groups them, silences them if needed, and routes them to receivers (like Discord). |
 | **Node Exporter** | System metrics | 9100 | **Background Worker (No UI).** Runs on the host machine to expose hardware metrics (CPU, RAM, Disk I/O) for Prometheus to scrape. |
+| **HAVM** | VM runner metrics | 9210 | **Background Daemon.** Exposes VM status, CPU, disk allocation, and USB passthrough stats for Home Assistant OS. |
 | **Alert Bot** | Discord Bridge | 8080 | **Background Worker.** A custom Python service that translates Alertmanager's raw JSON webhooks into formatted Discord messages. |
 
 ## Setup
@@ -28,7 +29,9 @@ Services → Prometheus (scrape) → Grafana (visualize)
 
 ## Grafana Dashboards
 
-Dashboards in `grafana/dashboards/` are auto-loaded on startup.
+Dashboards in `grafana/dashboards/` are auto-loaded on startup, including:
+- **Node Exporter Full** — Complete host hardware utilization
+- **HAVM (Home Assistant OS)** — VM lifecycle state, logical/allocated disk space, USB devices, and scrape health (`grafana/dashboards/havm.json`)
 
 **Add a dashboard:**
 ```bash

@@ -119,6 +119,8 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
 | BookOrbit | ✅ | ❌ | ❌ |
+| Home Assistant | ✅ | ❌ | ❌ |
+| Backrest | ✅ | ❌ | ❌ |
 | Homepage | ✅ | ✅ | ❌ |
 | FoundryVTT | ✅ | ✅ | ✅ |
 

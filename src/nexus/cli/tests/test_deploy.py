@@ -259,19 +259,22 @@ class TestMain:
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
-            patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.run_terraform") as mock_tf,
+            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
         ):
             mock_vault.exists.return_value = True
             runner = CliRunner()
-            result = runner.invoke(
-                main, ["traefik", "tailscale-access", "--domain", "example.com", "-y"]
-            )
+            result = runner.invoke(main, ["dashboard", "--domain", "example.com", "-y"])
 
             assert result.exit_code == 0, result.output
+            assert mock_tf.call_count == 1
+            deployed_services = mock_ansible.call_args[0][0]
+            assert "dashboard" in deployed_services
+            assert "traefik" in deployed_services
+            assert "tailscale-access" in deployed_services
 
     def test_main_missing_vault_exits(self) -> None:
         with (

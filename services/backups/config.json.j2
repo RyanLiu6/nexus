@@ -32,6 +32,9 @@
         "/base_data"{% if nexus_userdata_directory is defined and nexus_userdata_directory != '' %},
         "/user_data"{% endif %}
       ],
+      "excludes": [
+        "/base_data/homeassistant/vm"
+      ],
       "schedule": {
         "cron": "0 2 * * *"
       },
@@ -44,6 +47,9 @@
       "repo": "r2",
       "paths": [
         "/base_data"
+      ],
+      "excludes": [
+        "/base_data/homeassistant/vm"
       ],
       "schedule": {
         "cron": "0 3 * * *"

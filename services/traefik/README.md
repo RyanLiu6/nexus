@@ -1,24 +1,36 @@
 # Traefik <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Traefik.logo.png" width="24">
 
-[Traefik](https://doc.traefik.io/traefik/) is an open-source reverse proxy and load balancer that automatically discovers services and handles SSL certificates.
+[Traefik](https://doc.traefik.io/traefik/) is an open-source reverse proxy and load balancer that automatically discovers services, handles SSL certificates via Let's Encrypt DNS challenges, and terminates HTTPS traffic.
 
 Docker Image is from Traefik, found [here](https://hub.docker.com/r/traefik/traefik).
 
+## Architecture
+
+- **Entrypoints:**
+  - `http` (:80) — Permanently redirects (301) all traffic to `https` (:443)
+  - `https` (:443) — TLS termination with Let's Encrypt certificates
+  - `traefik` (:8080) — Internal dashboard and Prometheus metrics endpoint
+- **Providers:**
+  - **Docker Provider:** Automatically discovers containers attached to the `nexus` network with `traefik.enable=true` labels
+  - **File Provider:** Loads dynamic router/service definitions from `/rules` (`services/traefik/rules/`), including middlewares, TLS configuration, and external VMs like Home Assistant (`services/traefik/rules/homeassistant.yml`)
+- **Certificates:** Automated wildcard/subdomain DNS-01 challenges via Cloudflare (`certchallenge` resolver)
+- **Authentication & Security:** Standard requests route through `tailscale-chain@file` (combines IP allowlists, `tailscale-access` ForwardAuth middleware, and security headers)
+
 ## Setup
 
-1. **Environment variables** (provided by Ansible from vault.yml):
-   - `NEXUS_DOMAIN` - Your domain (e.g., example.com)
-   - `ACME_EMAIL` - Email for Let's Encrypt certificates
-   - `CLOUDFLARE_DNS_API_TOKEN` - Cloudflare API token for DNS challenge
+1. **Environment variables** (provided by Ansible from `vault.yml`):
+   - `NEXUS_DOMAIN` — Your base domain (e.g., `example.com`)
+   - `ACME_EMAIL` — Email for Let's Encrypt certificates
+   - `CLOUDFLARE_DNS_API_TOKEN` — Cloudflare API token for DNS challenges
 
-2. **Deploy via Ansible:**
+2. **Deploy via Invoke:**
    ```bash
-   cd ansible && ansible-playbook playbook.yml -e "services=traefik"
+   inv deploy --services traefik
    ```
 
 ## Backups
 
-N/A - Traefik configuration is version controlled. Let's Encrypt certificates are regenerated automatically.
+N/A — Traefik configuration is version controlled. Let's Encrypt certificates are stored in `/letsencrypt/acme.json` and regenerated automatically.
 
 ---
 
@@ -35,32 +47,23 @@ N/A - Traefik configuration is version controlled. Let's Encrypt certificates ar
 
 1. **Check Traefik logs:**
    ```bash
-   docker compose logs traefik --tail=100
+   docker logs traefik --tail=100
    ```
 
 2. **Verify DNS records:**
    ```bash
-   nslookup yourdomain.com
-   dig yourdomain.com
+   dig @1.1.1.1 sub.yourdomain.com
    ```
 
 3. **Check ACME configuration:**
    - Verify email address is correct
-   - Check Cloudflare API token is valid
+   - Check Cloudflare API token is valid with Zone:DNS edit permissions
 
 4. **Clear certificates and restart:**
    ```bash
-   rm -rf services/traefik/letsencrypt/*
-   docker compose restart traefik
+   rm -rf services/traefik/letsencrypt/acme.json
+   docker restart traefik
    ```
-
-#### Common Errors
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `acme: error 429` | Rate limited by Let's Encrypt | Wait 1 hour before retrying |
-| `acme: error 400` | Invalid DNS record | Fix DNS records at Cloudflare |
-| `acme: unable to generate certificate` | DNS propagation delay | Wait 10-15 minutes and retry |
 
 ---
 
@@ -74,32 +77,39 @@ N/A - Traefik configuration is version controlled. Let's Encrypt certificates ar
 #### Solutions
 
 1. **Check Traefik dashboard:**
-   - Visit `https://traefik.yourdomain.com/dashboard`
-   - Review routers and services configuration
+   - Visit `https://traefik.<domain>/dashboard/`
+   - Review routers, middlewares, and services configuration
 
-2. **Verify service labels:**
+2. **Verify service labels (Docker containers):**
    ```yaml
    labels:
      - "traefik.enable=true"
-     - "traefik.http.routers.myapp.rule=Host(`app.yourdomain.com`)"
-     - "traefik.http.routers.myapp.entrypoints=websecure"
+     - "traefik.docker.network=nexus"
+     - "traefik.http.routers.myapp.rule=Host(`myapp.${NEXUS_DOMAIN}`)"
+     - "traefik.http.routers.myapp.entrypoints=https"
+     - "traefik.http.routers.myapp.middlewares=tailscale-chain@file"
      - "traefik.http.routers.myapp.tls=true"
-     - "traefik.http.routers.myapp.tls.certresolver=letsencrypt"
+     - "traefik.http.routers.myapp.tls.certresolver=certchallenge"
+     - "traefik.http.services.myapp.loadbalancer.server.port=8080"
    ```
 
-3. **Check Docker network:**
+3. **Verify File Provider rules (for non-Docker VMs/services):**
+   - Check files in `services/traefik/rules/*.yml`
+   - Use dynamic Go template syntax `rule: "Host(`app.{{ env `NEXUS_DOMAIN` }}`)"` to prevent committing domains to Git
+
+4. **Check Docker network:**
    ```bash
-   docker network inspect proxy
+   docker network inspect nexus
    ```
-   Verify service is on the `proxy` network.
+   Verify service container is connected to the `nexus` network.
 
 ---
 
 ### Tailscale Access Integration
 
 #### Symptoms
-- Bypassing Auth when not expected
 - 403 Forbidden errors (Access Denied)
+- ForwardAuth loop
 
 #### Solutions
 
@@ -108,36 +118,9 @@ N/A - Traefik configuration is version controlled. Let's Encrypt certificates ar
    docker logs tailscale-access
    ```
 
-2. **Verify middleware configuration** - services should have:
-   ```yaml
-   labels:
-     - "traefik.http.routers.service.middlewares=tailscale-access@docker"
-   ```
+2. **Verify middleware configuration:**
+   - Services should reference `tailscale-chain@file`
 
 3. **Check Access Rules:**
    - Review `tailscale/access-rules.yml`
-   - Ensure your Tailscale user is in the correct group
-
----
-
-### Common Error Codes
-
-| Code | Meaning | Action |
-|------|---------|--------|
-| 502 | Service not responding | Check service is running: `docker ps` |
-| 503 | Service unhealthy | Check service logs: `docker compose logs <service>` |
-| 504 | Gateway timeout | Increase timeout in Traefik config |
-| 404 | Route not found | Check `Host()` rule in labels |
-| 400 | Bad request | Review Traefik logs for details |
-
----
-
-### Dashboard Access Issues
-
-If you can't access the Traefik dashboard:
-
-1. **Verify dashboard is enabled** in `traefik.yml`
-2. **Check basic auth credentials** if configured
-3. **Access via different methods:**
-   - `https://traefik.yourdomain.com/dashboard/` (note trailing slash)
-   - Direct: `http://localhost:8080` (if port exposed)
+   - Ensure your service is listed under `services:` with appropriate `groups` (e.g. `admins`, `members`)

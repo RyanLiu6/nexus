@@ -1,0 +1,30 @@
+# HAVM Configuration for Home Assistant on Nexus
+# Path: ${NEXUS_DATA_DIRECTORY}/Config/homeassistant/config.yml
+
+vm:
+  cpu_count: 4
+  memory_size: "4 GiB"
+  disk_size: "32 GiB"
+
+network:
+  type: bridge
+  interface: "en0"
+  mac: "02:00:00:00:00:01"  # Fixed MAC for deterministic router DHCP reservations
+  hostname: "homeassistant.local"
+
+ssh:
+  authorized_keys: "~/.ssh/ha_key.pub"  # Imported into HA OS for root debug SSH on port 22222
+
+metrics:
+  enabled: true
+  type: prometheus
+  prometheus:
+    port: 9210
+    host: ["::"]  # Listen on all interfaces so Prometheus in Docker can scrape via host.docker.internal:9210
+
+logging:
+  format: text
+  level: info
+
+shutdown:
+  timeout_seconds: 90
