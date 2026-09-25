@@ -349,7 +349,6 @@ def main(
         services_list = resolve_preset("home")
         logging.info("No services specified, using 'home' preset")
 
-
     # Get domain from vault if not specified
     if not domain:
         domain = os.environ.get("NEXUS_DOMAIN")

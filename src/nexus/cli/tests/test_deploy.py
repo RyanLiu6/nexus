@@ -267,9 +267,7 @@ class TestMain:
         ):
             mock_vault.exists.return_value = True
             runner = CliRunner()
-            result = runner.invoke(
-                main, ["dashboard", "--domain", "example.com", "-y"]
-            )
+            result = runner.invoke(main, ["dashboard", "--domain", "example.com", "-y"])
 
             assert result.exit_code == 0, result.output
             assert mock_tf.call_count == 1
