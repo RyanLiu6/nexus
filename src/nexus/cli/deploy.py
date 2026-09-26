@@ -25,6 +25,7 @@ from nexus.deploy.terraform import (
 from nexus.generate.access_rules import sync_access_rules
 from nexus.generate.dashboard import (
     generate_bookmarks_config,
+    generate_custom_css,
     generate_dashboard_config,
     generate_settings_config,
     generate_widgets_config,
@@ -173,6 +174,7 @@ def _generate_configs(
     settings_path = homepage_dir / "settings.yaml"
     bookmarks_path = homepage_dir / "bookmarks.yaml"
     widgets_path = homepage_dir / "widgets.yaml"
+    custom_css_path = homepage_dir / "custom.css"
 
     vault = {}
     try:
@@ -186,6 +188,7 @@ def _generate_configs(
     settings_config = generate_settings_config()
     bookmarks_config = generate_bookmarks_config()
     widgets_config = generate_widgets_config()
+    custom_css = generate_custom_css()
 
     if dry_run:
         logging.info(
@@ -194,6 +197,7 @@ def _generate_configs(
         logging.info(f"[DRY RUN] Would write settings to {settings_path}")
         logging.info(f"[DRY RUN] Would write bookmarks to {bookmarks_path}")
         logging.info(f"[DRY RUN] Would write widgets to {widgets_path}")
+        logging.info(f"[DRY RUN] Would write custom css to {custom_css_path}")
     else:
         homepage_dir.mkdir(parents=True, exist_ok=True)
 
@@ -212,6 +216,10 @@ def _generate_configs(
         logging.info(f"Writing widgets to {widgets_path}")
         with widgets_path.open("w") as f:
             yaml.dump(widgets_config, f, default_flow_style=False, sort_keys=False)
+
+        logging.info(f"Writing custom css to {custom_css_path}")
+        with custom_css_path.open("w") as f:
+            f.write(custom_css)
 
 
 @click.command()

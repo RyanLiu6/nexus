@@ -15,6 +15,8 @@ class TestPresets:
         assert "tailscale-access" in services
         assert "dashboard" in services
         assert "monitoring" in services
+        assert "homeassistant" in services
+        assert "scrypted" in services
 
     def test_resolve_preset_home_inherits_core(self) -> None:
         services = resolve_preset("home")
@@ -22,6 +24,8 @@ class TestPresets:
         assert "tailscale-access" in services
         assert "dashboard" in services
         assert "monitoring" in services
+        assert "homeassistant" in services
+        assert "scrypted" in services
 
     def test_resolve_preset_home_includes_additional_services(self) -> None:
         services = resolve_preset("home")

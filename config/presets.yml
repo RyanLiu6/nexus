@@ -9,6 +9,7 @@ core:
   - dashboard
   - monitoring
   - homeassistant
+  - scrypted
 
 home:
   extends: core

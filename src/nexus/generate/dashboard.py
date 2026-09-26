@@ -64,6 +64,38 @@ def get_service_config(service_name: str) -> list[TraefikConfig]:
     """
     compose_file = SERVICES_PATH / service_name / "docker-compose.yml"
     if not compose_file.exists():
+        manifest_file = SERVICES_PATH / service_name / "service.yml"
+        if manifest_file.exists():
+            # Check for dynamic Traefik file rule first
+            rule = ""
+            traefik_rule_file = (
+                SERVICES_PATH / "traefik" / "rules" / f"{service_name}.yml"
+            )
+            if traefik_rule_file.exists():
+                try:
+                    with traefik_rule_file.open() as f:
+                        rule_data = yaml.safe_load(f)
+                    routers = rule_data.get("http", {}).get("routers", {})
+                    for r_info in routers.values():
+                        if "rule" in r_info and "Host(`" in r_info["rule"]:
+                            rule = r_info["rule"]
+                            break
+                except Exception:
+                    pass
+
+            if not rule:
+                rule = f"Host(`{service_name}.${{NEXUS_DOMAIN}}`)"
+
+            return [
+                {
+                    "name": service_name,
+                    "container": service_name,
+                    "rule": rule,
+                    "description": get_service_description(service_name),
+                    "icon": get_service_icon(service_name),
+                }
+            ]
+
         logging.warning(f"No docker-compose.yml found for {service_name}")
         return []
 
@@ -237,6 +269,8 @@ def generate_dashboard_config(
                 # Replace placeholder with actual domain for absolute URLs
                 if "${NEXUS_DOMAIN}" in hostname:
                     hostname = hostname.replace("${NEXUS_DOMAIN}", domain)
+                if "{{ env `NEXUS_DOMAIN` }}" in hostname:
+                    hostname = hostname.replace("{{ env `NEXUS_DOMAIN` }}", domain)
                 url = f"https://{hostname}"
             else:
                 url = f"https://{svc_name}.{domain}"
@@ -283,6 +317,17 @@ def generate_dashboard_config(
                         widget_config["key"] = secrets["plex_token"]
                     else:
                         widget_config = {}  # Skip if no token
+                elif widget_type == "homeassistant":
+                    token = secrets.get("homeassistant_token") or secrets.get(
+                        "homeassistant_key"
+                    )
+                    if token:
+                        widget_config["key"] = token
+                        widget_config.setdefault(
+                            "url", f"https://homeassistant.{domain}"
+                        )
+                    else:
+                        widget_config = {}  # Skip widget if token not provided
 
             if widget_config:
                 dashboard_config[category][-1][svc_name]["widget"] = widget_config
@@ -425,3 +470,46 @@ def generate_widgets_config(
             }
         },
     ]
+
+
+def generate_custom_css() -> str:
+    """Generate custom CSS for Homepage with enhanced spacing and padding.
+
+    Returns:
+        CSS string to write to custom.css.
+    """
+    return """/* Custom styling for Nexus Homepage - Enhanced Padding & Spacing */
+
+/* Page container padding */
+.container {
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 3rem !important;
+}
+
+/* Service cards padding, margin, and rounded corners */
+.service-card {
+  padding: 1.25rem 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Spacing between service and bookmark groups */
+.services-group,
+div[class*="group"] {
+  margin-bottom: 2rem !important;
+}
+
+/* Grid gaps between cards */
+div[class*="grid"] {
+  gap: 1.25rem !important;
+}
+
+/* Information widgets bar spacing */
+#information-widgets {
+  padding-top: 0.5rem !important;
+  padding-bottom: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+"""
