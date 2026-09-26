@@ -349,3 +349,18 @@ def alert_bot(c: Context, port: int = 8080) -> None:
         port: Port to run the webhook server on.
     """
     c.run(f"uv run python -m nexus.cli.alert_bot --port {port}")
+
+
+# =============================================================================
+# Bare Metal Services
+# =============================================================================
+
+
+@task
+def install_scrypted(c: Context) -> None:
+    """Install Scrypted bare metal on macOS.
+
+    Args:
+        c: Invoke context.
+    """
+    c.run("./scripts/install-scrypted.sh")

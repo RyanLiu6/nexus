@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from nexus.generate.dashboard import (
     categorize_service,
     generate_bookmarks_config,
+    generate_custom_css,
     generate_dashboard_config,
     generate_settings_config,
     generate_widgets_config,
@@ -164,6 +166,39 @@ services:
 
         assert result == []
 
+    @patch("nexus.generate.dashboard.SERVICES_PATH")
+    def test_get_service_config_manifest_only(
+        self, mock_path: MagicMock, tmp_path: Path
+    ) -> None:
+        service_dir = tmp_path / "scrypted"
+        service_dir.mkdir()
+        manifest_file = service_dir / "service.yml"
+        manifest_file.write_text("""
+name: scrypted
+description: Video bridge
+subdomain: scrypted
+""")
+        traefik_dir = tmp_path / "traefik" / "rules"
+        traefik_dir.mkdir(parents=True)
+        rule_file = traefik_dir / "scrypted.yml"
+        rule_file.write_text("""
+http:
+  routers:
+    scrypted:
+      rule: "Host(`scrypted.{{ env `NEXUS_DOMAIN` }}`)"
+""")
+
+        def path_side_effect(arg: str) -> Path:
+            return tmp_path / arg
+
+        mock_path.__truediv__.side_effect = path_side_effect
+
+        result = get_service_config("scrypted")
+
+        assert len(result) == 1
+        assert result[0]["name"] == "scrypted"
+        assert "scrypted" in result[0]["rule"]
+
 
 class TestGenerateDashboardConfig:
     @patch("nexus.generate.dashboard.get_service_config")
@@ -317,6 +352,50 @@ class TestGenerateDashboardConfig:
         href = apps_category["Apps"][0]["foundryvtt"]["href"]
         assert href == "https://foundry.my-domain.com"
 
+    @patch("nexus.generate.dashboard.get_service_config")
+    def test_generate_dashboard_config_go_template_domain_substitution(
+        self, mock_get_config: MagicMock
+    ) -> None:
+        mock_get_config.return_value = [
+            {
+                "name": "homeassistant",
+                "container": "homeassistant",
+                "rule": "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)",
+                "description": "Smart Home",
+                "icon": "si-homeassistant",
+            }
+        ]
+
+        result = generate_dashboard_config(["homeassistant"], "my-domain.com")
+
+        core_category = next((item for item in result if "Core" in item), None)
+        assert core_category is not None
+        href = core_category["Core"][0]["homeassistant"]["href"]
+        assert href == "https://homeassistant.my-domain.com"
+
+    @patch("nexus.generate.dashboard.get_service_config")
+    def test_generate_dashboard_config_alphabetical_ordering(
+        self, mock_get_config: MagicMock
+    ) -> None:
+        def fake_config(svc: str) -> list[dict[str, Any]]:
+            return [
+                {
+                    "name": svc,
+                    "container": svc,
+                    "rule": f"Host(`{svc}.example.com`)",
+                    "description": svc,
+                    "icon": f"si-{svc}",
+                }
+            ]
+
+        mock_get_config.side_effect = fake_config
+        result = generate_dashboard_config(
+            ["scrypted", "transmission", "jellyfin"], "example.com"
+        )
+        media_group = next((item["Media"] for item in result if "Media" in item), [])
+        media_names = [next(iter(item.keys())) for item in media_group]
+        assert media_names == ["jellyfin", "scrypted", "transmission"]
+
 
 class TestGenerateSettingsConfig:
     def test_generate_settings_config(self) -> None:
@@ -393,3 +472,14 @@ class TestGenerateWidgetsConfig:
         assert weather["openmeteo"]["longitude"] == -0.1278
         assert weather["openmeteo"]["timezone"] == "Europe/London"
         assert weather["openmeteo"]["units"] == "imperial"
+
+
+class TestGenerateCustomCss:
+    def test_generate_custom_css(self) -> None:
+        css = generate_custom_css()
+        assert isinstance(css, str)
+        assert ".container" in css
+        assert ".service-card" in css
+        assert "padding-left: 2.5rem !important;" in css
+        assert "padding: 1.25rem 1.25rem !important;" in css
+        assert "margin-bottom: 2rem !important;" in css

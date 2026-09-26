@@ -1,0 +1,16 @@
+# Scrypted - High-performance video integration platform
+# Running natively on macOS outside Docker
+
+name: scrypted
+description: Video integration platform & camera bridge
+category: media
+icon: mdi-cctv
+subdomain: scrypted
+
+access:
+  groups: [admins]
+  public: false
+
+dependencies:
+  - traefik
+  - tailscale-access
