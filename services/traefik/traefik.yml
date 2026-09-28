@@ -20,12 +20,6 @@ entryPoints:
     address: ":8080"
   http:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: https
-          scheme: https
-          permanent: true
     forwardedHeaders:
       trustedIPs:
         - "127.0.0.1/32"
