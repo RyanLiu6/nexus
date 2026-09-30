@@ -14,8 +14,9 @@ HAOS_PORT="22222"
 HAOS_USER="root"
 HAOS_BACKUP_DIR="/mnt/data/supervisor/backup"
 LOCAL_BACKUP_DIR="/Volumes/Data/Config/homeassistant/backups"
-SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10"
-MAX_LOCAL_BACKUPS=5
+SSH_KEY="$HOME/.ssh/ha_key"
+SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10"
+MAX_LOCAL_BACKUPS=3
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') [ha-backup-sync] $*"; }
 
