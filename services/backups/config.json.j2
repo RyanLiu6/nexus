@@ -10,7 +10,10 @@
       "autoUnlock": true,
       "autoInitialize": true,
       "prunePolicy": {
-        "maxUnusedBytes": "10737418240"
+        "schedule": {
+          "cron": "0 4 * * 0"
+        },
+        "maxUnusedPercent": 10
       }
     }{% if backups_r2_access_key is defined and backups_r2_access_key != 'CHANGE_ME' %},
     {
@@ -20,7 +23,10 @@
       "autoUnlock": true,
       "autoInitialize": true,
       "prunePolicy": {
-        "maxUnusedBytes": "10737418240"
+        "schedule": {
+          "cron": "0 4 * * 0"
+        },
+        "maxUnusedPercent": 10
       }
     }{% endif %}
   ],
@@ -33,7 +39,15 @@
         "/user_data"{% endif %}
       ],
       "excludes": [
-        "/base_data/homeassistant/vm"
+        "/base_data/homeassistant/vm",
+        "/base_data/backrest",
+        "/base_data/jellyfin/cache",
+        "/base_data/virtue/cache",
+        "/base_data/foundryvtt/data/container_cache",
+        "/user_data/foundryvtt/container_cache",
+        "**/*.log",
+        "**/logs/**",
+        "**/log/**"
       ],
       "schedule": {
         "cron": "0 2 * * *"
@@ -49,7 +63,14 @@
         "/base_data"
       ],
       "excludes": [
-        "/base_data/homeassistant/vm"
+        "/base_data/homeassistant/vm",
+        "/base_data/backrest",
+        "/base_data/jellyfin/cache",
+        "/base_data/virtue/cache",
+        "/base_data/foundryvtt/data/container_cache",
+        "**/*.log",
+        "**/logs/**",
+        "**/log/**"
       ],
       "schedule": {
         "cron": "0 3 * * *"
