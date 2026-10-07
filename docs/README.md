@@ -25,6 +25,7 @@ Each service has its own README in `services/<name>/README.md`:
 | backups | Automated backups (Backrest) |
 | sure | Finance tracking |
 | jellyfin | Media server |
+| virtue | Media server (secondary Jellyfin) |
 | plex | Media streaming |
 | transmission | BitTorrent client |
 | paperless | Document management |

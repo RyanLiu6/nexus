@@ -214,6 +214,11 @@ def get_service_widget(service_name: str) -> dict[str, Any]:
     return meta["widget"] if meta else {}
 
 
+CATEGORY_SERVICE_ORDER: dict[str, list[str]] = {
+    "Media": ["jellyfin", "virtue", "transmission", "scrypted"],
+}
+
+
 def generate_dashboard_config(
     services: list[str],
     domain: str,
@@ -307,11 +312,6 @@ def generate_dashboard_config(
                         widget_config["password"] = secrets["grafana_admin_password"]
                     else:
                         widget_config = {}  # Skip if no password
-                elif widget_type == "jellyfin":
-                    if secrets.get("jellyfin_api_key"):
-                        widget_config["key"] = secrets["jellyfin_api_key"]
-                    else:
-                        widget_config = {}  # Skip if no API key
                 elif widget_type == "plex":
                     if secrets.get("plex_token"):
                         widget_config["key"] = secrets["plex_token"]
@@ -334,7 +334,18 @@ def generate_dashboard_config(
 
     # Sort services within each category before returning
     for category in dashboard_config:
-        dashboard_config[category].sort(key=lambda x: next(iter(x.keys())).lower())
+        order_list = [s.lower() for s in CATEGORY_SERVICE_ORDER.get(category, [])]
+
+        def sort_key(
+            item: dict[str, Any], order: list[str] = order_list
+        ) -> tuple[int, str]:
+            name = next(iter(item.keys())).lower()
+            try:
+                return (order.index(name), name)
+            except ValueError:
+                return (len(order), name)
+
+        dashboard_config[category].sort(key=sort_key)
 
     final_config = []
     for category in sorted(dashboard_config.keys()):

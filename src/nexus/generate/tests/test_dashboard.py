@@ -286,10 +286,10 @@ class TestGenerateDashboardConfig:
 
         secrets = {
             "grafana_admin_password": "secret",
-            "jellyfin_api_key": "jellykey",
+            "plex_token": "plextoken",
         }
 
-        services = ["traefik", "grafana", "jellyfin"]
+        services = ["traefik", "grafana", "plex"]
         config = generate_dashboard_config(services, "example.com", secrets=secrets)
 
         core_group = next((c["Core"] for c in config if "Core" in c), None)
@@ -307,29 +307,52 @@ class TestGenerateDashboardConfig:
 
         media_group = next((c["Media"] for c in config if "Media" in c), None)
         assert media_group is not None
-        jellyfin = next((i["jellyfin"] for i in media_group if "jellyfin" in i), None)
-        assert jellyfin is not None
-        assert jellyfin["widget"]["key"] == "jellykey"
+        plex = next((i["plex"] for i in media_group if "plex" in i), None)
+        assert plex is not None
+        assert plex["widget"]["key"] == "plextoken"
 
     def test_generate_dashboard_config_missing_secrets(self) -> None:
         with patch("nexus.generate.dashboard.get_service_config") as mock_get:
             mock_get.return_value = [
                 {
-                    "name": "jellyfin",
-                    "container": "jellyfin",
+                    "name": "plex",
+                    "container": "plex",
                     "description": "desc",
                     "icon": "icon",
                 }
             ]
-            config = generate_dashboard_config(["jellyfin"], "example.com", secrets={})
+            config = generate_dashboard_config(["plex"], "example.com", secrets={})
 
+            media_group = next((c["Media"] for c in config if "Media" in c), None)
+            assert media_group is not None
+            plex = next((i["plex"] for i in media_group if "plex" in i), None)
+            assert plex is not None
+            assert "widget" not in plex
+
+    def test_generate_dashboard_config_jellyfin_and_virtue_static(self) -> None:
+        with patch("nexus.generate.dashboard.get_service_config") as mock_get:
+            mock_get.side_effect = lambda name: [
+                {
+                    "name": name,
+                    "container": name,
+                    "rule": f"Host(`{name}.example.com`)",
+                    "description": f"{name} desc",
+                    "icon": "icon.png",
+                }
+            ]
+            config = generate_dashboard_config(["jellyfin", "virtue"], "example.com")
             media_group = next((c["Media"] for c in config if "Media" in c), None)
             assert media_group is not None
             jellyfin = next(
                 (i["jellyfin"] for i in media_group if "jellyfin" in i), None
             )
+            virtue = next((i["virtue"] for i in media_group if "virtue" in i), None)
             assert jellyfin is not None
+            assert virtue is not None
             assert "widget" not in jellyfin
+            assert "widget" not in virtue
+            assert jellyfin["href"] == "https://jellyfin.example.com"
+            assert virtue["href"] == "https://virtue.example.com"
 
     @patch("nexus.generate.dashboard.get_service_config")
     def test_generate_dashboard_config_domain_substitution(
@@ -374,7 +397,7 @@ class TestGenerateDashboardConfig:
         assert href == "https://homeassistant.my-domain.com"
 
     @patch("nexus.generate.dashboard.get_service_config")
-    def test_generate_dashboard_config_alphabetical_ordering(
+    def test_generate_dashboard_config_media_ordering(
         self, mock_get_config: MagicMock
     ) -> None:
         def fake_config(svc: str) -> list[dict[str, Any]]:
@@ -390,11 +413,37 @@ class TestGenerateDashboardConfig:
 
         mock_get_config.side_effect = fake_config
         result = generate_dashboard_config(
-            ["scrypted", "transmission", "jellyfin"], "example.com"
+            ["scrypted", "transmission", "virtue", "jellyfin"], "example.com"
         )
         media_group = next((item["Media"] for item in result if "Media" in item), [])
         media_names = [next(iter(item.keys())) for item in media_group]
-        assert media_names == ["jellyfin", "scrypted", "transmission"]
+        assert media_names == ["jellyfin", "virtue", "transmission", "scrypted"]
+
+    @patch("nexus.generate.dashboard.is_service_excluded", return_value=False)
+    @patch("nexus.generate.dashboard.categorize_service", return_value="Apps")
+    @patch("nexus.generate.dashboard.get_service_config")
+    def test_generate_dashboard_config_alphabetical_ordering_for_other_categories(
+        self,
+        mock_get_config: MagicMock,
+        mock_categorize: MagicMock,
+        mock_excluded: MagicMock,
+    ) -> None:
+        def fake_config(svc: str) -> list[dict[str, Any]]:
+            return [
+                {
+                    "name": svc,
+                    "container": svc,
+                    "rule": f"Host(`{svc}.example.com`)",
+                    "description": svc,
+                    "icon": f"si-{svc}",
+                }
+            ]
+
+        mock_get_config.side_effect = fake_config
+        result = generate_dashboard_config(["zeta", "alpha", "mid"], "example.com")
+        apps_group = next((item["Apps"] for item in result if "Apps" in item), [])
+        apps_names = [next(iter(item.keys())) for item in apps_group]
+        assert apps_names == ["alpha", "mid", "zeta"]
 
 
 class TestGenerateSettingsConfig:

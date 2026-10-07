@@ -28,9 +28,6 @@ services:
         reservations:
           memory: 64M
 
-    ports:
-      - "8000:8000"
-
     networks:
       - nexus
 
