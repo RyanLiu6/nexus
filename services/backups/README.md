@@ -13,22 +13,25 @@ Automated backup system using [Backrest](https://github.com/garethgeorge/backres
 
 ### Repositories
 
-| Repo | Storage | Retention | Purpose |
-|------|---------|-----------|---------|
-| **local** | `/repos` → `${NEXUS_DATA_DIRECTORY}/Backups` | 3 daily | Fast local recovery |
-| **r2** | Cloudflare R2 via rclone | 1 daily | Off-site disaster recovery |
+| Repo | Storage | Retention | Prune Schedule | Purpose |
+|------|---------|-----------|----------------|---------|
+| **local** | `/repos` → `${NEXUS_DATA_DIRECTORY}/Backups` | 3 daily | Sun 4:00 AM | Fast local recovery |
+| **r2** | Cloudflare R2 via rclone | 1 daily | Sun 4:00 AM | Off-site disaster recovery |
 
-R2 is optional — only active when `backups_r2_access_key` is configured. Both repos auto-initialize on first start.
+R2 is optional — only active when `backups_r2_access_key` is configured. Both repos auto-initialize on first start. Both repos run automated weekly pruning to clean up unreferenced packfiles when unused data exceeds 10%.
 
 ### Backup Plans
 
 | Plan | Schedule | Repo | Paths | Excludes | Purpose |
 |------|----------|------|-------|----------|---------|
-| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | `/base_data/homeassistant/vm` | Full backup of everything |
-| **daily-r2** | 3:00 AM | r2 | `/base_data` only | `/base_data/homeassistant/vm` | Off-site configs only |
+| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | `/base_data/homeassistant/vm`, `/base_data/backrest`, caches, `*.log` | Full backup of everything |
+| **daily-r2** | 3:00 AM | r2 | `/base_data` only | `/base_data/homeassistant/vm`, `/base_data/backrest`, caches, `*.log` | Off-site configs only |
 
 > [!NOTE]
-> **Home Assistant VM Exclusion:** The 32GB raw virtual disk at `/base_data/homeassistant/vm/` is excluded to prevent disk bloat and avoid crash-inconsistent VM snapshots. Instead, Home Assistant creates native, clean `.tar` backups inside the VM, which are synced every 6 hours by `sync-backups.sh` to `/base_data/homeassistant/backups/`. Backrest includes these compact `.tar` files in both backup plans automatically.
+> **Exclusions:**
+> - **Home Assistant VM:** The 32GB raw virtual disk at `/base_data/homeassistant/vm/` is excluded. Native `.tar` backups are synced by `sync-backups.sh` to `/base_data/homeassistant/backups/`.
+> - **Backrest Data & Caches:** `/base_data/backrest`, `/base_data/jellyfin/cache`, `/base_data/virtue/cache`, and Foundry container caches are excluded to prevent snapshot bloat.
+> - **Logs:** Ephemeral log files (`**/*.log`, `**/logs/**`, `**/log/**`) are excluded.
 
 ### Volume Mounts
 
@@ -117,4 +120,4 @@ The raw data syncs (paperless, bookorbit) mean documents and books are recoverab
 ## Maintenance
 
 - **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM–5 AM (ProtonDrive rsync if enabled: restic repos at 4:00, paperless at 4:30, bookorbit at 5:00)
-- **Weekly**: `nexus maintenance weekly` verifies backups exist
+- **Weekly**: Automated pruning at 4 AM Sunday on both repos; `nexus maintenance weekly` verifies backups exist
