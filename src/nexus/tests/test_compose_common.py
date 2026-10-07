@@ -19,6 +19,7 @@ ALL_SERVICES = [
     "tailscale-access",
     "traefik",
     "transmission",
+    "virtue",
 ]
 
 # Services where the standard HTTPS + tailscale-chain Traefik pattern doesn't apply

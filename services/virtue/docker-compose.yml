@@ -1,7 +1,7 @@
 services:
-  jellyfin:
+  virtue:
     image: lscr.io/linuxserver/jellyfin:10.11.11
-    container_name: jellyfin
+    container_name: virtue
     restart: unless-stopped
     deploy:
       resources:
@@ -13,13 +13,13 @@ services:
     networks:
       - nexus
     volumes:
-      - ${NEXUS_DATA_DIRECTORY}/Config/jellyfin:/config
-      - ${NEXUS_DATA_DIRECTORY}/Media/media:/data/media
+      - ${NEXUS_DATA_DIRECTORY}/Config/virtue:/config
+      - ${NEXUS_DATA_DIRECTORY}/Media:/data/media
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
       - TZ=${TZ}
-      - JELLYFIN_PublishedServerUrl=https://jellyfin.${NEXUS_DOMAIN}
+      - JELLYFIN_PublishedServerUrl=https://virtue.${NEXUS_DOMAIN}
       - NEXUS_ROOT_DIRECTORY=${NEXUS_ROOT_DIRECTORY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
@@ -30,14 +30,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
-      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      - "traefik.http.services.virtue.loadbalancer.server.port=8096"
       # HTTPS only - Tailscale access only
       # Note: Jellyfin has its own user auth; can add tsidp OAuth via SSO plugin
-      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${NEXUS_DOMAIN}`)"
-      - "traefik.http.routers.jellyfin.entrypoints=https"
-      - "traefik.http.routers.jellyfin.middlewares=tailscale-chain@file"
-      - "traefik.http.routers.jellyfin.tls=true"
-      - "traefik.http.routers.jellyfin.tls.certresolver=certchallenge"
+      - "traefik.http.routers.virtue.rule=Host(`virtue.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.virtue.entrypoints=https"
+      - "traefik.http.routers.virtue.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.virtue.tls=true"
+      - "traefik.http.routers.virtue.tls.certresolver=certchallenge"
 
 networks:
   nexus:

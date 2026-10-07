@@ -127,7 +127,7 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 ```python
 PRESETS = {
     "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
-    "home": ["core", "backups", "foundryvtt", "jellyfin", "transmission", "paperless", "bookorbit"],
+    "home": ["core", "backups", "foundryvtt", "jellyfin", "virtue", "transmission", "paperless", "bookorbit"],
 }
 ```
 
@@ -140,6 +140,7 @@ PRESETS = {
 | **dashboard** | Homepage | Admin/Member (Tailscale) |
 | **monitoring** | Prometheus + Grafana | Admin (Tailscale) |
 | **jellyfin** | Media server | Admin |
+| **virtue** | Media server (secondary Jellyfin) | Admin |
 | **plex** | Media streaming | Admin + Wife |
 | **transmission** | Torrent client | Admin |
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |

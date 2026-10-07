@@ -1,11 +1,11 @@
-# Jellyfin - Media Server
+# Virtue - Media Server (Secondary Jellyfin)
 # Open source media streaming
 
-name: jellyfin
-description: Media server for movies and TV
+name: virtue
+description: Media server (Virtue)
 category: media
 icon: si-jellyfin
-subdomain: jellyfin
+subdomain: virtue
 
 access:
   groups: [admins]

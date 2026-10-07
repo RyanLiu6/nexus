@@ -315,6 +315,13 @@ foundry_s3_bucket: "foundry-assets"
 # No secrets required - protected by Tailscale Access
 # Uses NEXUS_DOMAIN and TZ
 
+# =============================================================================
+# Home Assistant - Home Automation (Optional)
+# =============================================================================
+# Long-lived access token for Homepage dashboard widget
+# Create in Home Assistant: Profile -> Security -> Long-Lived Access Tokens
+# homeassistant_api_key: "CHANGE_ME"
+
 # #############################################################################
 #                           ENVIRONMENT VARIABLE MAPPING
 # #############################################################################

@@ -115,6 +115,7 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 | Alertmanager | ✅ | ❌ | ❌ |
 | Transmission | ✅ | ❌ | ❌ |
 | Jellyfin | ✅ | ❌ | ❌ |
+| Virtue | ✅ | ❌ | ❌ |
 | Plex | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
