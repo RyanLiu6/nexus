@@ -12,6 +12,27 @@ VAULT_PATH = ANSIBLE_PATH / "vars" / "vault.yml"
 TAILSCALE_PATH = ROOT_PATH / "tailscale"
 
 
+def _find_private_root() -> Optional[Path]:
+    """Discover the root path of the private repository, if available."""
+    candidates = [
+        os.environ.get("NEXUS_PRIVATE_PATH"),
+        str(ROOT_PATH.parent / "nexus-private"),
+        str(ROOT_PATH / ".private"),
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_dir():
+            return Path(candidate).resolve()
+    return None
+
+
+PRIVATE_ROOT_PATH: Optional[Path] = _find_private_root()
+PRIVATE_SERVICES_PATH: Optional[Path] = (
+    PRIVATE_ROOT_PATH / "services"
+    if PRIVATE_ROOT_PATH and (PRIVATE_ROOT_PATH / "services").is_dir()
+    else None
+)
+
+
 @cache
 def get_all_services() -> list[str]:
     """Get all available service names from manifest discovery.
@@ -30,7 +51,7 @@ PRESETS_PATH = ROOT_PATH / "config" / "presets.yml"
 
 @cache
 def load_presets() -> dict[str, list[str] | dict[str, Any]]:
-    """Load presets from presets.yml file.
+    """Load presets from presets.yml file and optional private presets.
 
     Returns:
         Dictionary mapping preset names to their configuration.
@@ -42,8 +63,51 @@ def load_presets() -> dict[str, list[str] | dict[str, Any]]:
     """
     import yaml
 
+    if not PRESETS_PATH.exists():
+        raise FileNotFoundError(f"Presets file not found: {PRESETS_PATH}")
+
     with open(PRESETS_PATH) as f:
-        return yaml.safe_load(f) or {}
+        presets: dict[str, Any] = yaml.safe_load(f) or {}
+
+    if PRIVATE_ROOT_PATH:
+        private_presets_path = PRIVATE_ROOT_PATH / "config" / "presets.yml"
+        if private_presets_path.exists():
+            with open(private_presets_path) as f:
+                private_presets: dict[str, Any] = yaml.safe_load(f) or {}
+            for name, config in private_presets.items():
+                if name not in presets:
+                    presets[name] = config
+                else:
+                    base = presets[name]
+                    if isinstance(base, dict) and isinstance(config, dict):
+                        merged = dict(base)
+                        if "extends" in config:
+                            merged["extends"] = config["extends"]
+                        base_svcs = list(base.get("services", []))
+                        priv_svcs = list(config.get("services", []))
+                        for s in priv_svcs:
+                            if s not in base_svcs:
+                                base_svcs.append(s)
+                        merged["services"] = base_svcs
+                        presets[name] = merged
+                    elif isinstance(base, list) and isinstance(config, list):
+                        merged_list = list(base)
+                        for s in config:
+                            if s not in merged_list:
+                                merged_list.append(s)
+                        presets[name] = merged_list
+                    elif isinstance(base, dict) and isinstance(config, list):
+                        merged = dict(base)
+                        base_svcs = list(base.get("services", []))
+                        for s in config:
+                            if s not in base_svcs:
+                                base_svcs.append(s)
+                        merged["services"] = base_svcs
+                        presets[name] = merged
+                    else:
+                        presets[name] = config
+
+    return presets
 
 
 def resolve_preset(name: str) -> list[str]:

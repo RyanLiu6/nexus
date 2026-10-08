@@ -76,18 +76,21 @@ class TestCategorizeService:
 
 class TestGetServiceConfig:
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_missing_file(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         mock_path.__truediv__.return_value = tmp_path / "missing"
+        mock_discover.return_value = {}
 
         result = get_service_config("missing")
 
         assert result == []
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_with_list_labels(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "plex"
         service_dir.mkdir()
@@ -105,6 +108,7 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("plex")
 
@@ -114,8 +118,9 @@ services:
         assert "plex.example.com" in result[0]["rule"]
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_multiple_services(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "monitoring"
         service_dir.mkdir()
@@ -136,6 +141,7 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("monitoring")
 
@@ -145,8 +151,9 @@ services:
         assert "grafana" in names
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_no_traefik_labels(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "redis"
         service_dir.mkdir()
@@ -161,14 +168,16 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("redis")
 
         assert result == []
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_manifest_only(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "scrypted"
         service_dir.mkdir()
@@ -192,6 +201,7 @@ http:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("scrypted")
 

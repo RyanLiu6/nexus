@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-SURE_SERVICE_PATH = SERVICES_PATH / "sure"
+SURE_SERVICE_PATH = discover_services()["sure"].path
 SURE_COMPOSE_PATH = SURE_SERVICE_PATH / "docker-compose.yml"
 
 _EXPECTED_CONTAINERS = {"sure-web", "sure-worker", "sure-db", "sure-redis"}

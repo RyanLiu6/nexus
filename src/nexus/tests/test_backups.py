@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-BACKUPS_SERVICE_PATH = SERVICES_PATH / "backups"
+BACKUPS_SERVICE_PATH = discover_services()["backups"].path
 BACKUPS_COMPOSE_PATH = BACKUPS_SERVICE_PATH / "docker-compose.yml"
 
 

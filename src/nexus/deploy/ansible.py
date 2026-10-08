@@ -3,7 +3,7 @@ import os
 import subprocess
 from typing import Optional
 
-from nexus.config import ANSIBLE_PATH
+from nexus.config import ANSIBLE_PATH, PRIVATE_ROOT_PATH
 from nexus.types import R2Credentials
 from nexus.utils import run_command
 
@@ -43,6 +43,9 @@ def run_ansible(
     # Pass environment overrides if set
     if data_dir := os.environ.get("NEXUS_DATA_DIRECTORY"):
         extra_vars.append(f"nexus_data_directory={data_dir}")
+
+    if PRIVATE_ROOT_PATH:
+        extra_vars.append(f"nexus_private_directory={PRIVATE_ROOT_PATH}")
 
     if email := os.environ.get("ACME_EMAIL"):
         extra_vars.append(f"acme_email={email}")

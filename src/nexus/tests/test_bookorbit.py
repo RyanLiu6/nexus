@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-BOOKORBIT_SERVICE_PATH = SERVICES_PATH / "bookorbit"
+BOOKORBIT_SERVICE_PATH = discover_services()["bookorbit"].path
 BOOKORBIT_COMPOSE_PATH = BOOKORBIT_SERVICE_PATH / "docker-compose.yml"
 
 

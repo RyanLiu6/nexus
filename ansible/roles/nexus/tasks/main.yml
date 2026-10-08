@@ -15,10 +15,28 @@
     file_type: directory
   register: nexus_service_directories
 
+- name: Get private services if configured
+  ansible.builtin.find:
+    paths: "{{ nexus_private_directory }}/services"
+    file_type: directory
+  register: nexus_private_service_directories
+  when: nexus_private_directory is defined and nexus_private_directory != ''
+
+- name: Combine available service directories
+  ansible.builtin.set_fact:
+    nexus_all_service_dirs: >-
+      {{ nexus_service_directories.files + (nexus_private_service_directories.files if (nexus_private_service_directories is defined and nexus_private_service_directories.files is defined) else []) }}
+
+- name: Build service to compose path mapping
+  ansible.builtin.set_fact:
+    nexus_service_paths: >-
+      {{ nexus_service_paths | default({}) | combine({item.path | basename: item.path ~ '/docker-compose.yml'}) }}
+  loop: "{{ nexus_all_service_dirs }}"
+
 - name: Set service list
   ansible.builtin.set_fact:
     nexus_final_services: >-
-      {{ nexus_service_directories.files | map(attribute='path') | map('basename') | list
+      {{ nexus_all_service_dirs | map(attribute='path') | map('basename') | list
          if nexus_deploy_all_services else nexus_services.split(',') }}
 
 - name: Display final service list
@@ -28,7 +46,7 @@
 # Generate combined docker-compose.yml from individual service files
 - name: Read service docker-compose files
   ansible.builtin.slurp:
-    src: "{{ nexus_root_directory }}/services/{{ item }}/docker-compose.yml"
+    src: "{{ nexus_service_paths[item] | default(nexus_root_directory ~ '/services/' ~ item ~ '/docker-compose.yml') }}"
   loop: "{{ nexus_final_services }}"
   register: nexus_compose_files
   failed_when: false

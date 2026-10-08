@@ -73,3 +73,7 @@ tailscale/access-rules.yml
 
 # Generated Dashboard Configs
 services/dashboard/config/*.yaml
+
+# Private repo overlay
+.private/
+services-private/

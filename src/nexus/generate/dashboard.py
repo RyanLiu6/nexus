@@ -63,8 +63,16 @@ def get_service_config(service_name: str) -> list[TraefikConfig]:
         and 'icon' if Traefik labels are found.
     """
     compose_file = SERVICES_PATH / service_name / "docker-compose.yml"
+    manifest = None
+    if not compose_file.exists():
+        manifest = discover_services().get(service_name)
+        if manifest and (manifest.path / "docker-compose.yml").exists():
+            compose_file = manifest.path / "docker-compose.yml"
+
     if not compose_file.exists():
         manifest_file = SERVICES_PATH / service_name / "service.yml"
+        if not manifest_file.exists() and manifest:
+            manifest_file = manifest.path / "service.yml"
         if manifest_file.exists():
             # Check for dynamic Traefik file rule first
             rule = ""

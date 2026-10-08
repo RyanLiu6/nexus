@@ -4,8 +4,6 @@ from typing import Any, Optional
 
 import yaml
 
-from nexus.config import SERVICES_PATH
-
 
 @dataclass
 class ServiceManifest:
@@ -110,27 +108,37 @@ def discover_services(
     """Discover all services with manifest files.
 
     Args:
-        services_path: Path to services directory. Defaults to SERVICES_PATH.
+        services_path: Path to services directory. Defaults to SERVICES_PATH
+            and PRIVATE_SERVICES_PATH (if configured).
 
     Returns:
         Dictionary mapping service name to its manifest.
     """
-    if services_path is None:
-        services_path = SERVICES_PATH
+    from nexus.config import PRIVATE_SERVICES_PATH, SERVICES_PATH
+
+    if services_path is not None:
+        paths_to_scan = [services_path]
+    else:
+        paths_to_scan = [SERVICES_PATH]
+        if PRIVATE_SERVICES_PATH and PRIVATE_SERVICES_PATH.exists():
+            paths_to_scan.append(PRIVATE_SERVICES_PATH)
 
     services = {}
-    for service_dir in services_path.iterdir():
-        if not service_dir.is_dir():
+    for base_path in paths_to_scan:
+        if not base_path.is_dir():
             continue
-
-        manifest_path = service_dir / "service.yml"
-        if manifest_path.exists():
-            try:
-                manifest = ServiceManifest.from_yaml(manifest_path)
-                services[manifest.name] = manifest
-            except (yaml.YAMLError, KeyError, ValueError):
-                # Skip invalid manifests
+        for service_dir in base_path.iterdir():
+            if not service_dir.is_dir():
                 continue
+
+            manifest_path = service_dir / "service.yml"
+            if manifest_path.exists():
+                try:
+                    manifest = ServiceManifest.from_yaml(manifest_path)
+                    services[manifest.name] = manifest
+                except (yaml.YAMLError, KeyError, ValueError):
+                    # Skip invalid manifests
+                    continue
 
     return services
 
