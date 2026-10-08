@@ -25,7 +25,10 @@
 - name: Combine available service directories
   ansible.builtin.set_fact:
     nexus_all_service_dirs: >-
-      {{ nexus_service_directories.files + (nexus_private_service_directories.files if (nexus_private_service_directories is defined and nexus_private_service_directories.files is defined) else []) }}
+      {{ nexus_service_directories.files +
+         (nexus_private_service_directories.files
+          if (nexus_private_service_directories is defined and
+              nexus_private_service_directories.files is defined) else []) }}
 
 - name: Build service to compose path mapping
   ansible.builtin.set_fact:

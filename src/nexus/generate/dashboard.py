@@ -223,7 +223,7 @@ def get_service_widget(service_name: str) -> dict[str, Any]:
 
 
 CATEGORY_SERVICE_ORDER: dict[str, list[str]] = {
-    "Media": ["jellyfin", "virtue", "transmission", "scrypted"],
+    "Media": ["jellyfin", "transmission", "scrypted"],
 }
 
 
