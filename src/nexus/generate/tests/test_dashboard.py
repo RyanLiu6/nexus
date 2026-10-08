@@ -76,18 +76,21 @@ class TestCategorizeService:
 
 class TestGetServiceConfig:
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_missing_file(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         mock_path.__truediv__.return_value = tmp_path / "missing"
+        mock_discover.return_value = {}
 
         result = get_service_config("missing")
 
         assert result == []
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_with_list_labels(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "plex"
         service_dir.mkdir()
@@ -105,6 +108,7 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("plex")
 
@@ -114,8 +118,9 @@ services:
         assert "plex.example.com" in result[0]["rule"]
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_multiple_services(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "monitoring"
         service_dir.mkdir()
@@ -136,6 +141,7 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("monitoring")
 
@@ -145,8 +151,9 @@ services:
         assert "grafana" in names
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_no_traefik_labels(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "redis"
         service_dir.mkdir()
@@ -161,14 +168,16 @@ services:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("redis")
 
         assert result == []
 
     @patch("nexus.generate.dashboard.SERVICES_PATH")
+    @patch("nexus.generate.dashboard.discover_services")
     def test_get_service_config_manifest_only(
-        self, mock_path: MagicMock, tmp_path: Path
+        self, mock_discover: MagicMock, mock_path: MagicMock, tmp_path: Path
     ) -> None:
         service_dir = tmp_path / "scrypted"
         service_dir.mkdir()
@@ -192,6 +201,7 @@ http:
             return tmp_path / arg
 
         mock_path.__truediv__.side_effect = path_side_effect
+        mock_discover.return_value = {}
 
         result = get_service_config("scrypted")
 
@@ -329,7 +339,7 @@ class TestGenerateDashboardConfig:
             assert plex is not None
             assert "widget" not in plex
 
-    def test_generate_dashboard_config_jellyfin_and_virtue_static(self) -> None:
+    def test_generate_dashboard_config_jellyfin_and_scrypted_static(self) -> None:
         with patch("nexus.generate.dashboard.get_service_config") as mock_get:
             mock_get.side_effect = lambda name: [
                 {
@@ -340,19 +350,21 @@ class TestGenerateDashboardConfig:
                     "icon": "icon.png",
                 }
             ]
-            config = generate_dashboard_config(["jellyfin", "virtue"], "example.com")
+            config = generate_dashboard_config(["jellyfin", "scrypted"], "example.com")
             media_group = next((c["Media"] for c in config if "Media" in c), None)
             assert media_group is not None
             jellyfin = next(
                 (i["jellyfin"] for i in media_group if "jellyfin" in i), None
             )
-            virtue = next((i["virtue"] for i in media_group if "virtue" in i), None)
+            scrypted = next(
+                (i["scrypted"] for i in media_group if "scrypted" in i), None
+            )
             assert jellyfin is not None
-            assert virtue is not None
+            assert scrypted is not None
             assert "widget" not in jellyfin
-            assert "widget" not in virtue
+            assert "widget" not in scrypted
             assert jellyfin["href"] == "https://jellyfin.example.com"
-            assert virtue["href"] == "https://virtue.example.com"
+            assert scrypted["href"] == "https://scrypted.example.com"
 
     @patch("nexus.generate.dashboard.get_service_config")
     def test_generate_dashboard_config_domain_substitution(
@@ -413,11 +425,11 @@ class TestGenerateDashboardConfig:
 
         mock_get_config.side_effect = fake_config
         result = generate_dashboard_config(
-            ["scrypted", "transmission", "virtue", "jellyfin"], "example.com"
+            ["scrypted", "transmission", "jellyfin"], "example.com"
         )
         media_group = next((item["Media"] for item in result if "Media" in item), [])
         media_names = [next(iter(item.keys())) for item in media_group]
-        assert media_names == ["jellyfin", "virtue", "transmission", "scrypted"]
+        assert media_names == ["jellyfin", "transmission", "scrypted"]
 
     @patch("nexus.generate.dashboard.is_service_excluded", return_value=False)
     @patch("nexus.generate.dashboard.categorize_service", return_value="Apps")

@@ -3,23 +3,12 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services, get_all_service_names
 
 ALL_SERVICES = [
-    "backups",
-    "bookorbit",
-    "cloudflared",
-    "dashboard",
-    "foundryvtt",
-    "jellyfin",
-    "monitoring",
-    "paperless",
-    "plex",
-    "sure",
-    "tailscale-access",
-    "traefik",
-    "transmission",
-    "virtue",
+    name
+    for name in get_all_service_names()
+    if (discover_services()[name].path / "docker-compose.yml").exists()
 ]
 
 # Services where the standard HTTPS + tailscale-chain Traefik pattern doesn't apply
@@ -43,19 +32,19 @@ _DB_REDIS_CONTAINERS = [
 
 
 def _load_compose(service_name: str) -> dict[str, Any]:
-    compose_path = SERVICES_PATH / service_name / "docker-compose.yml"
+    compose_path = discover_services()[service_name].path / "docker-compose.yml"
     with open(compose_path) as f:
         return dict(yaml.safe_load(f))
 
 
 @pytest.mark.parametrize("service_name", ALL_SERVICES)
 def test_compose_file_exists(service_name: str) -> None:
-    assert (SERVICES_PATH / service_name / "docker-compose.yml").exists()
+    assert (discover_services()[service_name].path / "docker-compose.yml").exists()
 
 
 @pytest.mark.parametrize("service_name", ALL_SERVICES)
 def test_service_manifest_exists(service_name: str) -> None:
-    assert (SERVICES_PATH / service_name / "service.yml").exists()
+    assert (discover_services()[service_name].path / "service.yml").exists()
 
 
 @pytest.mark.parametrize("service_name", ALL_SERVICES)

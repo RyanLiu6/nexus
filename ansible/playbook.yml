@@ -24,3 +24,4 @@
       tags: ['nexus', 'deploy']
       vars:
         nexus_services: "{{ services | default('all') }}"
+        nexus_private_directory: "{{ nexus_private_directory | default('') }}"

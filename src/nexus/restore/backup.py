@@ -31,7 +31,13 @@ def _get_container_names(service_name: str) -> list[str]:
     """
     compose_path = SERVICES_PATH / service_name / "docker-compose.yml"
     if not compose_path.exists():
-        return []
+        from nexus.services import discover_services
+
+        manifest = discover_services().get(service_name)
+        if manifest and (manifest.path / "docker-compose.yml").exists():
+            compose_path = manifest.path / "docker-compose.yml"
+        else:
+            return []
     with open(compose_path) as f:
         compose = yaml.safe_load(f)
     services = compose.get("services", {})
@@ -71,11 +77,20 @@ def _get_all_backup_services() -> list[str]:
     Returns:
         Sorted list of service names.
     """
-    return sorted(
+    from nexus.config import PRIVATE_SERVICES_PATH
+
+    service_names = set(
         d.name
         for d in SERVICES_PATH.iterdir()
         if d.is_dir() and (d / "docker-compose.yml").exists()
     )
+    if PRIVATE_SERVICES_PATH and PRIVATE_SERVICES_PATH.is_dir():
+        service_names.update(
+            d.name
+            for d in PRIVATE_SERVICES_PATH.iterdir()
+            if d.is_dir() and (d / "docker-compose.yml").exists()
+        )
+    return sorted(service_names)
 
 
 def _build_ephemeral_cmd(

@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-TRAEFIK_SERVICE_PATH = SERVICES_PATH / "traefik"
+TRAEFIK_SERVICE_PATH = discover_services()["traefik"].path
 TRAEFIK_COMPOSE_PATH = TRAEFIK_SERVICE_PATH / "docker-compose.yml"
 
 

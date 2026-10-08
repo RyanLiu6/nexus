@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-PAPERLESS_SERVICE_PATH = SERVICES_PATH / "paperless"
+PAPERLESS_SERVICE_PATH = discover_services()["paperless"].path
 PAPERLESS_COMPOSE_PATH = PAPERLESS_SERVICE_PATH / "docker-compose.yml"
 
 

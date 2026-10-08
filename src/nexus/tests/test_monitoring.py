@@ -3,9 +3,9 @@ from typing import Any
 import pytest
 import yaml
 
-from nexus.config import SERVICES_PATH
+from nexus.services import discover_services
 
-MONITORING_SERVICE_PATH = SERVICES_PATH / "monitoring"
+MONITORING_SERVICE_PATH = discover_services()["monitoring"].path
 MONITORING_COMPOSE_PATH = MONITORING_SERVICE_PATH / "docker-compose.yml"
 
 _EXPECTED_CONTAINERS = {
