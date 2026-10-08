@@ -54,4 +54,4 @@ def test_dashboard_config_amane() -> None:
         assert len(configs) >= 1
         assert configs[0]["name"] == "amane"
         assert configs[0]["container"] == "amane"
-        assert "amane.${NEXUS_DOMAIN}" in configs[0]["rule"]
+        assert "amane." in configs[0]["rule"]

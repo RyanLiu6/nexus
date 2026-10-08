@@ -101,7 +101,11 @@ jobs:
         run: |
           for file in services/*/docker-compose.yml; do
             echo "Validating $file..."
-            docker compose -f "$file" config --quiet
+            if [ -f services/gluetun/docker-compose.yml ] && grep -q "gluetun" "$file" && [ "$file" != "services/gluetun/docker-compose.yml" ]; then
+              docker compose -f services/gluetun/docker-compose.yml -f "$file" config --quiet
+            else
+              docker compose -f "$file" config --quiet
+            fi
           done
 
   opentofu-validate:
@@ -117,4 +121,3 @@ jobs:
 
       - name: OpenTofu Validate
         run: tofu -chdir=terraform validate
-

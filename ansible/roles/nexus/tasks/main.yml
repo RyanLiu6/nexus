@@ -68,6 +68,20 @@
     dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
     mode: "0644"
 
+- name: Ensure private rules directory exists
+  ansible.builtin.file:
+    path: "{{ nexus_root_directory }}/services/traefik/rules/private"
+    state: directory
+    mode: "0755"
+
+- name: Copy private Traefik rules if present
+  ansible.builtin.copy:
+    src: "{{ nexus_private_directory }}/rules/"
+    dest: "{{ nexus_root_directory }}/services/traefik/rules/private/"
+    mode: "0644"
+  when: nexus_private_directory is defined and nexus_private_directory != ''
+  failed_when: false
+
 - name: Resolve base data directory
   ansible.builtin.set_fact:
     nexus_base_path: "{{ nexus_data_directory | default('/Volumes/Data') }}"
@@ -400,6 +414,11 @@
     NEXUS_DATA_DIRECTORY: "{{ nexus_data_directory | default('/Volumes/Data') }}"
     NEXUS_DOMAIN: "{{ nexus_domain }}"
     TZ: "{{ tz | default('America/Vancouver') }}"
+    # Gluetun / ProtonVPN
+    PROTONVPN_WIREGUARD_PRIVATE_KEY: "{{ protonvpn_wireguard_private_key | default('') }}"
+    PROTONVPN_WIREGUARD_ADDRESSES: "{{ protonvpn_wireguard_addresses | default('') }}"
+    PROTONVPN_SERVER_COUNTRIES: "{{ protonvpn_server_countries | default('Netherlands') }}"
+    PROTONVPN_PORT_FORWARDING: "{{ protonvpn_port_forwarding | default('on') }}"
     # Cloudflare
     CLOUDFLARE_DNS_API_TOKEN: "{{ cloudflare_api_token | default('') }}"
     CLOUDFLARE_ZONE_ID: "{{ cloudflare_zone_id | default('') }}"

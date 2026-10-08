@@ -145,6 +145,39 @@ def get_service_config(service_name: str) -> list[TraefikConfig]:
                     }
                 )
 
+    if not configs:
+        from nexus.config import PRIVATE_ROOT_PATH
+
+        rule_paths = [
+            SERVICES_PATH / "traefik" / "rules" / f"{service_name}.yml",
+            SERVICES_PATH / "traefik" / "rules" / "private" / f"{service_name}.yml",
+        ]
+        if PRIVATE_ROOT_PATH:
+            rule_paths.append(PRIVATE_ROOT_PATH / "rules" / f"{service_name}.yml")
+
+        for rule_path in rule_paths:
+            if rule_path.exists():
+                try:
+                    with rule_path.open() as f:
+                        rule_data = yaml.safe_load(f)
+                    routers = rule_data.get("http", {}).get("routers", {})
+                    for r_info in routers.values():
+                        if "rule" in r_info and "Host(`" in r_info["rule"]:
+                            configs.append(
+                                {
+                                    "name": service_name,
+                                    "container": service_name,
+                                    "rule": r_info["rule"],
+                                    "description": get_service_description(
+                                        service_name
+                                    ),
+                                    "icon": get_service_icon(service_name),
+                                }
+                            )
+                            break
+                except Exception:
+                    pass
+                break
     return configs
 
 
