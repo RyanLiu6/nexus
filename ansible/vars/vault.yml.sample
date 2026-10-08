@@ -322,6 +322,14 @@ foundry_s3_bucket: "foundry-assets"
 # Create in Home Assistant: Profile -> Security -> Long-Lived Access Tokens
 # homeassistant_api_key: "CHANGE_ME"
 
+# =============================================================================
+# Gluetun / ProtonVPN (WireGuard)
+# =============================================================================
+protonvpn_wireguard_private_key: "CHANGE_ME"
+protonvpn_wireguard_addresses: "CHANGE_ME"
+protonvpn_server_countries: "CHANGE_ME"
+protonvpn_port_forwarding: "on"
+
 # #############################################################################
 #                           ENVIRONMENT VARIABLE MAPPING
 # #############################################################################

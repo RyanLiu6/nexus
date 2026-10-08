@@ -14,8 +14,9 @@ access:
 dashboard:
   widget:
     type: transmission
-    url: http://transmission:9091
+    url: http://gluetun:9091
 
 dependencies:
   - traefik
   - tailscale-access
+  - gluetun

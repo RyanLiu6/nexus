@@ -18,6 +18,9 @@ _TRAEFIK_HTTPS_SKIP = {
     "tailscale-access",
     "foundryvtt",
     "traefik",
+    "gluetun",
+    "transmission",
+    "amane",
 }
 _TRAEFIK_HTTPS_SERVICES = [s for s in ALL_SERVICES if s not in _TRAEFIK_HTTPS_SKIP]
 

@@ -77,3 +77,6 @@ services/dashboard/config/*.yaml
 # Private repo overlay
 .private/
 services-private/
+
+# Private Traefik rules
+services/traefik/rules/private/
