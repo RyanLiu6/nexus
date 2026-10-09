@@ -10,16 +10,30 @@ from pyinfra.operations import files, server
 # =============================================================================
 # Load Secrets
 # =============================================================================
-SECRETS_PATH = Path("config/secrets.yml")
+SECRETS_PATH = Path("config/secrets.enc.yml")
 
 
 def load_secrets():
-    """Load secrets from the unencrypted YAML file."""
+    """Load secrets, decrypting with SOPS if needed."""
     if not SECRETS_PATH.exists():
         logger.error(f"Secrets file not found at {SECRETS_PATH}")
         return {}
-    with open(SECRETS_PATH) as f:
-        return yaml.safe_load(f)
+
+    import subprocess
+
+    try:
+        # Try to decrypt with SOPS first
+        result = subprocess.run(
+            ["sops", "-d", str(SECRETS_PATH)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return yaml.safe_load(result.stdout)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Fall back to reading as plain text if SOPS fails or is not installed
+        with open(SECRETS_PATH) as f:
+            return yaml.safe_load(f)
 
 
 secrets = load_secrets()

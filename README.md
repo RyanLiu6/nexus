@@ -39,8 +39,8 @@ source .venv/bin/activate
 
 # 3. Setup and configure secrets
 invoke setup
-cp config/secrets.enc.yml.sample config/secrets.yml
-nano config/secrets.yml   # Add your domain, credentials, and Tailscale users
+cp config/secrets.sample.yml config/secrets.enc.yml
+nano config/secrets.enc.yml   # Add your domain, credentials, and Tailscale users
 
 # 4. Deploy everything
 invoke deploy
