@@ -172,20 +172,28 @@ def restart(
     preset: Optional[str] = None,
     all_services: bool = False,
 ) -> None:
-    """Quickly restart/redeploy services (skips DNS/Tunnel setup).
+    """Quickly restart/redeploy services.
 
-    Regenerates configurations and runs Ansible to apply changes/restart containers.
-    Basically 'inv deploy' but faster.
+    If specific services are provided, this securely restarts ONLY those containers
+    without wiping other services.
+    If no specific services are requested, it acts exactly like a full 'inv deploy'
+    with DNS skipped.
     """
-    deploy(
-        c,
-        services=services,
-        preset=preset,
-        all_services=all_services,
-        skip_dns=True,
-        skip_cloudflared=True,
-        yes=True,
-    )
+    if services:
+        print(f"🔄 Restarting specific services safely: {services}")
+        # Run docker compose restart on just the requested services
+        c.run(f"docker compose restart {services.replace(',', ' ')}")
+    else:
+        print("🔄 Performing full safe redeployment of all services...")
+        deploy(
+            c,
+            services=None,
+            preset=None,
+            all_services=True,
+            skip_dns=True,
+            skip_cloudflared=True,
+            yes=True,
+        )
 
 
 @task

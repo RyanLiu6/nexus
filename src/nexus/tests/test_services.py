@@ -169,6 +169,7 @@ class TestResolveDependencies:
 
         assert "dashboard" in resolved
         assert "traefik" in resolved
+        assert "headscale" in resolved
         assert "tailscale-access" in resolved
 
     def test_resolve_dependencies_no_dependencies(self) -> None:

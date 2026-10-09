@@ -8,7 +8,7 @@ icon: si-homeassistant
 subdomain: homeassistant
 
 access:
-  groups: [admins]
+  groups: [admins, members]
   public: false
 
 dashboard:

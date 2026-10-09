@@ -21,6 +21,7 @@ _TRAEFIK_HTTPS_SKIP = {
     "gluetun",
     "transmission",
     "amane",
+    "headscale",
 }
 _TRAEFIK_HTTPS_SERVICES = [s for s in ALL_SERVICES if s not in _TRAEFIK_HTTPS_SKIP]
 

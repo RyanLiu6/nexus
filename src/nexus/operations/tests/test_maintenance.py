@@ -132,7 +132,7 @@ class TestCheckServiceLogs:
                 stdout="info message\nERROR something", returncode=0
             )
             check_service_logs()
-            assert mock_run.call_count == 3
+            assert mock_run.call_count == 4
 
     def test_check_service_logs_no_errors(self) -> None:
         with patch("subprocess.run") as mock_run:

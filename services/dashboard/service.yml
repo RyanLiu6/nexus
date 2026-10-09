@@ -8,7 +8,7 @@ icon: si-homeassistant
 subdomain: nexus
 
 access:
-  groups: [admins, members]
+  groups: [admins]
   public: false
 
 dashboard:

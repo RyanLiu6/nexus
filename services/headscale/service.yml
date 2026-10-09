@@ -1,0 +1,22 @@
+# Headscale - Self-Hosted Tailscale Control Server
+# Coordinates local Tailscale network and replaces commercial Tailnet
+
+name: headscale
+description: Self-hosted Tailscale control server
+category: core
+icon: si-tailscale
+subdomains:
+  - headscale
+  - headplane
+
+access:
+  groups: [admins]
+  public: true
+
+services:
+  headplane:
+    icon: si-tailscale
+    description: Tailscale Web Console UI
+
+dependencies:
+  - traefik

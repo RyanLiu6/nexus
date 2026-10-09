@@ -38,8 +38,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Auth | Tailscale + Header Auth | Network security & Identity |
 | DNS | OpenTofu + Cloudflare | DNS record management |
 | Config | Ansible | Docker Compose generation |
-| Secrets | Ansible Vault | Encrypted credentials |
-| VPN | Tailscale | Secure remote access |
+| VPN | Headscale + Tailscale | Self-hosted control server & secure remote access |
 | CLI | Python + Invoke | User interface |
 
 ---
@@ -83,7 +82,7 @@ This allows:
 ## Traffic Flow
 
 ```
-Internet → Cloudflare DNS → Cloudflare Tunnel → FoundryVTT (Public)
+Internet → Router Port Forwarding (80/443) → Traefik → FoundryVTT / Headscale (Public)
 
 Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Docker Services
                                    │              ↓

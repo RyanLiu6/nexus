@@ -1,0 +1,71 @@
+services:
+  headscale:
+    image: headscale/headscale:0.29.4
+    container_name: headscale
+    restart: unless-stopped
+    command: serve
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - nexus
+    ports:
+      - "26478:26478/udp"
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/headscale/config.yaml:/etc/headscale/config.yaml:ro
+      - ${NEXUS_ROOT_DIRECTORY}/tailscale/acl.hujson:/etc/headscale/acl.hujson:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config/headscale:/var/lib/headscale
+    tmpfs:
+      - /var/run/headscale
+    environment:
+      - HEADSCALE_SERVER_URL=https://headscale.${NEXUS_DOMAIN}
+      - HEADSCALE_DNS_BASE_DOMAIN=nexus.internal
+      - HEADSCALE_OIDC_CLIENT_ID=${HEADSCALE_OIDC_CLIENT_ID}
+      - HEADSCALE_OIDC_CLIENT_SECRET=${HEADSCALE_OIDC_CLIENT_SECRET}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.headscale.loadbalancer.server.port=8080"
+      # HTTP router (for Cloudflare Tunnel or local HTTP reverse proxy)
+      - "traefik.http.routers.headscale-http.rule=Host(`headscale.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.headscale-http.entrypoints=http"
+      - "traefik.http.routers.headscale-http.middlewares=cloudflare-proto@file,security-headers@file"
+      # HTTPS router (direct TLS access - bootstrap without tailscale-chain)
+      - "traefik.http.routers.headscale.rule=Host(`headscale.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.headscale.entrypoints=https"
+      - "traefik.http.routers.headscale.middlewares=security-headers@file"
+      - "traefik.http.routers.headscale.tls=true"
+      - "traefik.http.routers.headscale.tls.certresolver=certchallenge"
+
+  headplane:
+    image: ghcr.io/tale/headplane:latest
+    container_name: headplane
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - nexus
+    volumes:
+      - ${NEXUS_ROOT_DIRECTORY}/services/headscale/headplane.yaml:/etc/headplane/config.yaml:ro
+      - ${NEXUS_DATA_DIRECTORY}/Config/headscale/headplane:/var/lib/headplane
+    environment:
+      - HEADSCALE_URL=http://headscale:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.headplane.loadbalancer.server.port=3000"
+      - "traefik.http.routers.headplane.rule=Host(`headplane.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.headplane.entrypoints=https"
+      - "traefik.http.routers.headplane.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.headplane.tls=true"
+      - "traefik.http.routers.headplane.tls.certresolver=certchallenge"
+networks:
+  nexus:
+    external: true

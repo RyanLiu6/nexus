@@ -321,6 +321,9 @@ def generate_dashboard_config(
             else:
                 url = f"https://{svc_name}.{domain}"
 
+            if svc_name == "headplane":
+                url += "/admin"
+
             category = categorize_service(svc_name)
 
             if category not in dashboard_config:
@@ -431,12 +434,22 @@ def generate_settings_config() -> dict[str, Any]:
     }
 
 
-def generate_bookmarks_config() -> list[dict[str, Any]]:
+def generate_bookmarks_config(
+    domain: Optional[str] = None,
+) -> list[dict[str, Any]]:
     """Generate the bookmarks.yaml configuration.
+
+    Args:
+        domain: Optional domain to construct Headscale link.
 
     Returns:
         List of bookmark categories and items.
     """
+    tailscale_url = (
+        f"https://headplane.{domain}/admin"
+        if domain
+        else "https://login.tailscale.com/admin/machines"
+    )
     return [
         {
             "Productivity": [
@@ -459,7 +472,7 @@ def generate_bookmarks_config() -> list[dict[str, Any]]:
                     "Tailscale": [
                         {
                             "icon": "si-tailscale",
-                            "href": "https://login.tailscale.com/admin/machines",
+                            "href": tailscale_url,
                         }
                     ]
                 },

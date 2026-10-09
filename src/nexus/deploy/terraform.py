@@ -37,18 +37,7 @@ def _get_terraform_vars_from_vault() -> dict[str, str]:
         "cloudflare_api_token": "TF_VAR_cloudflare_api_token",
         "cloudflare_zone_id": "TF_VAR_cloudflare_zone_id",
         "cloudflare_account_id": "TF_VAR_cloudflare_account_id",
-        "tunnel_secret": "TF_VAR_tunnel_secret",
     }
-
-    # Optional Tailscale OAuth credentials
-    tailscale_oauth_id = vault.get("tailscale_oauth_client_id", "")
-    tailscale_oauth_secret = vault.get("tailscale_oauth_client_secret", "")
-    if tailscale_oauth_id and tailscale_oauth_id != "CHANGE_ME":
-        key_mapping["tailscale_oauth_client_id"] = "TF_VAR_tailscale_oauth_client_id"
-    if tailscale_oauth_secret and tailscale_oauth_secret != "CHANGE_ME":
-        key_mapping["tailscale_oauth_client_secret"] = (
-            "TF_VAR_tailscale_oauth_client_secret"
-        )
 
     # Check for missing keys and build env vars
     missing = []
@@ -118,17 +107,13 @@ def run_terraform(
     env = os.environ.copy()
     env.update(tf_env_vars)
 
-    # Get optional Tailscale configuration from vault
+    # Get optional Tailscale server IP from vault
     tailscale_ip = ""
-    tailnet_id = ""
-    tailscale_users: dict[str, list[str]] = {}
     try:
         vault = read_vault()
         tailscale_ip = vault.get("tailscale_server_ip", "")
-        tailnet_id = vault.get("tailnet_id", "")
-        tailscale_users = vault.get("tailscale_users", {})
     except (FileNotFoundError, KeyError, ValueError):
-        logging.debug("Could not read Tailscale configuration from vault")
+        logging.debug("Could not read Tailscale server IP from vault")
         pass
 
     # Build subdomains from service manifests.
@@ -156,12 +141,9 @@ def run_terraform(
 
     subdomains = sorted(list(set(subdomains)))
 
-    # tf_vars contains mixed types: str, list[str], and dict[str, list[str]]
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "tailscale_server_ip": tailscale_ip,
-        "tailnet_id": tailnet_id,
-        "tailscale_users": tailscale_users,
         "subdomains": subdomains,
     }
 

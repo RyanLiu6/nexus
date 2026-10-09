@@ -68,6 +68,29 @@
     dest: "{{ nexus_root_directory }}/tailscale/access-rules.yml"
     mode: "0644"
 
+- name: Generate Headscale ACL policy
+  ansible.builtin.template:
+    src: acl.hujson.j2
+    dest: "{{ nexus_root_directory }}/tailscale/acl.hujson"
+    mode: "0644"
+
+- name: Ensure Headscale config data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/headscale"
+    - "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/headscale/headplane"
+  when: "'headscale' in nexus_final_services"
+
+- name: Generate Headscale config
+  ansible.builtin.template:
+    src: headscale-config.yaml.j2
+    dest: "{{ nexus_data_directory | default('/Volumes/Data') }}/Config/headscale/config.yaml"
+    mode: "0600"
+  when: "'headscale' in nexus_final_services"
+
 - name: Ensure private rules directory exists
   ansible.builtin.file:
     path: "{{ nexus_root_directory }}/services/traefik/rules/private"
@@ -389,19 +412,6 @@
     (nexus_userdata_directory is not defined or nexus_userdata_directory == '' or
     protondrive_sync_directory is not defined or protondrive_sync_directory == '')
 
-- name: Stop and remove existing containers
-  ansible.builtin.shell: |
-    set -o pipefail
-    # Stop via compose (handles both default and explicit project names)
-    docker compose down --remove-orphans 2>/dev/null || true
-    docker compose -p nexus down --remove-orphans 2>/dev/null || true
-    # Force remove any remaining containers from this project by label
-    docker ps -aq --filter "label=com.docker.compose.project=nexus" | xargs -r docker rm -f 2>/dev/null || true
-  args:
-    chdir: "{{ nexus_root_directory }}"
-    executable: /bin/bash
-  changed_when: true
-
 - name: Deploy services using docker compose
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_root_directory }}"
@@ -445,8 +455,10 @@
     # Backups
     NEXUS_USERDATA_DIRECTORY: "{{ nexus_userdata_env_dir }}"
     RESTIC_PASSWORD: "{{ restic_password | default('') }}"
-    # Tailscale
+    # Tailscale / Headscale
     TAILNET_ID: "{{ tailnet_id | default('') }}"
+    HEADSCALE_OIDC_CLIENT_ID: "{{ headscale_oidc_client_id | default('') }}"
+    HEADSCALE_OIDC_CLIENT_SECRET: "{{ headscale_oidc_client_secret | default('') }}"
     # Paperless-ngx
     PAPERLESS_POSTGRES_USER: "{{ paperless_postgres_user | default('paperless') }}"
     PAPERLESS_POSTGRES_PASSWORD: "{{ paperless_postgres_password | default('') }}"

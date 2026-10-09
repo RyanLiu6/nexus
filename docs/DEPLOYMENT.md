@@ -6,8 +6,8 @@ Complete setup guide for Nexus homelab. Follow steps 1-8 in order.
 
 - Docker 24.0+, Python 3.12+, uv
 - Domain with Cloudflare (free tier works)
-- No port forwarding needed (uses Cloudflare Tunnels)
-- **Tailscale Account** (free tier works)
+- Port Forwarding: Configure your router to forward ports `80` (HTTP), `443` (HTTPS), and `26478` (UDP for Headscale) to your server's local IP.
+- Google Account (for Headscale OIDC authentication)
 
 ---
 
@@ -101,20 +101,20 @@ tz: "America/Vancouver"
 cloudflare_api_token: "your-api-token"
 cloudflare_zone_id: "your-zone-id"
 cloudflare_account_id: "your-account-id"
-tunnel_secret: "run: openssl rand -hex 32"
 
-# Tailscale
-tailnet_id: "your-tailnet-id"
+# Headscale OIDC (Google)
+headscale_oidc_client_id: "your-google-client-id"
+headscale_oidc_client_secret: "your-google-client-secret"
 ```
 
 **Where to find Cloudflare values:**
-- API Token: Cloudflare Dashboard → Profile → API Tokens (needs Zone:DNS:Edit, Account:Tunnel:Edit)
+- API Token: Cloudflare Dashboard → Profile → API Tokens (needs Zone:DNS:Edit)
 - Zone ID: Domain Overview page
 - Account ID: URL bar or Account Settings
 
 ---
 
-## Step 7: Configure Tailscale Access
+## Step 7: Configure Tailscale Users
 
 **Users are configured in vault.yml** (already done in Step 3):
 
@@ -126,14 +126,7 @@ tailscale_users:
     - friend@gmail.com
 ```
 
-**Add Tailscale OAuth credentials (required):**
-
-1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
-2. Click **"Add a credential..."**, choose **Custom scopes**
-3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
-4. Add to vault.yml: `tailscale_oauth_client_id` and `tailscale_oauth_client_secret`
-
-Deploy will automatically configure ACL and DNS via OpenTofu.
+Headscale runs locally as a container, coordinating your private network. To enable browser-based login, ensure you have set up your Google OIDC credentials in `vault.yml` and configured `services/headscale/config.yaml` as per the [OIDC Guide](../services/headscale/OIDC.md).
 
 ---
 
@@ -147,17 +140,18 @@ You'll be prompted for a vault password (save it somewhere secure).
 
 ## Step 9: Post-Deployment (one-time)
 
-**Tag your server & enable Tailscale SSH:**
+**Connect your server to local Headscale:**
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server --ssh
+sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tags=tag:nexus-server --ssh
 ```
+*Follow the link provided in the terminal to log in via your Google account.*
 > `--ssh` is required for SSH access. `tailscale up` resets any pref you omit, so
 > re-running this without `--ssh` disables Tailscale SSH and breaks SSH with
 > `Permission denied (publickey)`. See [Access Control → SSH Access](ACCESS_CONTROL.md#ssh-access).
 
 **Access your services:**
 - Dashboard: `https://nexus.yourdomain.com` (Tailscale only)
-- FoundryVTT: `https://foundry.yourdomain.com` (**Public** via Cloudflare Tunnel)
+- FoundryVTT: `https://foundry.yourdomain.com` (**Public** via port forwarding)
 - All other services are accessible only via Tailscale.
 - Authentication is handled automatically via Tailscale identity.
 
