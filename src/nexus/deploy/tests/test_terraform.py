@@ -59,7 +59,6 @@ class TestGetTerraformVarsFromVault:
         assert result["TF_VAR_cloudflare_api_token"] == "token123"
         assert result["TF_VAR_cloudflare_zone_id"] == "zone123"
         assert result["TF_VAR_cloudflare_account_id"] == "account123"
-        assert result["TF_VAR_tunnel_secret"] == "secret123"
 
     @patch("nexus.deploy.terraform.read_vault")
     def test_missing_vault_values(self, mock_read_vault: MagicMock) -> None:

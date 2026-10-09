@@ -46,8 +46,8 @@ class TestHeadscaleDockerCompose:
     def test_stun_port_exposed(self, compose_config: dict[str, Any]) -> None:
         ports = compose_config["services"]["headscale"].get("ports", [])
         port_strings = [str(p) for p in ports]
-        assert any("3478:3478/udp" in p for p in port_strings), (
-            "STUN port 3478/udp must be exposed"
+        assert any("26478:26478/udp" in p for p in port_strings), (
+            "STUN port 26478/udp must be exposed"
         )
 
     def test_volume_mounts(self, compose_config: dict[str, Any]) -> None:
