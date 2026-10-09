@@ -5,7 +5,7 @@ http:
       entryPoints:
         - "https"
       middlewares:
-        - "tailscale-chain@file"
+        - "authentik-chain@file"
       service: "homeassistant"
       tls:
         certResolver: "certchallenge"

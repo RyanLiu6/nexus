@@ -9,7 +9,7 @@ http:
       entryPoints:
         - "https"
       middlewares:
-        - "tailscale-chain@file"
+        - "authentik-chain@file"
       service: "scrypted"
       tls:
         certResolver: "certchallenge"

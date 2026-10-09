@@ -71,7 +71,7 @@ services:
       - "traefik.http.services.headplane.loadbalancer.server.port=3000"
       - "traefik.http.routers.headplane.rule=Host(`headplane.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.headplane.entrypoints=https"
-      - "traefik.http.routers.headplane.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.headplane.middlewares=authentik-chain@file"
       - "traefik.http.routers.headplane.tls=true"
       - "traefik.http.routers.headplane.tls.certresolver=certchallenge"
 networks:

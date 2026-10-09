@@ -40,7 +40,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.node-exporter.rule=Host(`node-exporter.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.node-exporter.entrypoints=https"
-      - "traefik.http.routers.node-exporter.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.node-exporter.middlewares=authentik-chain@file"
       - "traefik.http.routers.node-exporter.tls=true"
       - "traefik.http.routers.node-exporter.tls.certresolver=certchallenge"
 
@@ -81,7 +81,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.prometheus.entrypoints=https"
-      - "traefik.http.routers.prometheus.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.prometheus.middlewares=authentik-chain@file"
       - "traefik.http.routers.prometheus.tls=true"
       - "traefik.http.routers.prometheus.tls.certresolver=certchallenge"
 
@@ -138,7 +138,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.grafana.rule=Host(`grafana.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.grafana.entrypoints=https"
-      - "traefik.http.routers.grafana.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.grafana.middlewares=authentik-chain@file"
       - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.tls.certresolver=certchallenge"
 
@@ -186,7 +186,7 @@ services:
       # HTTPS only - Tailscale access only
       - "traefik.http.routers.alertmanager.rule=Host(`alertmanager.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.alertmanager.entrypoints=https"
-      - "traefik.http.routers.alertmanager.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.alertmanager.middlewares=authentik-chain@file"
       - "traefik.http.routers.alertmanager.tls=true"
       - "traefik.http.routers.alertmanager.tls.certresolver=certchallenge"
 
