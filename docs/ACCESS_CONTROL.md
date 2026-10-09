@@ -6,7 +6,7 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 
 | Layer | Purpose | Configuration |
 |-------|---------|---------------|
-| **Tailscale ACLs** | Network access (who can reach server) | `tailscale/acl-policy.jsonc` |
+| **Headscale ACLs** | Network access (who can reach server) | `tailscale/acl.hujson` |
 | **tailscale-access** | Service access (who can use which service) | `tailscale/access-rules.yml` |
 | **Header Auth** | Identity propagation (auto-login) | Traefik + Middleware |
 
@@ -15,7 +15,7 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 | Group | Services | SSH |
 |-------|----------|-----|
 | `admins` | Everything | Yes |
-| `members` | FoundryVTT, Homepage | No |
+| `members` | FoundryVTT, Jellyfin, Home Assistant | No |
 
 ## Architecture
 
@@ -27,17 +27,17 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Cloudflare Tunnel                             │
-│              (Only FoundryVTT - public access)                   │
+│       (FoundryVTT public access & Headscale registration)       │
 └─────────────────────────────────────────────────────────────────┘
 
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Tailscale Users                              │
+│                     Tailscale Clients                            │
 └─────────────────────────────────────────────────────────────────┘
-                              │
+                              │ (coordinated by Headscale container)
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Tailscale ACLs                                │
+│                     Headscale ACLs                              │
 │           (Network-level: can user reach server?)                │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -59,7 +59,7 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 │  Remote-Groups: admins  │
 │         ↓               │
 │      Service            │
-└─────────────────────────┘
+│└─────────────────────────┘
 ```
 
 ---
@@ -78,14 +78,10 @@ tailscale_users:
     - friend1@gmail.com
 ```
 
-### 2. Add Tailscale OAuth Credentials
+### 2. Local Headscale Control Server
 
-**Required** for ACL and DNS management:
-
-1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
-2. Click **"Add a credential..."**, choose **Custom scopes**
-3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
-4. Add to vault.yml: `tailscale_oauth_client_id` and `tailscale_oauth_client_secret`
+Headscale runs locally as a container dependency (replaces commercial Tailnet and OAuth credentials).
+ACL policies are automatically rendered to `tailscale/acl.hujson` and loaded by Headscale.
 
 ### 3. Deploy
 
@@ -93,10 +89,10 @@ tailscale_users:
 invoke deploy --preset home
 ```
 
-### 4. Tag Your Server & Enable Tailscale SSH (one-time)
+### 4. Connect Your Server to Headscale (one-time)
 
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server --ssh
+sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tags=tag:nexus-server --ssh
 ```
 
 > `--ssh` is required — SSH is authenticated by **Tailscale SSH** (tailnet
@@ -110,19 +106,20 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 | Service | admins | members | Public |
 |---------|--------|---------|--------|
 | Traefik | ✅ | ❌ | ❌ |
+| Headscale | ✅ | ❌ | ✅ |
 | Grafana | ✅ | ❌ | ❌ |
 | Prometheus | ✅ | ❌ | ❌ |
 | Alertmanager | ✅ | ❌ | ❌ |
 | Transmission | ✅ | ❌ | ❌ |
-| Jellyfin | ✅ | ❌ | ❌ |
+| Jellyfin | ✅ | ✅ | ❌ |
 | Virtue | ✅ | ❌ | ❌ |
 | Plex | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
 | BookOrbit | ✅ | ❌ | ❌ |
-| Home Assistant | ✅ | ❌ | ❌ |
+| Home Assistant | ✅ | ✅ | ❌ |
 | Backrest | ✅ | ❌ | ❌ |
-| Homepage | ✅ | ✅ | ❌ |
+| Homepage | ✅ | ❌ | ❌ |
 | FoundryVTT | ✅ | ✅ | ✅ |
 
 ---
@@ -131,9 +128,9 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 
 All access control is configured in `ansible/vars/vault.yml` and applied automatically.
 
-### Tailscale ACL (via OpenTofu)
+### Headscale ACL (via `tailscale/acl.hujson`)
 
-Network-level access control applied directly to your tailnet:
+Network-level access control applied directly by Headscale:
 - **Groups**: Who belongs to which role
 - **ACLs**: Who can reach the server (admins: all ports, others: 80/443)
 - **SSH**: Who can SSH into the server (admins only)

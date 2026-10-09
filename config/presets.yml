@@ -5,6 +5,7 @@
 
 core:
   - traefik
+  - headscale
   - tailscale-access
   - dashboard
   - monitoring

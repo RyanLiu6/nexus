@@ -3,7 +3,11 @@ from unittest.mock import patch
 
 import yaml
 
-from nexus.generate.access_rules import generate_access_rules, sync_access_rules
+from nexus.generate.access_rules import (
+    generate_access_rules,
+    generate_acl_policy,
+    sync_access_rules,
+)
 
 
 class TestGenerateAccessRules:
@@ -45,11 +49,30 @@ class TestGenerateAccessRules:
         assert "services" in parsed
 
 
+class TestGenerateAclPolicy:
+    def test_generates_dict(self) -> None:
+        policy = generate_acl_policy()
+        assert isinstance(policy, dict)
+        assert "groups" in policy
+        assert "tagOwners" in policy
+        assert "acls" in policy
+        assert "ssh" in policy
+
+    def test_writes_to_output_path(self, tmp_path: Path) -> None:
+        output_path = tmp_path / "acl.hujson"
+        generate_acl_policy(output_path=output_path)
+        assert output_path.exists()
+        content = output_path.read_text()
+        assert "tag:nexus-server" in content
+
+
 class TestSyncAccessRules:
     def test_sync_creates_file(self, tmp_path: Path) -> None:
         with patch("nexus.generate.access_rules.TAILSCALE_PATH", tmp_path):
             sync_access_rules()
 
-            # Check file was created
-            expected_path = tmp_path / "access-rules.yml"
-            assert expected_path.exists()
+            # Check files were created
+            expected_rules_path = tmp_path / "access-rules.yml"
+            expected_acl_path = tmp_path / "acl.hujson"
+            assert expected_rules_path.exists()
+            assert expected_acl_path.exists()

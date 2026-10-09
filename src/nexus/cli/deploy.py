@@ -186,7 +186,7 @@ def _generate_configs(
         services, domain or "example.com", dry_run, secrets=vault
     )
     settings_config = generate_settings_config()
-    bookmarks_config = generate_bookmarks_config()
+    bookmarks_config = generate_bookmarks_config(domain=domain)
     widgets_config = generate_widgets_config()
     custom_css = generate_custom_css()
 
@@ -491,35 +491,21 @@ def main(
     if dry_run:
         logging.info("\n[Dry Run Complete] No changes were made.")
     else:
-        # Check if Tailscale OAuth credentials are configured
-        tailscale_configured = False
-        try:
-            vault = read_vault()
-            tailscale_oauth_id = vault.get("tailscale_oauth_client_id", "")
-            tailscale_configured = bool(
-                tailscale_oauth_id and tailscale_oauth_id != "CHANGE_ME"
-            )
-        except Exception:
-            pass
-
         print("\n" + "=" * 60)
         print("  ✅ Deployment Complete!")
         print("=" * 60)
         print("\nAccess your services (via Tailscale):")
         print(f"  Dashboard: https://nexus.{domain}")
         print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
+        print(f"  Headscale: https://headscale.{domain}")
 
-        if tailscale_configured:
-            print("\n✅ Tailscale ACL and DNS configured via Terraform")
-        else:
-            print("\n⚠️  Tailscale ACL/DNS not configured!")
-            print("   Add tailscale_oauth_client_id/secret to vault.yml.")
-            print(
-                "   Create: https://login.tailscale.com/admin/settings/trust-credentials"
-            )
-
-        print("\n⚠️  One-time setup (if not done already):")
-        print("   tailscale up --advertise-tags=tag:nexus-server --ssh")
+        print("\n✅ Tailscale control server (Headscale) running locally")
+        print(f"   Server URL: https://headscale.{domain}")
+        print("\n⚠️  Connect this server to Headscale (one-time setup):")
+        print(
+            f"   sudo tailscale up --login-server https://headscale.{domain} "
+            "--advertise-tags=tag:nexus-server --ssh"
+        )
         print("\nUseful commands:")
         print("  inv logs --service traefik  # View logs")
         print("  inv ps                      # Show containers")

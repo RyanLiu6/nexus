@@ -14,6 +14,15 @@ resource "cloudflare_dns_record" "tailscale_subdomains" {
   proxied  = false # Cannot proxy to private Tailscale IP
 }
 
+resource "cloudflare_dns_record" "headplane" {
+  zone_id = var.cloudflare_zone_id
+  name    = "headplane"
+  content = var.tailscale_server_ip
+  type    = "A"
+  ttl     = 1
+  proxied = false
+}
+
 # =============================================================================
 # Variables
 # =============================================================================

@@ -65,7 +65,7 @@ services:
     description: "Torrent client"
 
   jellyfin:
-    groups: [admins]
+    groups: [admins, members]
     description: "Media server"
 
   virtue:
@@ -89,7 +89,7 @@ services:
     description: "Personal finance"
 
   homeassistant:
-    groups: [admins]
+    groups: [admins, members]
     description: "Home automation"
 
   # ---------------------------------------------------------------------------
@@ -104,9 +104,9 @@ services:
     description: "Virtual tabletop (alias)"
 
   homepage:
-    groups: [admins, members]
+    groups: [admins]
     description: "Dashboard (alias)"
 
   nexus:
-    groups: [admins, members]
+    groups: [admins]
     description: "Dashboard"

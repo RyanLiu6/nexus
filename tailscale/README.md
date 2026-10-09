@@ -1,14 +1,14 @@
-# Tailscale Configuration
+# Tailscale Configuration (via Headscale)
 
-Tailscale ACL and DNS are managed automatically via OpenTofu.
+Tailscale is hosted locally via **Headscale** running as a core container dependency.
+It replaces the commercial Tailnet and coordinates connections on your local machine.
 
 ## Files
 
 | File | Purpose | Managed By |
 |------|---------|------------|
-| `access-rules.yml` | Per-service access rules | Ansible (from vault.yml) |
-| ACL Policy | Network-level ACLs | OpenTofu (from vault.yml) |
-| DNS Nameservers | Cloudflare Gateway | OpenTofu |
+| `access-rules.yml` | Per-service access rules | Ansible / CLI (from vault.yml) |
+| `acl.hujson` | Network-level ACLs (Headscale policy) | Ansible / CLI (from vault.yml) |
 
 ## Setup
 
@@ -24,35 +24,21 @@ tailscale_users:
     - friend1@gmail.com
 ```
 
-### 2. Add Tailscale OAuth Credentials
-
-**Required** for ACL and DNS management:
-
-1. Go to [Tailscale Admin → Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials)
-2. Click **"Add a credential..."**, choose **Custom scopes**
-3. Enable: **DNS** (Read + Write), **Policy File** (Read + Write)
-4. Add to vault.yml:
-
-```yaml
-tailscale_oauth_client_id: "<client_id>"
-tailscale_oauth_client_secret: "<client_secret>"
-```
-
-### 3. Deploy
+### 2. Deploy
 
 ```bash
 inv deploy
 ```
 
-OpenTofu will automatically:
-- Apply ACL policy (groups, access rules, SSH)
-- Configure DNS nameservers (Cloudflare Gateway)
-- Enable MagicDNS
+Ansible / CLI will automatically:
+- Start Headscale container (`https://headscale.<domain>`)
+- Generate `tailscale/acl.hujson` from `tailscale_users`
+- Generate `tailscale/access-rules.yml` for `tailscale-access`
 
-### 4. Tag Your Server & Enable Tailscale SSH (one-time)
+### 3. Connect Server to Headscale (one-time)
 
 ```bash
-sudo tailscale up --advertise-tags=tag:nexus-server --ssh
+sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tags=tag:nexus-server --ssh
 ```
 
 > **`--ssh` is required.** SSH into the server is handled by **Tailscale SSH**
@@ -139,6 +125,6 @@ sudo tailscale up --advertise-tags=tag:nexus-server --ssh
 ## Important Notes
 
 - **Single source of truth**: Edit users only in `vault.yml`
-- **OAuth credentials**: Do not expire (unlike API keys) — no rotation needed
+- **Self-hosted**: Coordinated locally by Headscale without commercial account or OAuth keys
 - **Default deny**: Services not listed in `access-rules.yml` are denied
 - **SSH is admin-only**: Only `admins` group can SSH

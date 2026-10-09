@@ -7,7 +7,12 @@ import socket
 from typing import Optional
 
 import yaml
-from flask import Flask, Response, render_template, request
+from flask import (  # type: ignore[import-not-found,import-untyped]
+    Flask,
+    Response,
+    render_template,
+    request,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)

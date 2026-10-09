@@ -110,20 +110,17 @@ tailscale_server_ip: ""
 # No additional secrets required - uses ACME_EMAIL and CLOUDFLARE_DNS_API_TOKEN
 
 # =============================================================================
-# Tailscale Configuration
+# Tailscale / Headscale Configuration
 # =============================================================================
-# Your Tailnet ID (Unique ID found under Settings -> General)
-tailnet_id: "your-tailnet-id"
+# Headscale runs locally as a container, replacing the commercial Tailnet.
+# Server URL will be: https://headscale.<domain>
+#
+# Headscale OIDC (OpenID Connect) Credentials
+headscale_oidc_client_id: ""
+headscale_oidc_client_secret: ""
 
-# Tailscale OAuth client credentials for ACL and DNS management (required)
-#
-# To create an OAuth client:
-#   1. Go to https://login.tailscale.com/admin/settings/trust-credentials
-#   2. Click "Add a credential..." and choose Custom scopes
-#   3. Enable: DNS (Read + Write), Policy File (Read + Write)
-#   4. Save the client_id and client_secret below
-#
-# OAuth credentials do not expire (unlike API keys).
+# Optional legacy commercial Tailscale credentials (not needed when using Headscale):
+tailnet_id: ""
 tailscale_oauth_client_id: ""
 tailscale_oauth_client_secret: ""
 
@@ -356,6 +353,8 @@ protonvpn_port_forwarding: "on"
 # foundry_password           -> FOUNDRY_PASSWORD
 # foundry_admin_key          -> FOUNDRY_ADMIN_KEY
 # tailnet_id                 -> TAILNET_ID
+# headscale_oidc_client_id   -> HEADSCALE_OIDC_CLIENT_ID
+# headscale_oidc_client_secret -> HEADSCALE_OIDC_CLIENT_SECRET
 # paperless_postgres_user    -> PAPERLESS_POSTGRES_USER
 # paperless_postgres_password -> PAPERLESS_POSTGRES_PASSWORD
 # paperless_postgres_db      -> PAPERLESS_POSTGRES_DB

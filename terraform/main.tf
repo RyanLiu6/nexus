@@ -4,10 +4,6 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.18"
     }
-    tailscale = {
-      source  = "tailscale/tailscale"
-      version = "~> 0.29"
-    }
   }
 
   required_version = ">= 1.0"
@@ -15,12 +11,6 @@ terraform {
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
-}
-
-provider "tailscale" {
-  oauth_client_id     = var.tailscale_oauth_client_id
-  oauth_client_secret = var.tailscale_oauth_client_secret
-  tailnet             = var.tailnet_id
 }
 
 # =============================================================================
@@ -59,34 +49,4 @@ variable "tunnel_secret" {
   type        = string
   sensitive   = true
   default     = ""
-}
-
-# =============================================================================
-# Tailscale Configuration
-# =============================================================================
-
-variable "tailscale_oauth_client_id" {
-  description = "Tailscale OAuth client ID for managing ACLs and DNS"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "tailscale_oauth_client_secret" {
-  description = "Tailscale OAuth client secret"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "tailnet_id" {
-  description = "Tailnet ID (found at admin/settings/general)"
-  type        = string
-  default     = ""
-}
-
-variable "tailscale_users" {
-  description = "Map of group names to lists of user emails for Tailscale ACL"
-  type        = map(list(string))
-  default     = {}
 }

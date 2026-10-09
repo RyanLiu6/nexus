@@ -3,6 +3,7 @@
 Auto-generates tailscale/access-rules.yml from service.yml manifests.
 """
 
+import json
 from pathlib import Path
 from typing import Any, Optional
 
@@ -94,8 +95,76 @@ def generate_access_rules(
     return rules
 
 
+def generate_acl_policy(
+    output_path: Optional[Path] = None,
+) -> dict[str, Any]:
+    """Generate Headscale ACL policy (HuJSON) from vault users.
+
+    Args:
+        output_path: Path to write the generated ACL policy. If None, returns dict only.
+
+    Returns:
+        Dictionary representing the Headscale ACL policy.
+    """
+    try:
+        vault = read_vault()
+        users = vault.get("tailscale_users", {})
+    except (FileNotFoundError, KeyError):
+        users = {}
+
+    acl_groups = {f"group:{name}": emails for name, emails in users.items()}
+    non_admin_groups = [name for name in users.keys() if name != "admins"]
+
+    acl_rules: list[dict[str, Any]] = []
+    if "admins" in users:
+        acl_rules.append(
+            {
+                "action": "accept",
+                "src": ["group:admins"],
+                "dst": ["tag:nexus-server:*"],
+            }
+        )
+
+    for name in non_admin_groups:
+        acl_rules.append(
+            {
+                "action": "accept",
+                "src": [f"group:{name}"],
+                "dst": ["tag:nexus-server:80", "tag:nexus-server:443"],
+            }
+        )
+
+    ssh_rules: list[dict[str, Any]] = []
+    if "admins" in users:
+        ssh_rules.append(
+            {
+                "action": "accept",
+                "src": ["group:admins"],
+                "dst": ["tag:nexus-server"],
+                "users": ["autogroup:nonroot", "root"],
+            }
+        )
+
+    policy: dict[str, Any] = {
+        "groups": acl_groups,
+        "tagOwners": {
+            "tag:nexus-server": ["group:admins"],
+        },
+        "acls": acl_rules,
+        "ssh": ssh_rules,
+    }
+
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(policy, f, indent=2)
+            f.write("\n")
+
+    return policy
+
+
 def sync_access_rules(services: Optional[list[str]] = None) -> Path:
-    """Sync access rules file with current service manifests.
+    """Sync access rules file and Headscale ACL policy with current service manifests.
 
     Args:
         services: List of services to include. If None, uses all.
@@ -105,4 +174,8 @@ def sync_access_rules(services: Optional[list[str]] = None) -> Path:
     """
     output_path = TAILSCALE_PATH / "access-rules.yml"
     generate_access_rules(services=services, output_path=output_path)
+
+    acl_path = TAILSCALE_PATH / "acl.hujson"
+    generate_acl_policy(output_path=acl_path)
+
     return output_path
