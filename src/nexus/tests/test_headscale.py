@@ -77,6 +77,6 @@ class TestHeadscaleDockerCompose:
         headplane = services["headplane"]
         assert headplane["container_name"] == "headplane"
         labels = headplane.get("labels", [])
-        assert any("tailscale-chain@file" in label for label in labels), (
-            "Headplane must be protected by tailscale-chain"
+        assert any("authentik-chain@file" in label for label in labels), (
+            "Headplane must be protected by authentik-chain"
         )

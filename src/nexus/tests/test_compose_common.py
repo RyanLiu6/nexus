@@ -89,10 +89,10 @@ def test_web_containers_have_traefik_https_labels(service_name: str) -> None:
             continue
 
         containers_with_https += 1
-        has_tailscale = any("tailscale-chain@file" in label for label in labels)
-        assert has_tailscale, (
+        has_authentik = any("authentik-chain@file" in label for label in labels)
+        assert has_authentik, (
             f"{container_name}: has entrypoints=https but missing "
-            "tailscale-chain@file middleware"
+            "authentik-chain@file middleware"
         )
 
     assert containers_with_https > 0, (

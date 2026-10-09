@@ -130,7 +130,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
-            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run") as mock_run,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -143,7 +144,7 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
             mock_tf.assert_called_once()
-            mock_ansible.assert_called_once()
+            mock_run.assert_called_once()
 
     def test_main_with_all_services(self) -> None:
         with (
@@ -152,7 +153,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -170,7 +172,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -188,7 +191,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -210,7 +214,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run") as mock_run,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -230,7 +235,7 @@ class TestMain:
             )
 
             assert result.exit_code == 0, result.output
-            mock_ansible.assert_not_called()
+            mock_run.assert_not_called()
 
     def test_main_dry_run(self) -> None:
         with (
@@ -239,7 +244,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -260,7 +266,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
-            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run") as mock_run,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -271,10 +278,10 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
             assert mock_tf.call_count == 1
-            deployed_services = mock_ansible.call_args[0][0]
+            env = mock_run.call_args.kwargs.get("env", {})
+            deployed_services = env.get("NEXUS_SERVICES", "").split(",")
             assert "dashboard" in deployed_services
             assert "traefik" in deployed_services
-            assert "tailscale-access" in deployed_services
 
     def test_main_missing_vault_exits(self) -> None:
         with (
@@ -313,7 +320,8 @@ class TestMain:
             patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
-            patch("nexus.cli.deploy.run_ansible"),
+            patch("nexus.cli.deploy.get_r2_credentials"),
+            patch("subprocess.run"),
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -335,7 +343,7 @@ class TestMain:
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,
-            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("subprocess.run") as mock_run,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -355,9 +363,10 @@ class TestMain:
 
             assert result.exit_code == 0, result.output
             mock_r2.assert_called_once()
-            mock_ansible.assert_called_once()
-            _args, kwargs = mock_ansible.call_args
-            assert kwargs["r2_credentials"] == mock_r2.return_value
+            mock_run.assert_called_once()
+            _args, kwargs = mock_run.call_args
+            env = kwargs.get("env", {})
+            assert env.get("TF_FOUNDRY_S3_ENDPOINT") == mock_r2.return_value["endpoint"]
 
     def test_main_skips_r2_credentials_when_skip_dns(self) -> None:
         with (
@@ -367,7 +376,7 @@ class TestMain:
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
             patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,
-            patch("nexus.cli.deploy.run_ansible") as mock_ansible,
+            patch("subprocess.run") as mock_run,
             patch("nexus.cli.deploy._generate_configs"),
             patch("nexus.cli.deploy._is_cloudflared_running", return_value=True),
             patch.dict("os.environ", {"VIRTUAL_ENV": "/fake/venv"}),
@@ -382,6 +391,7 @@ class TestMain:
             assert result.exit_code == 0, result.output
             mock_tf.assert_not_called()
             mock_r2.assert_not_called()
-            mock_ansible.assert_called_once()
-            _args, kwargs = mock_ansible.call_args
-            assert kwargs["r2_credentials"] is None
+            mock_run.assert_called_once()
+            _args, kwargs = mock_run.call_args
+            env = kwargs.get("env", {})
+            assert "TF_FOUNDRY_S3_ENDPOINT" not in env
