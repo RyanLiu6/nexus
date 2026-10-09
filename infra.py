@@ -139,6 +139,25 @@ if "headscale" in services:
         dest=f"{NEXUS_ROOT}/tailscale/acl.hujson",
     )
 
+
+# =============================================================================
+# Generate .env file for Docker Compose
+# =============================================================================
+env_lines = []
+for key, value in secrets.items():
+    if isinstance(value, str):
+        env_key = key.upper()
+        env_lines.append(f"{env_key}={value}")
+
+env_lines.append(f"NEXUS_ROOT_DIRECTORY={NEXUS_ROOT}")
+env_lines.append(f"NEXUS_DATA_DIRECTORY={NEXUS_DATA}")
+
+files.put(
+    name="Generate .env file",
+    src=io.StringIO("\n".join(env_lines)),
+    dest=f"{NEXUS_ROOT}/.env",
+)
+
 # =============================================================================
 # Deploy Services
 # =============================================================================
