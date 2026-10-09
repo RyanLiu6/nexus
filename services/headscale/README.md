@@ -97,8 +97,23 @@ docker exec headscale headscale nodes list
 
 ---
 
-## OIDC Authentication with Google
+## OIDC Authentication & User Access Control
 
-Headscale natively supports OpenID Connect (OIDC). Enabling OIDC allows users and devices to sign in using their identity provider directly in the browser when running `tailscale up`, exactly like standard Tailscale SaaS.
+We had to explicitly set up OpenID Connect (OIDC) using Google to handle authentication for our Tailscale clients. Since Headscale replaces the commercial Tailscale backend, we needed a way to securely authenticate users before they are allowed to join the private network.
 
-For a complete step-by-step guide on configuring Google Workspace or Gmail as your OIDC provider, including cost analysis and configuration snippets, please see the [OIDC Authentication Guide](OIDC.md).
+By setting up OIDC, users authenticate directly via their Google account in the browser. Furthermore, Headscale is configured with an explicit `allowed_users` list derived directly from our `vault.yml` (`tailscale_users`). This acts as an automated bouncer: if someone successfully authenticates via Google but is not explicitly listed as an admin or member in our Ansible configuration, Headscale immediately denies them network access.
+
+For detailed setup instructions, please see the [OIDC Authentication Guide](OIDC.md).
+
+---
+
+## Network Security & Port Forwarding
+
+To allow remote Tailscale clients to securely reach the Headscale control server and establish VPN tunnels, **port forwarding must be configured on your physical router.**
+
+You must forward the following ports to your server's internal IP address:
+
+*   **Port `443` (TCP/HTTPS)**: This is required so external clients can communicate with the Headscale control API securely. It's also used for the Traefik reverse proxy to handle the OIDC login callbacks, and to serve FoundryVTT.
+*   **Port `26478` (UDP)**: This port handles Headscale's embedded DERP (Designated Encrypted Relay for Packets) server and STUN functionality. It is critical for NAT traversal, allowing remote peer devices to negotiate direct WireGuard connections with each other even when both are behind restrictive firewalls.
+
+**Important:** Port `80` (HTTP) is **explicitly NOT port forwarded** by design. We rely entirely on DNS-01 challenges via Cloudflare to obtain our SSL certificates natively in Traefik, eliminating the need to expose insecure HTTP traffic or perform HTTP-01 challenges. Traefik automatically routes valid HTTPS traffic securely.

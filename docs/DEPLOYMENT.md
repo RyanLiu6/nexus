@@ -6,7 +6,7 @@ Complete setup guide for Nexus homelab. Follow steps 1-8 in order.
 
 - Docker 24.0+, Python 3.12+, uv
 - Domain with Cloudflare (free tier works)
-- Port Forwarding: Configure your router to forward ports `80` (HTTP), `443` (HTTPS), and `26478` (UDP for Headscale) to your server's local IP.
+- Port Forwarding: Configure your router to forward ports `443` (HTTPS) and `26478` (UDP for Headscale) to your server's local IP. Port 80 is explicitly not forwarded by design.
 - Google Account (for Headscale OIDC authentication)
 
 ---

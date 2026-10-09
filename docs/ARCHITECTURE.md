@@ -82,7 +82,7 @@ This allows:
 ## Traffic Flow
 
 ```
-Internet → Router Port Forwarding (80/443) → Traefik → FoundryVTT / Headscale (Public)
+Internet → Router Port Forwarding (443) → Traefik → FoundryVTT / Headscale (Public)
 
 Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Docker Services
                                    │              ↓
