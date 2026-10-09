@@ -18,10 +18,10 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 |-----------|------------|
 | Runtime | Docker Compose + macOS Virtualization (HAVM) |
 | Proxy | Traefik (HTTP→HTTPS redirect, SSL, routing) |
-| Auth | Tailscale + tailscale-access |
-| DNS | OpenTofu + Cloudflare |
-| Config | Ansible (generates docker-compose.yml) |
-| Secrets | Ansible Vault |
+| Auth | Authentik (OIDC + Traefik ForwardAuth) + Headscale |
+| Proxy | Cloudflare DNS |
+| Config | PyInfra (generates docker-compose.yml) |
+| Secrets | SOPS (planned) / YAML |
 | CLI | Python + Invoke |
 
 ## Quick Start
@@ -39,13 +39,14 @@ source .venv/bin/activate
 
 # 3. Setup and configure secrets
 invoke setup
-nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, and Tailscale users
+cp config/secrets.enc.yml.sample config/secrets.yml
+nano config/secrets.yml   # Add your domain, credentials, and Tailscale users
 
 # 4. Deploy everything
 invoke deploy
 ```
 
-The deploy command handles vault encryption, OpenTofu, cloudflared, and Ansible automatically.
+The deploy command handles configuration generation and PyInfra automatically.
 
 > **Tip:** For a complete shell setup with direnv + uv integration, see [here](https://github.com/RyanLiu6/dotfiles).
 
@@ -94,12 +95,13 @@ Each service also has its own README in `services/<name>/README.md`.
 
 ```
 nexus/
-├── ansible/            # Playbooks, roles, vault.yml
+├── config/             # secrets.yml and preset definitions
 ├── docs/               # Documentation
+├── infra.py            # PyInfra deployment script
 ├── scripts/            # Bootstrap script
 ├── services/           # Service definitions (Docker Compose & HAVM)
 ├── src/nexus/          # Python library
-├── terraform/          # Cloudflare DNS (OpenTofu)
+├── templates/          # Jinja templates for configuration generation
 ├── tasks.py            # Invoke tasks
 └── pyproject.toml      # Python config
 ```
