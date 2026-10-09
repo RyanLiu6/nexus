@@ -21,6 +21,7 @@ dependencies = [
     "aiohttp>=3.9.0",
     "ansible>=8.0.0",
     "ansible-vault>=2.1.0",
+    "pyinfra>=3.10.0",
 ]
 
 [project.optional-dependencies]
