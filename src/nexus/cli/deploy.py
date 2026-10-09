@@ -475,7 +475,7 @@ def main(
                 )
 
     # =========================================================================
-    # Step 8: Deploy with Ansible
+    # Step 8: Deploy with PyInfra
     # =========================================================================
     if not skip_ansible:
         logging.info("\n🚀 Deploying services using PyInfra...")
@@ -483,6 +483,16 @@ def main(
 
         env = os.environ.copy()
         env["NEXUS_SERVICES"] = ",".join(services_list)
+
+        # Inject Terraform R2 outputs into environment for PyInfra
+        if r2_credentials:
+            env["TF_FOUNDRY_S3_ENDPOINT"] = r2_credentials["endpoint"]
+            env["TF_FOUNDRY_S3_ACCESS_KEY"] = r2_credentials["access_key"]
+            env["TF_FOUNDRY_S3_SECRET_KEY"] = r2_credentials["secret_key"]
+        if backups_r2_credentials:
+            env["TF_BACKUPS_R2_ENDPOINT"] = backups_r2_credentials["endpoint"]
+            env["TF_BACKUPS_R2_ACCESS_KEY"] = backups_r2_credentials["access_key"]
+            env["TF_BACKUPS_R2_SECRET_KEY"] = backups_r2_credentials["secret_key"]
 
         cmd = ["uv", "run", "pyinfra", "@local", "infra.py", "-y"]
         if dry_run:

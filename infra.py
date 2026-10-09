@@ -157,6 +157,20 @@ if "headscale" in services:
 # =============================================================================
 # Generate .env file for Docker Compose
 # =============================================================================
+# Override secrets with Terraform environment variables if they are present
+tf_vars_mapping = {
+    "TF_FOUNDRY_S3_ENDPOINT": "foundry_s3_endpoint",
+    "TF_FOUNDRY_S3_ACCESS_KEY": "foundry_s3_access_key",
+    "TF_FOUNDRY_S3_SECRET_KEY": "foundry_s3_secret_key",
+    "TF_BACKUPS_R2_ENDPOINT": "backups_r2_endpoint",
+    "TF_BACKUPS_R2_ACCESS_KEY": "backups_r2_access_key",
+    "TF_BACKUPS_R2_SECRET_KEY": "backups_r2_secret_key",
+}
+
+for tf_env, secret_key in tf_vars_mapping.items():
+    if os.environ.get(tf_env):
+        secrets[secret_key] = os.environ[tf_env]
+
 env_lines = []
 for key, value in secrets.items():
     if isinstance(value, str):
