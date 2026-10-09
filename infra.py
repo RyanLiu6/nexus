@@ -1,5 +1,6 @@
 import io
 import os
+import platform
 from pathlib import Path
 
 import yaml
@@ -193,3 +194,139 @@ server.shell(
     name="Deploy services using docker compose",
     commands=[f"cd {NEXUS_ROOT} && docker compose up -d --remove-orphans"],
 )
+
+# =============================================================================
+# ProtonDrive Background Sync
+# =============================================================================
+protondrive_sync_directory = secrets.get("protondrive_sync_directory", "")
+NEXUS_USERDATA = secrets.get("nexus_userdata_directory", "")
+
+if "backups" in services and protondrive_sync_directory:
+    is_darwin = platform.system() == "Darwin"
+    home = str(Path.home())
+
+    sync_jobs = [
+        {
+            "id": "com.nexus.protondrive-sync",
+            "hour": 4,
+            "minute": 0,
+            "args": [
+                "/bin/bash",
+                f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh",
+                f"{NEXUS_DATA}/Backups",
+                f"{protondrive_sync_directory}/Containers",
+            ],
+            "cron_name": "nexus-protondrive-sync",
+            "cron_command": (
+                f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh "
+                f"{NEXUS_DATA}/Backups {protondrive_sync_directory}/Containers"
+            ),
+        }
+    ]
+
+    if NEXUS_USERDATA:
+        sync_jobs.append(
+            {
+                "id": "com.nexus.protondrive-paperless-sync",
+                "hour": 4,
+                "minute": 30,
+                "args": [
+                    "/bin/bash",
+                    f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh",
+                    f"{NEXUS_USERDATA}/paperless",
+                    f"{protondrive_sync_directory}/paperless",
+                    "paperless-web",
+                    "paperless-redis",
+                    "paperless-db",
+                ],
+                "cron_name": "nexus-protondrive-paperless-sync",
+                "cron_command": (
+                    f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh "
+                    f"{NEXUS_USERDATA}/paperless "
+                    f"{protondrive_sync_directory}/paperless "
+                    f"paperless-web paperless-redis paperless-db"
+                ),
+            }
+        )
+        sync_jobs.append(
+            {
+                "id": "com.nexus.protondrive-bookorbit-sync",
+                "hour": 5,
+                "minute": 0,
+                "args": [
+                    "/bin/bash",
+                    f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh",
+                    f"{NEXUS_USERDATA}/bookorbit",
+                    f"{protondrive_sync_directory}/bookorbit",
+                    "bookorbit",
+                    "bookorbit-db",
+                ],
+                "cron_name": "nexus-protondrive-bookorbit-sync",
+                "cron_command": (
+                    f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh "
+                    f"{NEXUS_USERDATA}/bookorbit "
+                    f"{protondrive_sync_directory}/bookorbit "
+                    f"bookorbit bookorbit-db"
+                ),
+            }
+        )
+
+    if is_darwin:
+        # Create log directory
+        files.directory(
+            name="Ensure nexus log directory exists",
+            path=f"{home}/Library/Logs/nexus",
+            present=True,
+        )
+        for job in sync_jobs:
+            plist_path = f"{home}/Library/LaunchAgents/{job['id']}.plist"
+            args_xml = "".join(
+                f"<string>{arg}</string>\n        " for arg in job["args"]
+            )
+            plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{job["id"]}</string>
+    <key>ProgramArguments</key>
+    <array>
+        {args_xml.strip()}
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{job["hour"]}</integer>
+        <key>Minute</key>
+        <integer>{job["minute"]}</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{home}/Library/Logs/nexus/{job["id"]}.log</string>
+    <key>StandardErrorPath</key>
+    <string>{home}/Library/Logs/nexus/{job["id"]}.log</string>
+</dict>
+</plist>"""
+
+            files.put(
+                name=f"Install LaunchAgent: {job['id']}",
+                src=io.StringIO(plist_content),
+                dest=plist_path,
+            )
+            server.shell(
+                name=f"Load LaunchAgent: {job['id']}",
+                commands=[
+                    f"launchctl bootout gui/$(id -u) {plist_path} 2>/dev/null || true",
+                    f"launchctl bootstrap gui/$(id -u) {plist_path}",
+                ],
+            )
+    else:
+        for job in sync_jobs:
+            server.crontab(
+                name=f"Install crontab: {job['cron_name']}",
+                command=job["cron_command"],
+                cron_name=job["cron_name"],
+                minute=str(job["minute"]),
+                hour=str(job["hour"]),
+            )
