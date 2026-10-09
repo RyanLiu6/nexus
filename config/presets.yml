@@ -22,3 +22,5 @@ home:
     - jellyfin
     - gluetun
     - transmission
+    - authentik
+    - tailscale-proton

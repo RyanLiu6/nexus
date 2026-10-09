@@ -62,6 +62,9 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Config/headscale/headplane:/var/lib/headplane
     environment:
       - HEADSCALE_URL=http://headscale:8080
+      - HEADPLANE_OIDC__ISSUER=https://auth.${NEXUS_DOMAIN}/application/o/headplane/
+      - HEADPLANE_OIDC__CLIENT_ID=${HEADSCALE_OIDC_CLIENT_ID}
+      - HEADPLANE_OIDC__CLIENT_SECRET=${HEADSCALE_OIDC_CLIENT_SECRET}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"

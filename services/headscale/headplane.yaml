@@ -10,3 +10,4 @@ server:
 
 headscale:
   url: "http://headscale:8080"
+  api_key: "hskey-api-0I8jBUaPXusw-ugWpuNV7GPVj6qlHqfdSP6iE5Urn_UkUe7liT9avT4fyECiQY4cndilXx7Nbbb89"

@@ -16,7 +16,8 @@ from nexus.config import (
     get_all_services,
     resolve_preset,
 )
-from nexus.deploy.ansible import run_ansible
+
+# from nexus.deploy.ansible import run_ansible
 from nexus.deploy.terraform import (
     get_r2_credentials,
     get_tofu_cmd,
@@ -477,13 +478,21 @@ def main(
     # Step 8: Deploy with Ansible
     # =========================================================================
     if not skip_ansible:
-        logging.info("\n🚀 Deploying services...")
-        run_ansible(
-            services_list,
-            dry_run,
-            r2_credentials=r2_credentials,
-            backups_r2_credentials=backups_r2_credentials,
-        )
+        logging.info("\n🚀 Deploying services using PyInfra...")
+        import subprocess
+
+        env = os.environ.copy()
+        env["NEXUS_SERVICES"] = ",".join(services_list)
+
+        cmd = ["uv", "run", "pyinfra", "@local", "infra.py", "-y"]
+        if dry_run:
+            logging.info(f"[DRY RUN] Would execute: {' '.join(cmd)}")
+        else:
+            try:
+                subprocess.run(cmd, env=env, check=True)
+            except subprocess.CalledProcessError:
+                logging.error("PyInfra deployment failed.")
+                sys.exit(1)
 
     # =========================================================================
     # Done!

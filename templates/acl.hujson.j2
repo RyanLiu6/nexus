@@ -1,0 +1,46 @@
+{
+  "groups": {
+{% for group, emails in tailscale_users.items() %}
+    "group:{{ group }}": [
+{% for email in emails %}
+      "{{ email }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+    ]{% if not loop.last %},{% endif %}
+{% endfor %}
+  },
+  "tagOwners": {
+    "tag:nexus-server": ["group:admins"]
+  },
+  "acls": [
+{% if 'admins' in tailscale_users %}
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:nexus-server:*"]
+    }{% if tailscale_users | length > 1 %},{% endif %}
+{% endif %}
+{% for group in tailscale_users.keys() if group != 'admins' %}
+    {
+      "action": "accept",
+      "src": ["group:{{ group }}"],
+      "dst": ["tag:nexus-server:80", "tag:nexus-server:443"]
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+    ,
+    {
+      "action": "accept",
+      "src": ["group:admins", "group:members"],
+      "dst": ["autogroup:internet:*"]
+    }
+  ],
+  "ssh": [
+{% if 'admins' in tailscale_users %}
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:nexus-server"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+{% endif %}
+  ]
+}
