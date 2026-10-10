@@ -84,10 +84,10 @@ This creates the Docker network and copies vault.yml.sample to vault.yml.
 
 ## Step 6: Configure Secrets
 
-Edit `config/secrets.yml` with your values:
+Edit `config/secrets.enc.yml` with your values:
 
 ```bash
-nano config/secrets.yml
+nano config/secrets.enc.yml
 ```
 
 **Required:**
@@ -136,7 +136,7 @@ Headscale runs locally as a container, coordinating your private network. To ena
 invoke deploy
 ```
 
-You'll be prompted for a vault password (save it somewhere secure).
+You'll be prompted for a SOPS age key (save it somewhere secure).
 
 ## Step 9: Post-Deployment (one-time)
 
@@ -164,7 +164,7 @@ invoke deploy              # Full deployment
 invoke up                  # Start containers
 invoke down                # Stop containers
 
-sops edit config/secrets.yml  # Edit secrets
+sops edit config/secrets.enc.yml  # Edit secrets
 ```
 
 ---

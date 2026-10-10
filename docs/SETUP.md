@@ -59,7 +59,7 @@ To ensure the apps requested this new custom mapping and allowed the correct ema
    - Enabled environment overrides (`HEADPLANE_LOAD_ENV_OVERRIDES=true`).
    - Appended `headscale-username` to the `HEADPLANE_OIDC__SCOPE` environment variable.
 3. **Headscale ACLs (`config/secrets.enc.yml`)**
-   - Ensured `tailscale_users.admins` explicitly lists the verified email (e.g., `dio.ryanliu@gmail.com`) so Headscale's internal firewall permits the connection.
+   - Ensured `tailscale_users.admins` explicitly lists the verified email (e.g., `<YOUR_EMAIL_ADDRESS>`) so Headscale's internal firewall permits the connection.
 
 ---
 

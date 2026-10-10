@@ -96,7 +96,7 @@ Each service also has its own README in `services/<name>/README.md`.
 
 ```
 nexus/
-├── config/             # secrets.yml and preset definitions
+├── config/             # secrets.enc.yml and preset definitions
 ├── docs/               # Documentation
 ├── infra.py            # PyInfra deployment script
 ├── scripts/            # Bootstrap script

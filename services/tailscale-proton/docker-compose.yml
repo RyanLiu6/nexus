@@ -7,6 +7,8 @@ services:
       - NET_ADMIN
       - NET_RAW
     environment:
+      - TS_HOSTNAME=ProtonVPN
+      - TS_AUTHKEY=${PROTON_TAILSCALE_AUTHKEY:-}
       - TS_EXTRA_ARGS=--login-server=https://headscale.${NEXUS_DOMAIN} --advertise-exit-node
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/tailscale-proton:/var/lib/tailscale

@@ -10,6 +10,7 @@
 - **[Access Control](ACCESS_CONTROL.md)** - Tailscale, SSH
 - **[DNS Filtering](DNS_FILTERING.md)** - Ad-blocking and malware protection via Cloudflare Gateway
 - **[Home Assistant OS (HAVM)](haos-havm-setup.md)** - Virtualizing HAOS on Apple Silicon alongside Nexus
+- **[Asus Router Setup](ASUS_MERLIN_TAILMON.md)** - Installing Tailscale (Tailmon) and Subnet Routing on Asus Merlin
 
 ## Service Documentation
 

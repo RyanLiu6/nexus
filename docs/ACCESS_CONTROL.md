@@ -66,7 +66,7 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 
 ### 1. Configure Users in vault.yml
 
-Edit `config/secrets.yml` (the **single source of truth**):
+Edit `config/secrets.enc.yml` (the **single source of truth**):
 
 ```yaml
 tailscale_users:
@@ -124,7 +124,7 @@ sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tag
 
 ## Configuration
 
-All access control is configured in `config/secrets.yml` and applied automatically.
+All access control is configured in `config/secrets.enc.yml` and applied automatically.
 
 ### Headscale ACL (via `tailscale/acl.hujson`)
 
@@ -216,7 +216,7 @@ works immediately — no re-auth prompt.
 
 ### Add to Existing Group
 
-1. Edit `config/secrets.yml`:
+1. Edit `config/secrets.enc.yml`:
    ```yaml
    tailscale_users:
      members:

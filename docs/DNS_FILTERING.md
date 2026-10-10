@@ -36,7 +36,7 @@ Update your Cloudflare API token permissions:
 
 ## Configuration
 
-Add your server's Tailscale IP to `config/secrets.yml`:
+Add your server's Tailscale IP to `config/secrets.enc.yml`:
 
 ```yaml
 tailscale_server_ip: "100.x.x.x"
