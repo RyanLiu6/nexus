@@ -69,12 +69,12 @@ PyInfra generates the root `docker-compose.yml` by combining individual service 
 1. Each service has its own `services/<name>/docker-compose.yml`
 2. PyInfra reads the preset to determine which services to include
 3. The `pyinfra/roles/nexus/templates/docker-compose.yml.j2 (PyInfra Jinja)` template combines them
-4. Variables from `vault.yml` are injected (domains, passwords, etc.)
+4. Variables from `secrets.enc.yml` are injected (domains, passwords, etc.)
 5. Final `docker-compose.yml` is written to the project root
 
 This allows:
 - Individual service files to be version controlled
-- Secrets to remain encrypted in vault.yml
+- Secrets to remain encrypted in secrets.enc.yml
 - Different presets (core, home) to generate different compositions
 
 ---
@@ -160,7 +160,7 @@ nexus/
 │   │   ├── tasks/main.yml
 │   │   └── templates/        # docker-compose.yml.j2
 │   └── vars/
-│       └── vault.yml.sample  # Template for secrets
+│       └── secrets.enc.yml.sample  # Template for secrets
 │
 ├── docs/                     # Documentation
 │   ├── ARCHITECTURE.md       # This file
@@ -205,7 +205,7 @@ nexus/
 
 ## Secrets Management
 
-All secrets stored in `config/secrets.yml` (encrypted with sops).
+All secrets stored in `config/secrets.enc.yml` (encrypted with sops).
 
 ### Required Secrets
 
@@ -237,16 +237,16 @@ htpasswd -nb admin password | sed 's/\$/\$\$/g'
 
 ```bash
 # Create encrypted vault
-sops create config/secrets.yml
+sops create config/secrets.enc.yml
 
 # Edit secrets
-sops edit config/secrets.yml
+sops edit config/secrets.enc.yml
 
 # View secrets
-sops view config/secrets.yml
+sops view config/secrets.enc.yml
 ```
 
-**Store your vault password securely** (password manager). If lost, you must recreate all secrets.
+**Store your age key (or SOPS decryption key) securely** (password manager). If lost, you must recreate all secrets.
 
 ---
 

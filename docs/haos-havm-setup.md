@@ -175,7 +175,7 @@ http:
     homeassistant:
       loadBalancer:
         servers:
-          - url: "http://192.168.50.161:80"
+          - url: "http://<HOME_ASSISTANT_IP>:80"
         passHostHeader: true
 ```
 

@@ -145,7 +145,7 @@ if "headscale" in services:
     tailscale_users = secrets.get("tailscale_users", {})
 
     # 1. Build groups
-    groups = {}
+    groups = {"group:admins": []}
     for group_name, emails in tailscale_users.items():
         if emails:  # Ensure we don't add empty groups
             groups[f"group:{group_name}"] = emails
