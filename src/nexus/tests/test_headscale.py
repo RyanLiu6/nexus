@@ -65,7 +65,7 @@ class TestHeadscaleDockerCompose:
             )
 
     def test_healthcheck_defined(self, compose_config: dict[str, Any]) -> None:
-        healthcheck = compose_config["services"]["headscale"].get("healthcheck", {})
+        compose_config["services"]["headscale"].get("healthcheck", {})
         pass
 
     def test_headplane_service(self, compose_config: dict[str, Any]) -> None:

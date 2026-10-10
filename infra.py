@@ -3,6 +3,7 @@ import json
 import os
 import platform
 from pathlib import Path
+from typing import Any
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -276,7 +277,7 @@ if "backups" in services and protondrive_sync_directory:
     is_darwin = platform.system() == "Darwin"
     home = str(Path.home())
 
-    sync_jobs = [
+    sync_jobs: list[dict[str, Any]] = [
         {
             "id": "com.nexus.protondrive-sync",
             "hour": 4,
