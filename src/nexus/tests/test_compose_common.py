@@ -11,11 +11,11 @@ ALL_SERVICES = [
     if (discover_services()[name].path / "docker-compose.yml").exists()
 ]
 
-# Services where the standard HTTPS + tailscale-chain Traefik pattern doesn't apply
+# Services where the standard HTTPS + authentik-chain Traefik pattern doesn't apply
 _TRAEFIK_HTTPS_SKIP = {
     "cloudflared",
     "backups",
-    "tailscale-access",
+    "authentik",
     "foundryvtt",
     "traefik",
     "gluetun",
@@ -89,10 +89,10 @@ def test_web_containers_have_traefik_https_labels(service_name: str) -> None:
             continue
 
         containers_with_https += 1
-        has_tailscale = any("tailscale-chain@file" in label for label in labels)
-        assert has_tailscale, (
+        has_authentik = any("authentik-chain@file" in label for label in labels)
+        assert has_authentik, (
             f"{container_name}: has entrypoints=https but missing "
-            "tailscale-chain@file middleware"
+            "authentik-chain@file middleware"
         )
 
     assert containers_with_https > 0, (

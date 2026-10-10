@@ -59,29 +59,6 @@ jobs:
           files: ./coverage.xml
           fail_ci_if_error: false
 
-  ansible-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
-
-      - name: Set up Python and venv
-        run: |
-          uv python install 3.12
-          uv venv
-          uv pip install ansible-lint ansible-core
-
-      - name: Install Ansible collections
-        run: uv run ansible-galaxy collection install community.general community.docker
-
-      - name: Create dummy vault password file
-        run: echo "dummy-vault-pass" > .vault_pass
-
-      - name: Run ansible-lint
-        run: uv run ansible-lint ansible/
-
   docker-compose-validate:
     runs-on: ubuntu-latest
     steps:

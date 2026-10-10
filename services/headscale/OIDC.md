@@ -62,7 +62,7 @@ Google recently updated their UI to the "Google Auth Platform".
 
 ### 4. Configure Headscale
 
-Instead of hardcoding your secrets into `config.yaml` where they would be exposed in Git, Nexus injects them securely via Ansible Vault.
+Instead of hardcoding your secrets into `config.yaml` where they would be exposed in Git, Nexus injects them securely via sops secrets.
 
 1. Open your encrypted vault:
    ```bash

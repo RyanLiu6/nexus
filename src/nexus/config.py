@@ -7,8 +7,7 @@ ROOT_PATH = Path(__file__).parent.parent.parent
 SERVICES_PATH = ROOT_PATH / "services"
 TERRAFORM_PATH = ROOT_PATH / "terraform"
 TOFU_PATH = TERRAFORM_PATH
-ANSIBLE_PATH = ROOT_PATH / "ansible"
-VAULT_PATH = ANSIBLE_PATH / "vars" / "vault.yml"
+VAULT_PATH = ROOT_PATH / "config" / "secrets.enc.yml"
 TAILSCALE_PATH = ROOT_PATH / "tailscale"
 
 

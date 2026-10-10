@@ -4,9 +4,11 @@
 server:
   host: "0.0.0.0"
   port: 3000
+  base_url: "https://headplane.ryanliu6.xyz"
   # Cookie secret for session encryption (change if desired)
   cookie_secret: "f6a25ea2c4af5e706b65c12f2cb23b81"
   cookie_secure: true
 
 headscale:
   url: "http://headscale:8080"
+  api_key: "hskey-api-0I8jBUaPXusw-ugWpuNV7GPVj6qlHqfdSP6iE5Urn_UkUe7liT9avT4fyECiQY4cndilXx7Nbbb89"

@@ -1,15 +1,5 @@
 name: gluetun
 description: ProtonVPN WireGuard gateway
-category: infrastructure
-icon: si-wireguard
 subdomain: null
-
-access:
-  groups: [admins]
-  public: false
-
-dashboard:
-  exclude: true
-
 dependencies:
-  - traefik
+- traefik

@@ -1,22 +1,7 @@
-# Transmission - Torrent Client
-# BitTorrent download client
-
 name: transmission
 description: Torrent download client
-category: media
-icon: si-transmission
 subdomain: transmission
-
-access:
-  groups: [admins]
-  public: false
-
-dashboard:
-  widget:
-    type: transmission
-    url: http://gluetun:9091
-
 dependencies:
-  - traefik
-  - tailscale-access
-  - gluetun
+- traefik
+- authentik
+- gluetun

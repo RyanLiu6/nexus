@@ -1,20 +1,6 @@
-# Home Assistant - Smart Home Platform
-# Managed via HAVM (Apple Silicon native VM) outside Docker
-
 name: homeassistant
 description: Home automation platform
-category: core
-icon: si-homeassistant
 subdomain: homeassistant
-
-access:
-  groups: [admins, members]
-  public: false
-
-dashboard:
-  widget:
-    type: homeassistant
-
 dependencies:
-  - traefik
-  - tailscale-access
+- traefik
+- authentik

@@ -13,8 +13,6 @@ class TestPresets:
         services = resolve_preset("core")
         assert "traefik" in services
         assert "headscale" in services
-        assert "tailscale-access" in services
-        assert "dashboard" in services
         assert "monitoring" in services
         assert "homeassistant" in services
         assert "scrypted" in services
@@ -23,8 +21,7 @@ class TestPresets:
         services = resolve_preset("home")
         assert "traefik" in services
         assert "headscale" in services
-        assert "tailscale-access" in services
-        assert "dashboard" in services
+        assert "authentik" in services
         assert "monitoring" in services
         assert "homeassistant" in services
         assert "scrypted" in services

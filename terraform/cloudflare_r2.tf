@@ -2,7 +2,7 @@
 # Cloudflare R2 Storage
 # =============================================================================
 # Provisions R2 buckets and API tokens for S3-compatible access.
-# Credentials are output for injection into Ansible/service configuration.
+# Credentials are output for injection into PyInfra/service configuration.
 
 # Get available permission groups
 data "cloudflare_api_token_permission_groups_list" "all" {}

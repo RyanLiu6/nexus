@@ -84,10 +84,10 @@ This creates the Docker network and copies vault.yml.sample to vault.yml.
 
 ## Step 6: Configure Secrets
 
-Edit `ansible/vars/vault.yml` with your values:
+Edit `config/secrets.yml` with your values:
 
 ```bash
-nano ansible/vars/vault.yml
+nano config/secrets.yml
 ```
 
 **Required:**
@@ -150,7 +150,7 @@ sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tag
 > `Permission denied (publickey)`. See [Access Control → SSH Access](ACCESS_CONTROL.md#ssh-access).
 
 **Access your services:**
-- Dashboard: `https://nexus.yourdomain.com` (Tailscale only)
+- Dashboard: `https://auth.yourdomain.com` (Tailscale only)
 - FoundryVTT: `https://foundry.yourdomain.com` (**Public** via port forwarding)
 - All other services are accessible only via Tailscale.
 - Authentication is handled automatically via Tailscale identity.
@@ -164,7 +164,7 @@ invoke deploy              # Full deployment
 invoke up                  # Start containers
 invoke down                # Stop containers
 
-ansible-vault edit ansible/vars/vault.yml  # Edit secrets
+sops edit config/secrets.yml  # Edit secrets
 ```
 
 ---
@@ -180,7 +180,7 @@ ansible-vault edit ansible/vars/vault.yml  # Edit secrets
 **View logs:**
 ```bash
 docker logs traefik
-docker logs tailscale-access
+docker logs authentik
 ```
 
 ---

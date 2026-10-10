@@ -4,9 +4,9 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 
 ## What It Does
 
-- **Dashboard** - Single homepage to access all services
+- **Dashboard** - Authentik Application Dashboard to access all services
 - **Smart Home** - Home Assistant OS with Matter/Thread via HAVM (Apple Silicon Virtualization)
-- **Authentication** - Tailscale Access Control (Gatekeeper) + Header Auth
+- **Authentication** - Authentik (OIDC) + Traefik ForwardAuth + Headscale
 - **Media** - Jellyfin/Plex streaming, Transmission downloads
 - **Apps** - FoundryVTT (D&D), Sure (finance), Paperless-ngx (documents), BookOrbit (books)
 - **Monitoring** - Prometheus + Grafana + Discord alerts
@@ -18,10 +18,10 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 |-----------|------------|
 | Runtime | Docker Compose + macOS Virtualization (HAVM) |
 | Proxy | Traefik (HTTP→HTTPS redirect, SSL, routing) |
-| Auth | Tailscale + tailscale-access |
-| DNS | OpenTofu + Cloudflare |
-| Config | Ansible (generates docker-compose.yml) |
-| Secrets | Ansible Vault |
+| Auth | Authentik (OIDC + Traefik ForwardAuth) + Headscale |
+| Proxy | Cloudflare DNS |
+| Config | PyInfra (generates docker-compose.yml) |
+| Secrets | SOPS (planned) / YAML |
 | CLI | Python + Invoke |
 
 ## Quick Start
@@ -39,13 +39,14 @@ source .venv/bin/activate
 
 # 3. Setup and configure secrets
 invoke setup
-nano ansible/vars/vault.yml   # Add your domain, Cloudflare creds, and Tailscale users
+cp config/secrets.sample.yml config/secrets.enc.yml
+nano config/secrets.enc.yml   # Add your domain, credentials, and Tailscale users
 
 # 4. Deploy everything
 invoke deploy
 ```
 
-The deploy command handles vault encryption, OpenTofu, cloudflared, and Ansible automatically.
+The deploy command handles configuration generation and PyInfra automatically.
 
 > **Tip:** For a complete shell setup with direnv + uv integration, see [here](https://github.com/RyanLiu6/dotfiles).
 
@@ -67,7 +68,7 @@ invoke ops --daily               # Daily maintenance
 
 ## Services
 
-**Core:** traefik, tailscale-access, dashboard, monitoring, homeassistant
+**Core:** traefik, authentik,  monitoring, homeassistant
 **Media:** jellyfin, plex, transmission
 **Apps:** foundryvtt, sure, paperless, bookorbit
 **Utils:** backups
@@ -76,16 +77,17 @@ invoke ops --daily               # Daily maintenance
 
 | Group | Access | Auth |
 |-------|--------|------|
-| admin | All services | Tailscale + SSH |
-| members | FoundryVTT, Homepage | Tailscale |
+| authentik Admins | All services | Authentik OIDC / Passkey / WebAuthn |
+| nexus members | Specific apps configured in Authentik | Authentik OIDC |
 
 ## Documentation
 
 | Doc | Contents |
 |-----|----------|
+| [Authentik Setup Guide](docs/SETUP.md) | How to configure Authentik OIDC property mappings for Headscale |
 | [Deployment](docs/DEPLOYMENT.md) | Step-by-step setup guide, invoke tasks, maintenance |
 | [Architecture](docs/ARCHITECTURE.md) | Features, tech stack, deployment flow, monitoring & alerting |
-| [Access Control](docs/ACCESS_CONTROL.md) | Tailscale ACLs, Gatekeeper, Header Auth |
+| [Access Control](docs/ACCESS_CONTROL.md) | Tailscale ACLs, Authentik, Header Auth |
 | [Home Assistant OS](docs/haos-havm-setup.md) | HAOS on Apple Silicon (HAVM), Matter/Thread, and Prometheus |
 
 Each service also has its own README in `services/<name>/README.md`.
@@ -94,12 +96,13 @@ Each service also has its own README in `services/<name>/README.md`.
 
 ```
 nexus/
-├── ansible/            # Playbooks, roles, vault.yml
+├── config/             # secrets.yml and preset definitions
 ├── docs/               # Documentation
+├── infra.py            # PyInfra deployment script
 ├── scripts/            # Bootstrap script
 ├── services/           # Service definitions (Docker Compose & HAVM)
 ├── src/nexus/          # Python library
-├── terraform/          # Cloudflare DNS (OpenTofu)
+├── templates/          # Jinja templates for configuration generation
 ├── tasks.py            # Invoke tasks
 └── pyproject.toml      # Python config
 ```

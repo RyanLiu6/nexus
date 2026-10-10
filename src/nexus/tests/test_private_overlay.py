@@ -4,7 +4,6 @@ from nexus.config import (
     load_presets,
     resolve_preset,
 )
-from nexus.generate.dashboard import get_service_config
 from nexus.services import discover_services
 
 
@@ -25,7 +24,6 @@ def test_discover_services_finds_amane() -> None:
         assert "amane" in services
         manifest = services["amane"]
         assert manifest.name == "amane"
-        assert manifest.category == "media"
         assert manifest.subdomains == ["amane"]
         assert manifest.path == PRIVATE_SERVICES_PATH / "amane"
 
@@ -45,13 +43,3 @@ def test_presets_merge_private_services() -> None:
         assert "amane" in resolved_home
         # Verify public home services are also preserved
         assert "jellyfin" in resolved_home
-
-
-def test_dashboard_config_amane() -> None:
-    """Verify that get_service_config can parse amane's docker-compose labels."""
-    if PRIVATE_SERVICES_PATH and (PRIVATE_SERVICES_PATH / "amane").exists():
-        configs = get_service_config("amane")
-        assert len(configs) >= 1
-        assert configs[0]["name"] == "amane"
-        assert configs[0]["container"] == "amane"
-        assert "amane." in configs[0]["rule"]

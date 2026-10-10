@@ -24,8 +24,7 @@ def _get_terraform_vars_from_vault() -> dict[str, str]:
         vault = read_vault()
     except FileNotFoundError as err:
         raise ValueError(
-            "vault.yml not found. "
-            "Run: cp ansible/vars/vault.yml.sample ansible/vars/vault.yml"
+            "vault.yml not found. Run: cp config/secrets.yml.sample config/secrets.yml"
         ) from err
     except subprocess.CalledProcessError as err:
         raise ValueError(
@@ -53,7 +52,7 @@ def _get_terraform_vars_from_vault() -> dict[str, str]:
     if missing:
         raise ValueError(
             f"Missing or unconfigured values in vault.yml: {', '.join(missing)}\n"
-            f"Edit vault.yml: ansible-vault edit ansible/vars/vault.yml"
+            f"Edit vault.yml: sops config/secrets.yml"
         )
 
     return env_vars
@@ -79,7 +78,7 @@ def run_terraform(
     """Execute OpenTofu or Terraform to manage Cloudflare Tunnel and DNS for services.
 
     Creates a Cloudflare Tunnel and configures DNS records.
-    Reads Cloudflare credentials from vault.yml (decrypted via ansible-vault).
+    Reads Cloudflare credentials from vault.yml (decrypted via sops).
 
     Args:
         services: List of service names (used for DNS subdomain records).
@@ -130,21 +129,25 @@ def run_terraform(
     effective_services = set(services) | set(core_services)
 
     subdomains = []
+    public_subdomains = []
     for svc in effective_services:
         if svc in all_manifests:
             manifest = all_manifests[svc]
             if manifest.is_public:
-                continue
-            subdomains.extend(manifest.subdomains)
+                public_subdomains.extend(manifest.subdomains)
+            else:
+                subdomains.extend(manifest.subdomains)
         else:
             subdomains.append(svc)
 
     subdomains = sorted(list(set(subdomains)))
+    public_subdomains = sorted(list(set(public_subdomains)))
 
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "tailscale_server_ip": tailscale_ip,
         "subdomains": subdomains,
+        "public_subdomains": public_subdomains,
     }
 
     tf_vars_path = TERRAFORM_PATH / "terraform.tfvars.json"

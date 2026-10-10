@@ -6,7 +6,7 @@ The Nexus homelab framework supports a "private overlay" mechanism. This allows 
 
 The deployment toolchain automatically detects the presence of a private directory and dynamically merges its contents into your homelab deployment at runtime.
 
-Private services benefit from all the same automated features as public services (Tailscale access control, Traefik routing, Homepage dashboard generation) while remaining completely isolated.
+Private services benefit from all the same automated features as public services (Tailscale access control, Traefik routing, Authentik App integration) while remaining completely isolated.
 
 ### Auto-Detection
 
@@ -46,9 +46,7 @@ To add a new private service, simply create a folder under `services/` exactly a
 ```yaml
 name: my-secret-app
 description: "A completely private application"
-category: "Media"
 url: "https://secret.{{ domain }}"
-icon: "mdi-lock"
 subdomains:
   - "secret"
 ```
@@ -88,7 +86,6 @@ home:
 # Create a completely new preset
 secret-preset:
   - traefik
-  - tailscale-access
   - my-secret-app
 ```
 
@@ -106,8 +103,8 @@ When you run `inv deploy`:
 
 1. **Manifest Discovery**: `src/nexus/services.py` scans `nexus/services/` AND `nexus-private/services/`. It compiles a master dictionary of all `service.yml` manifests.
 2. **Preset Merging**: `src/nexus/config.py` loads the public `presets.yml` and then intelligently merges any configurations found in the private `presets.yml`.
-3. **Ansible Generation**: The Ansible playbook takes the merged preset list. It loops through both the public and private service directories, appending every matching `docker-compose.yml` fragment into the single, massive `docker-compose.yml` placed in the Nexus root.
-4. **Dashboard Links**: The homepage generator scans the private `service.yml` manifests and `rules/` files, dynamically generating dashboard links for your private apps without committing those links to the public repo.
+3. **PyInfra Generation**: The PyInfra playbook takes the merged preset list. It loops through both the public and private service directories, appending every matching `docker-compose.yml` fragment into the single, massive `docker-compose.yml` placed in the Nexus root.
+4. **Dashboard Links**: Authentik acts as the application dashboard, allowing you to link your private apps securely without committing those links to the public repo.
 
 ## Adding a New Service (Quickstart)
 

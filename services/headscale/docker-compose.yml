@@ -20,11 +20,7 @@ services:
       - ${NEXUS_DATA_DIRECTORY}/Config/headscale:/var/lib/headscale
     tmpfs:
       - /var/run/headscale
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
     environment:
       - HEADSCALE_SERVER_URL=https://headscale.${NEXUS_DOMAIN}
       - HEADSCALE_DNS_BASE_DOMAIN=nexus.internal
@@ -38,12 +34,14 @@ services:
       - "traefik.http.routers.headscale-http.rule=Host(`headscale.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.headscale-http.entrypoints=http"
       - "traefik.http.routers.headscale-http.middlewares=cloudflare-proto@file,security-headers@file"
+      - "traefik.http.routers.headscale-http.service=headscale"
       # HTTPS router (direct TLS access - bootstrap without tailscale-chain)
       - "traefik.http.routers.headscale.rule=Host(`headscale.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.headscale.entrypoints=https"
       - "traefik.http.routers.headscale.middlewares=security-headers@file"
       - "traefik.http.routers.headscale.tls=true"
       - "traefik.http.routers.headscale.tls.certresolver=certchallenge"
+      - "traefik.http.routers.headscale.service=headscale"
 
   headplane:
     image: ghcr.io/tale/headplane:latest
@@ -61,14 +59,21 @@ services:
       - ${NEXUS_ROOT_DIRECTORY}/services/headscale/headplane.yaml:/etc/headplane/config.yaml:ro
       - ${NEXUS_DATA_DIRECTORY}/Config/headscale/headplane:/var/lib/headplane
     environment:
+      - ORIGIN=https://headplane.${NEXUS_DOMAIN}
+      - HEADPLANE_SERVER__BASE_URL=https://headplane.${NEXUS_DOMAIN}
       - HEADSCALE_URL=http://headscale:8080
+      - HEADPLANE_OIDC__ISSUER=https://auth.${NEXUS_DOMAIN}/application/o/headplane/
+      - HEADPLANE_OIDC__CLIENT_ID=${HEADPLANE_OIDC_CLIENT_ID}
+      - HEADPLANE_OIDC__CLIENT_SECRET=${HEADPLANE_OIDC_CLIENT_SECRET}
+      - HEADPLANE_LOAD_ENV_OVERRIDES=true
+      - HEADPLANE_OIDC__SCOPE=openid profile email headscale-username
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
       - "traefik.http.services.headplane.loadbalancer.server.port=3000"
       - "traefik.http.routers.headplane.rule=Host(`headplane.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.headplane.entrypoints=https"
-      - "traefik.http.routers.headplane.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.headplane.middlewares=security-headers@file"
       - "traefik.http.routers.headplane.tls=true"
       - "traefik.http.routers.headplane.tls.certresolver=certchallenge"
 networks:

@@ -6,8 +6,6 @@
 core:
   - traefik
   - headscale
-  - tailscale-access
-  - dashboard
   - monitoring
   - homeassistant
   - scrypted
@@ -22,3 +20,5 @@ home:
     - jellyfin
     - gluetun
     - transmission
+    - authentik
+    - tailscale-proton

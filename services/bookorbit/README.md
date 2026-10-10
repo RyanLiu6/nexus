@@ -28,10 +28,10 @@ openssl rand -base64 32
 
 ### 2. Configure Vault Variables
 
-Edit the Ansible vault file:
+Edit the secrets file:
 
 ```bash
-ansible-vault edit ansible/vars/vault.yml
+PyInfra-vault edit config/secrets.yml
 ```
 
 Add the secrets:
@@ -56,7 +56,7 @@ nexus deploy home
 ### Access
 
 - **URL:** `https://bookorbit.${NEXUS_DOMAIN}`
-- **Auth:** Tailscale + tailscale-access (admins)
+- **Auth:** Tailscale + authentik (admins)
 - **Initial Setup:** Navigate to `https://bookorbit.${NEXUS_DOMAIN}` to complete the initial admin setup using your `bookorbit_setup_bootstrap_token`.
 
 ## Data Storage

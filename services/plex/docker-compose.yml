@@ -38,7 +38,7 @@ services:
       # Note: Plex has its own user auth; can add tsidp OAuth via Plex SSO
       - "traefik.http.routers.plex.rule=Host(`plex.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.plex.entrypoints=https"
-      - "traefik.http.routers.plex.middlewares=tailscale-chain@file"
+      - "traefik.http.routers.plex.middlewares=authentik-chain@file"
       - "traefik.http.routers.plex.tls=true"
       - "traefik.http.routers.plex.tls.certresolver=certchallenge"
 

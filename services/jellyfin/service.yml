@@ -1,16 +1,6 @@
-# Jellyfin - Media Server
-# Open source media streaming
-
 name: jellyfin
 description: Media server for movies and TV
-category: media
-icon: si-jellyfin
 subdomain: jellyfin
-
-access:
-  groups: [admins, members]
-  public: false
-
 dependencies:
-  - traefik
-  - tailscale-access
+- traefik
+- authentik

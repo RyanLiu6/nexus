@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: config/secrets.*\.yml$
+    age: 'age1q2jpywhc5823c8wz8e6p6yqaevp0f72eu2ctn4gaurxzca5vdcuskhdynh'

@@ -1,0 +1,16 @@
+services:
+  tailscale-proton:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-proton
+    network_mode: "service:gluetun"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - TS_EXTRA_ARGS=--login-server=https://headscale.${NEXUS_DOMAIN} --advertise-exit-node
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/tailscale-proton:/var/lib/tailscale
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy

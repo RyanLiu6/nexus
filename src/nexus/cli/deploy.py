@@ -3,11 +3,9 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import Optional
 
 import click
-import yaml
 
 from nexus.config import (
     PRESETS,
@@ -16,19 +14,10 @@ from nexus.config import (
     get_all_services,
     resolve_preset,
 )
-from nexus.deploy.ansible import run_ansible
 from nexus.deploy.terraform import (
     get_r2_credentials,
     get_tofu_cmd,
     run_terraform,
-)
-from nexus.generate.access_rules import sync_access_rules
-from nexus.generate.dashboard import (
-    generate_bookmarks_config,
-    generate_custom_css,
-    generate_dashboard_config,
-    generate_settings_config,
-    generate_widgets_config,
 )
 from nexus.services import discover_services, resolve_dependencies
 from nexus.types import R2Credentials
@@ -36,7 +25,7 @@ from nexus.utils import read_vault
 
 
 def _check_dependencies() -> list[str]:
-    required = ["docker", "ansible-vault", "cloudflared"]
+    required = ["docker", "sops", "cloudflared"]
     missing = []
 
     for tool in required:
@@ -66,24 +55,6 @@ def _create_docker_network() -> None:
     logging.info("Creating Docker nexus network...")
     subprocess.run(["docker", "network", "create", "nexus"], check=True)
     logging.info("✅ Created 'nexus' network")
-
-
-def _is_vault_encrypted() -> bool:
-    if not VAULT_PATH.exists():
-        return False
-
-    with open(VAULT_PATH) as f:
-        first_line = f.readline()
-    return first_line.startswith("$ANSIBLE_VAULT")
-
-
-def _encrypt_vault() -> None:
-    logging.info("Encrypting vault.yml...")
-    subprocess.run(
-        ["ansible-vault", "encrypt", str(VAULT_PATH)],
-        check=True,
-    )
-    logging.info("✅ Vault encrypted")
 
 
 def _get_tunnel_token() -> Optional[str]:
@@ -148,13 +119,6 @@ def _generate_configs(
 ) -> None:
     logging.info("Generating configurations...")
 
-    # Generate access rules from service manifests
-    if dry_run:
-        logging.info("[DRY RUN] Would generate access rules from service manifests")
-    else:
-        rules_path = sync_access_rules(services)
-        logging.info(f"Generated access rules: {rules_path}")
-
     # Resolve data_dir: arg -> env -> vault -> default
     if not data_dir:
         data_dir = os.environ.get("NEXUS_DATA_DIRECTORY")
@@ -169,57 +133,11 @@ def _generate_configs(
     if not data_dir:
         data_dir = "~/nexus-data"
 
-    homepage_dir = Path(data_dir).expanduser() / "Config" / "homepage"
-    dashboard_config_path = homepage_dir / "services.yaml"
-    settings_path = homepage_dir / "settings.yaml"
-    bookmarks_path = homepage_dir / "bookmarks.yaml"
-    widgets_path = homepage_dir / "widgets.yaml"
-    custom_css_path = homepage_dir / "custom.css"
-
     vault = {}
     try:
         vault = read_vault()
     except Exception:
-        logging.warning("Could not read vault secrets for dashboard generation.")
-
-    dashboard_config = generate_dashboard_config(
-        services, domain or "example.com", dry_run, secrets=vault
-    )
-    settings_config = generate_settings_config()
-    bookmarks_config = generate_bookmarks_config(domain=domain)
-    widgets_config = generate_widgets_config()
-    custom_css = generate_custom_css()
-
-    if dry_run:
-        logging.info(
-            f"[DRY RUN] Would write dashboard config to {dashboard_config_path}"
-        )
-        logging.info(f"[DRY RUN] Would write settings to {settings_path}")
-        logging.info(f"[DRY RUN] Would write bookmarks to {bookmarks_path}")
-        logging.info(f"[DRY RUN] Would write widgets to {widgets_path}")
-        logging.info(f"[DRY RUN] Would write custom css to {custom_css_path}")
-    else:
-        homepage_dir.mkdir(parents=True, exist_ok=True)
-
-        logging.info(f"Writing dashboard config to {dashboard_config_path}")
-        with dashboard_config_path.open("w") as f:
-            yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing settings to {settings_path}")
-        with settings_path.open("w") as f:
-            yaml.dump(settings_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing bookmarks to {bookmarks_path}")
-        with bookmarks_path.open("w") as f:
-            yaml.dump(bookmarks_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing widgets to {widgets_path}")
-        with widgets_path.open("w") as f:
-            yaml.dump(widgets_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing custom css to {custom_css_path}")
-        with custom_css_path.open("w") as f:
-            f.write(custom_css)
+        logging.warning("Could not read vault secrets.")
 
 
 @click.command()
@@ -238,10 +156,10 @@ def _generate_configs(
 )
 @click.option("--skip-dns", is_flag=True, default=False, help="Skip DNS/tunnel setup.")
 @click.option(
-    "--skip-ansible",
+    "--skip-deploy",
     is_flag=True,
     default=False,
-    help="Skip Ansible deployment (only generate configs).",
+    help="Skip deployment (only generate configs).",
 )
 @click.option(
     "--skip-cloudflared",
@@ -269,7 +187,7 @@ def main(
     preset: Optional[str],
     domain: Optional[str],
     skip_dns: bool,
-    skip_ansible: bool,
+    skip_deploy: bool,
     skip_cloudflared: bool,
     dry_run: bool,
     yes: bool,
@@ -278,7 +196,7 @@ def main(
 
     Orchestrates the full deployment flow: validates prerequisites, encrypts
     secrets, provisions Cloudflare infrastructure via Terraform, starts the
-    tunnel connector, and deploys services through Ansible.
+    tunnel connector, and deploys services through PyInfra.
 
     Args:
         services: Specific service names to deploy. Overrides preset.
@@ -287,7 +205,7 @@ def main(
         preset: Named service group to deploy (e.g., "core", "home").
         domain: Base domain for service URLs (e.g., "example.com").
         skip_dns: Skip Terraform DNS/tunnel provisioning.
-        skip_ansible: Skip Ansible deployment phase.
+        skip_deploy: Skip deployment phase.
         skip_cloudflared: Skip starting the cloudflared tunnel connector.
         dry_run: Preview changes without applying them.
         yes: Skip all confirmation prompts.
@@ -312,7 +230,6 @@ def main(
         install_hints = {
             "docker": "  brew install --cask docker / https://get.docker.com",
             "tofu": "  brew install opentofu / https://opentofu.org/docs/intro/install/",
-            "ansible-vault": "  brew install ansible / apt install ansible",
             "cloudflared": "  brew install cloudflare/cloudflare/cloudflared",
         }
         for tool in missing_tools:
@@ -329,15 +246,19 @@ def main(
             if not click.confirm("Continue anyway?", default=False):
                 sys.exit(1)
 
-    # Check vault exists
+    # Check secrets exist
     if not VAULT_PATH.exists():
-        vault_sample = VAULT_PATH.parent / "vault.yml.sample"
-        if vault_sample.exists():
-            logging.error("vault.yml not found!")
-            logging.info("Run: invoke setup")
-            logging.info("Then edit ansible/vars/vault.yml with your secrets")
+        secrets_sample = VAULT_PATH.parent / "secrets.sample.yml"
+        if secrets_sample.exists():
+            logging.error("secrets.enc.yml not found!")
+            logging.info("Run: cp config/secrets.sample.yml config/secrets.yml")
+            logging.info(
+                "Then edit config/secrets.yml with your secrets, and encrypt with sops."
+            )
         else:
-            logging.error("vault.yml.sample not found! Is this a valid nexus checkout?")
+            logging.error(
+                "secrets.sample.yml not found! Is this a valid nexus checkout?"
+            )
         sys.exit(1)
 
     # =========================================================================
@@ -371,26 +292,25 @@ def main(
 
     if not domain:
         logging.error("Domain not configured!")
-        logging.info("Set nexus_domain in vault.yml or use --domain")
+        logging.info("Set nexus_domain in secrets.yml or use --domain")
         sys.exit(1)
 
     # Show deployment plan
-    vault_status = "Encrypted" if _is_vault_encrypted() else "⚠️  NOT ENCRYPTED"
+    vault_status = (
+        "Encrypted" if "sops" in VAULT_PATH.read_text() else "⚠️  NOT ENCRYPTED"
+    )
     network_status = "Exists" if _check_docker_network() else "Will create"
 
     print(f"\nServices: {', '.join(services_list)}")
     print(f"Domain: {domain}")
-    print(f"Vault: {vault_status}")
+    print(f"Secrets: {vault_status}")
     print(f"Docker Network: {network_status}")
     print(f"Dry Run: {'Yes' if dry_run else 'No'}")
     print("=" * 60)
 
     if not yes and not dry_run:
         print("\n⚠️  Prerequisites check:")
-        print(
-            "   1. Have you configured ansible/vars/vault.yml "
-            "(including tailscale_users)?"
-        )
+        print("   1. Have you configured config/secrets.yml?")
         print("   2. Is Docker running?")
         if not click.confirm("\nProceed with deployment?", default=True):
             logging.info("Deployment cancelled.")
@@ -406,19 +326,7 @@ def main(
             _create_docker_network()
 
     # =========================================================================
-    # Step 4: Encrypt vault if needed
-    # =========================================================================
-    if not _is_vault_encrypted():
-        if dry_run:
-            logging.info("[DRY RUN] Would encrypt vault.yml")
-        else:
-            logging.info("\n📦 Vault is not encrypted. Encrypting now...")
-            logging.info("   You'll be prompted to create a vault password.")
-            logging.info("   ⚠️  SAVE THIS PASSWORD - needed for future deploys!\n")
-            _encrypt_vault()
-
-    # =========================================================================
-    # Step 5: Run Terraform for DNS/Tunnel
+    # Step 4: Run Terraform for DNS/Tunnel
     # =========================================================================
     if not skip_dns:
         logging.info("\n🌐 Setting up Cloudflare Tunnel...")
@@ -426,7 +334,7 @@ def main(
             run_terraform(services_list, domain, dry_run)
         except ValueError as e:
             logging.error(f"Terraform error: {e}")
-            logging.info("Fix vault.yml configuration and retry, or use --skip-dns")
+            logging.info("Fix secrets.yml configuration and retry, or use --skip-dns")
             sys.exit(1)
 
     # =========================================================================
@@ -474,16 +382,34 @@ def main(
                 )
 
     # =========================================================================
-    # Step 8: Deploy with Ansible
+    # Step 8: Deploy with PyInfra
     # =========================================================================
-    if not skip_ansible:
-        logging.info("\n🚀 Deploying services...")
-        run_ansible(
-            services_list,
-            dry_run,
-            r2_credentials=r2_credentials,
-            backups_r2_credentials=backups_r2_credentials,
-        )
+    if not skip_deploy:
+        logging.info("\n🚀 Deploying services using PyInfra...")
+        import subprocess
+
+        env = os.environ.copy()
+        env["NEXUS_SERVICES"] = ",".join(services_list)
+
+        # Inject Terraform R2 outputs into environment for PyInfra
+        if r2_credentials:
+            env["TF_FOUNDRY_S3_ENDPOINT"] = r2_credentials["endpoint"]
+            env["TF_FOUNDRY_S3_ACCESS_KEY"] = r2_credentials["access_key"]
+            env["TF_FOUNDRY_S3_SECRET_KEY"] = r2_credentials["secret_key"]
+        if backups_r2_credentials:
+            env["TF_BACKUPS_R2_ENDPOINT"] = backups_r2_credentials["endpoint"]
+            env["TF_BACKUPS_R2_ACCESS_KEY"] = backups_r2_credentials["access_key"]
+            env["TF_BACKUPS_R2_SECRET_KEY"] = backups_r2_credentials["secret_key"]
+
+        cmd = ["uv", "run", "pyinfra", "@local", "infra.py", "-y"]
+        if dry_run:
+            logging.info(f"[DRY RUN] Would execute: {' '.join(cmd)}")
+        else:
+            try:
+                subprocess.run(cmd, env=env, check=True)
+            except subprocess.CalledProcessError:
+                logging.error("PyInfra deployment failed.")
+                sys.exit(1)
 
     # =========================================================================
     # Done!
@@ -495,12 +421,12 @@ def main(
         print("  ✅ Deployment Complete!")
         print("=" * 60)
         print("\nAccess your services (via Tailscale):")
-        print(f"  Dashboard: https://nexus.{domain}")
-        print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
-        print(f"  Headscale: https://headscale.{domain}")
+        print(f"  Traefik: https://traefik.{domain}")
+        print(f"  FoundryVTT: https://foundry.{domain}")
+        print(f"  Headplane (VPN UI): https://headplane.{domain}")
 
         print("\n✅ Tailscale control server (Headscale) running locally")
-        print(f"   Server URL: https://headscale.{domain}")
+        print(f"   API URL: https://headscale.{domain}")
         print("\n⚠️  Connect this server to Headscale (one-time setup):")
         print(
             f"   sudo tailscale up --login-server https://headscale.{domain} "

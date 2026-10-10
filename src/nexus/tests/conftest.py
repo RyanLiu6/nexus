@@ -10,7 +10,7 @@ def temp_services_path(tmp_path: Path) -> Path:
     services_dir = tmp_path / "services"
     services_dir.mkdir()
 
-    for service in ["traefik", "auth", "dashboard", "plex", "jellyfin"]:
+    for service in ["traefik", "auth", "plex", "jellyfin"]:
         service_dir = services_dir / service
         service_dir.mkdir()
         compose_file = service_dir / "docker-compose.yml"
@@ -42,24 +42,6 @@ def mock_subprocess() -> Generator[MagicMock, None, None]:
             stderr="",
         )
         yield mock_run
-
-
-@pytest.fixture
-def temp_ansible_path(tmp_path: Path) -> Path:
-    ansible_dir = tmp_path / "ansible"
-    ansible_dir.mkdir()
-
-    playbook = ansible_dir / "playbook.yml"
-    playbook.write_text("""---
-- name: Test playbook
-  hosts: localhost
-  tasks: []
-""")
-
-    vars_dir = ansible_dir / "vars"
-    vars_dir.mkdir()
-
-    return ansible_dir
 
 
 @pytest.fixture

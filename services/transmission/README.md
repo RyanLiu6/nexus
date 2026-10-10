@@ -109,7 +109,7 @@ docker exec transmission transmission-remote -t all -r
 **Always use Tailscale protection:**
 ```yaml
 labels:
-  - "traefik.http.routers.transmission.middlewares=tailscale-access@docker"
+  - "traefik.http.routers.transmission.middlewares=authentik@docker"
 ```
 
 Transmission is a powerful tool - keep it protected!
