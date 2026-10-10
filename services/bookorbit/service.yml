@@ -17,4 +17,4 @@ services:
 
 dependencies:
   - traefik
-  - tailscale-access
+  - authentik

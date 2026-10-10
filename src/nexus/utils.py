@@ -55,46 +55,43 @@ def run_command(
 
 
 def read_vault(vault_path: Optional[Path] = None) -> dict[str, Any]:
-    """Read and decrypt the Ansible vault file.
+    """Read and decrypt the secrets file.
 
-    Uses ansible-vault to decrypt the vault.yml file and parse its contents.
-    Requires ansible-vault to be installed and the vault password to be
-    available (via --ask-vault-pass prompt or ANSIBLE_VAULT_PASSWORD_FILE).
+    Uses sops to decrypt the secrets.enc.yml file and parse its contents.
+    Requires sops to be installed and the age key to be configured.
 
     Args:
         vault_path: Path to the vault file. Defaults to VAULT_PATH.
 
     Returns:
         Dictionary containing the decrypted vault contents.
-        Structure matches the vault.yml schema (mixed types).
 
     Raises:
         FileNotFoundError: If the vault file does not exist.
-        subprocess.CalledProcessError: If ansible-vault decryption fails.
+        subprocess.CalledProcessError: If sops decryption fails.
         yaml.YAMLError: If the vault contents are not valid YAML.
     """
     path = vault_path or VAULT_PATH
 
     if not path.exists():
-        raise FileNotFoundError(f"Vault file not found: {path}")
+        raise FileNotFoundError(f"Secrets file not found: {path}")
 
-    # Check if vault is encrypted
+    # Check if vault is encrypted with SOPS
     with open(path) as f:
-        first_line = f.readline()
+        content = f.read()
 
-    if first_line.startswith("$ANSIBLE_VAULT"):
-        # Encrypted - use ansible-vault to decrypt
-        logging.debug(f"Decrypting vault: {path}")
+    if "sops:" in content:
+        # Encrypted - use sops to decrypt
+        logging.debug(f"Decrypting secrets: {path}")
         result = run_command(
-            ["ansible-vault", "view", str(path)],
+            ["sops", "-d", str(path)],
             capture=True,
         )
         vault_content = result.stdout
     else:
         # Unencrypted (development mode)
-        logging.debug(f"Reading unencrypted vault: {path}")
-        with open(path) as f:
-            vault_content = f.read()
+        logging.debug(f"Reading unencrypted secrets: {path}")
+        vault_content = content
 
     parsed: dict[str, Any] = yaml.safe_load(vault_content)
     return parsed

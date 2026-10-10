@@ -83,7 +83,7 @@ def generate_access_rules(
 # 1. Group memberships (must match Tailscale ACL policy)
 # 2. Per-service access rules
 #
-# Used by the tailscale-access ForwardAuth middleware.
+# Used by the authentik ForwardAuth middleware.
 #
 # AUTO-GENERATED FROM service.yml MANIFESTS - Edit manifests, not this file.
 

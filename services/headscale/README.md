@@ -11,7 +11,7 @@ It replaces the commercial Tailnet and coordinates encrypted WireGuard connectio
 - **Port 3478/UDP**: STUN endpoint for NAT traversal and DERP relaying.
 - **Web UI (Headplane)**: Serves a Tailscale admin console clone via Traefik (`https://headplane.<domain>`).
 - **ACL Policy**: Loaded from `tailscale/acl.hujson`, generated from user groups configured in `ansible/vars/vault.yml`.
-- **Identity & Authentication**: The host's `tailscaled` daemon connects to Headscale as the coordination server. Downstream, `tailscale-access` queries `tailscaled`'s LocalAPI socket (`/var/run/tailscale/tailscaled.sock`) to authenticate requests.
+- **Identity & Authentication**: The host's `tailscaled` daemon connects to Headscale as the coordination server. Downstream, `authentik` queries `tailscaled`'s LocalAPI socket (`/var/run/tailscale/tailscaled.sock`) to authenticate requests.
 
 ## Deployment
 

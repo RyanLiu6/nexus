@@ -49,7 +49,7 @@ Sure consists of four services:
 ## Access
 
 - **URL:** `https://sure.${NEXUS_DOMAIN}`
-- **Auth:** Tailscale + tailscale-access
+- **Auth:** Tailscale + authentik
 
 ## Data Storage
 

@@ -46,15 +46,15 @@ class TestCheckDependencies:
             missing = _check_dependencies()
             assert "tofu" not in missing
 
-    def test_check_dependencies_missing_ansible_vault(self) -> None:
+    def test_check_dependencies_missing_sops(self) -> None:
         def side_effect(cmd):
-            if cmd == "ansible-vault":
+            if cmd == "sops":
                 return None
             return "/usr/bin/" + cmd
 
         with patch("shutil.which", side_effect=side_effect):
             missing = _check_dependencies()
-            assert "ansible-vault" in missing
+            assert "sops" in missing
 
 
 class TestGenerateConfigs:
@@ -76,7 +76,7 @@ class TestGenerateConfigs:
         mock_widgets_config.return_value = {}
 
         _generate_configs(
-            ["traefik", "tailscale-access"], "example.com", data_dir=str(tmp_path)
+            ["traefik", "authentik"], "example.com", data_dir=str(tmp_path)
         )
 
         mock_dashboard_config.assert_called_once()
@@ -127,7 +127,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -150,7 +149,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -169,7 +167,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -188,7 +185,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -207,11 +203,10 @@ class TestMain:
             assert result.exit_code == 0, result.output
             mock_tf.assert_not_called()
 
-    def test_main_skip_ansible(self) -> None:
+    def test_main_skip_deploy(self) -> None:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -229,7 +224,7 @@ class TestMain:
                     "core",
                     "--domain",
                     "example.com",
-                    "--skip-ansible",
+                    "--skip-deploy",
                     "-y",
                 ],
             )
@@ -241,7 +236,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -263,7 +257,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -317,7 +310,6 @@ class TestMain:
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=False),
             patch("nexus.cli.deploy._create_docker_network") as mock_create,
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials"),
@@ -339,7 +331,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform"),
             patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,
@@ -372,7 +363,6 @@ class TestMain:
         with (
             patch("nexus.cli.deploy._check_dependencies", return_value=[]),
             patch("nexus.cli.deploy._check_docker_network", return_value=True),
-            patch("nexus.cli.deploy._is_vault_encrypted", return_value=True),
             patch("nexus.cli.deploy.VAULT_PATH") as mock_vault,
             patch("nexus.cli.deploy.run_terraform") as mock_tf,
             patch("nexus.cli.deploy.get_r2_credentials") as mock_r2,

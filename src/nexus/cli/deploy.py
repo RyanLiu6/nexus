@@ -16,8 +16,6 @@ from nexus.config import (
     get_all_services,
     resolve_preset,
 )
-
-# from nexus.deploy.ansible import run_ansible
 from nexus.deploy.terraform import (
     get_r2_credentials,
     get_tofu_cmd,
@@ -37,7 +35,7 @@ from nexus.utils import read_vault
 
 
 def _check_dependencies() -> list[str]:
-    required = ["docker", "ansible-vault", "cloudflared"]
+    required = ["docker", "sops", "cloudflared"]
     missing = []
 
     for tool in required:
@@ -67,24 +65,6 @@ def _create_docker_network() -> None:
     logging.info("Creating Docker nexus network...")
     subprocess.run(["docker", "network", "create", "nexus"], check=True)
     logging.info("✅ Created 'nexus' network")
-
-
-def _is_vault_encrypted() -> bool:
-    if not VAULT_PATH.exists():
-        return False
-
-    with open(VAULT_PATH) as f:
-        first_line = f.readline()
-    return first_line.startswith("$ANSIBLE_VAULT")
-
-
-def _encrypt_vault() -> None:
-    logging.info("Encrypting vault.yml...")
-    subprocess.run(
-        ["ansible-vault", "encrypt", str(VAULT_PATH)],
-        check=True,
-    )
-    logging.info("✅ Vault encrypted")
 
 
 def _get_tunnel_token() -> Optional[str]:
@@ -239,10 +219,10 @@ def _generate_configs(
 )
 @click.option("--skip-dns", is_flag=True, default=False, help="Skip DNS/tunnel setup.")
 @click.option(
-    "--skip-ansible",
+    "--skip-deploy",
     is_flag=True,
     default=False,
-    help="Skip Ansible deployment (only generate configs).",
+    help="Skip deployment (only generate configs).",
 )
 @click.option(
     "--skip-cloudflared",
@@ -270,7 +250,7 @@ def main(
     preset: Optional[str],
     domain: Optional[str],
     skip_dns: bool,
-    skip_ansible: bool,
+    skip_deploy: bool,
     skip_cloudflared: bool,
     dry_run: bool,
     yes: bool,
@@ -279,7 +259,7 @@ def main(
 
     Orchestrates the full deployment flow: validates prerequisites, encrypts
     secrets, provisions Cloudflare infrastructure via Terraform, starts the
-    tunnel connector, and deploys services through Ansible.
+    tunnel connector, and deploys services through PyInfra.
 
     Args:
         services: Specific service names to deploy. Overrides preset.
@@ -288,7 +268,7 @@ def main(
         preset: Named service group to deploy (e.g., "core", "home").
         domain: Base domain for service URLs (e.g., "example.com").
         skip_dns: Skip Terraform DNS/tunnel provisioning.
-        skip_ansible: Skip Ansible deployment phase.
+        skip_deploy: Skip deployment phase.
         skip_cloudflared: Skip starting the cloudflared tunnel connector.
         dry_run: Preview changes without applying them.
         yes: Skip all confirmation prompts.
@@ -313,7 +293,6 @@ def main(
         install_hints = {
             "docker": "  brew install --cask docker / https://get.docker.com",
             "tofu": "  brew install opentofu / https://opentofu.org/docs/intro/install/",
-            "ansible-vault": "  brew install ansible / apt install ansible",
             "cloudflared": "  brew install cloudflare/cloudflare/cloudflared",
         }
         for tool in missing_tools:
@@ -330,15 +309,19 @@ def main(
             if not click.confirm("Continue anyway?", default=False):
                 sys.exit(1)
 
-    # Check vault exists
+    # Check secrets exist
     if not VAULT_PATH.exists():
-        vault_sample = VAULT_PATH.parent / "vault.yml.sample"
-        if vault_sample.exists():
-            logging.error("vault.yml not found!")
-            logging.info("Run: invoke setup")
-            logging.info("Then edit ansible/vars/vault.yml with your secrets")
+        secrets_sample = VAULT_PATH.parent / "secrets.sample.yml"
+        if secrets_sample.exists():
+            logging.error("secrets.enc.yml not found!")
+            logging.info("Run: cp config/secrets.sample.yml config/secrets.yml")
+            logging.info(
+                "Then edit config/secrets.yml with your secrets, and encrypt with sops."
+            )
         else:
-            logging.error("vault.yml.sample not found! Is this a valid nexus checkout?")
+            logging.error(
+                "secrets.sample.yml not found! Is this a valid nexus checkout?"
+            )
         sys.exit(1)
 
     # =========================================================================
@@ -372,26 +355,25 @@ def main(
 
     if not domain:
         logging.error("Domain not configured!")
-        logging.info("Set nexus_domain in vault.yml or use --domain")
+        logging.info("Set nexus_domain in secrets.yml or use --domain")
         sys.exit(1)
 
     # Show deployment plan
-    vault_status = "Encrypted" if _is_vault_encrypted() else "⚠️  NOT ENCRYPTED"
+    vault_status = (
+        "Encrypted" if "sops" in VAULT_PATH.read_text() else "⚠️  NOT ENCRYPTED"
+    )
     network_status = "Exists" if _check_docker_network() else "Will create"
 
     print(f"\nServices: {', '.join(services_list)}")
     print(f"Domain: {domain}")
-    print(f"Vault: {vault_status}")
+    print(f"Secrets: {vault_status}")
     print(f"Docker Network: {network_status}")
     print(f"Dry Run: {'Yes' if dry_run else 'No'}")
     print("=" * 60)
 
     if not yes and not dry_run:
         print("\n⚠️  Prerequisites check:")
-        print(
-            "   1. Have you configured ansible/vars/vault.yml "
-            "(including tailscale_users)?"
-        )
+        print("   1. Have you configured config/secrets.yml?")
         print("   2. Is Docker running?")
         if not click.confirm("\nProceed with deployment?", default=True):
             logging.info("Deployment cancelled.")
@@ -407,19 +389,7 @@ def main(
             _create_docker_network()
 
     # =========================================================================
-    # Step 4: Encrypt vault if needed
-    # =========================================================================
-    if not _is_vault_encrypted():
-        if dry_run:
-            logging.info("[DRY RUN] Would encrypt vault.yml")
-        else:
-            logging.info("\n📦 Vault is not encrypted. Encrypting now...")
-            logging.info("   You'll be prompted to create a vault password.")
-            logging.info("   ⚠️  SAVE THIS PASSWORD - needed for future deploys!\n")
-            _encrypt_vault()
-
-    # =========================================================================
-    # Step 5: Run Terraform for DNS/Tunnel
+    # Step 4: Run Terraform for DNS/Tunnel
     # =========================================================================
     if not skip_dns:
         logging.info("\n🌐 Setting up Cloudflare Tunnel...")
@@ -427,7 +397,7 @@ def main(
             run_terraform(services_list, domain, dry_run)
         except ValueError as e:
             logging.error(f"Terraform error: {e}")
-            logging.info("Fix vault.yml configuration and retry, or use --skip-dns")
+            logging.info("Fix secrets.yml configuration and retry, or use --skip-dns")
             sys.exit(1)
 
     # =========================================================================
@@ -477,7 +447,7 @@ def main(
     # =========================================================================
     # Step 8: Deploy with PyInfra
     # =========================================================================
-    if not skip_ansible:
+    if not skip_deploy:
         logging.info("\n🚀 Deploying services using PyInfra...")
         import subprocess
 

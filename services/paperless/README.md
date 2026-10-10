@@ -57,7 +57,7 @@ nexus deploy home
 ### Access
 
 - **URL:** `https://paperless.${NEXUS_DOMAIN}`
-- **Auth:** Tailscale + tailscale-access (admins)
+- **Auth:** Tailscale + authentik (admins)
 
 ## Data Storage
 

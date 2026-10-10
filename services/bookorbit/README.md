@@ -56,7 +56,7 @@ nexus deploy home
 ### Access
 
 - **URL:** `https://bookorbit.${NEXUS_DOMAIN}`
-- **Auth:** Tailscale + tailscale-access (admins)
+- **Auth:** Tailscale + authentik (admins)
 - **Initial Setup:** Navigate to `https://bookorbit.${NEXUS_DOMAIN}` to complete the initial admin setup using your `bookorbit_setup_bootstrap_token`.
 
 ## Data Storage

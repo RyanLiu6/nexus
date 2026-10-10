@@ -16,4 +16,4 @@ dashboard:
 
 dependencies:
   - traefik
-  - tailscale-access
+  - authentik

@@ -96,10 +96,10 @@ def verify_backups() -> bool:
 def check_service_logs() -> None:
     """Scan service logs from the last hour for error messages.
 
-    Checks traefik, headscale, tailscale-access, and jellyfin container logs
+    Checks traefik, headscale, authentik, and jellyfin container logs
     and logs a warning if errors are found.
     """
-    services = ["traefik", "headscale", "tailscale-access", "jellyfin"]
+    services = ["traefik", "headscale", "authentik", "jellyfin"]
 
     for service in services:
         result = subprocess.run(
@@ -181,6 +181,6 @@ def monthly_tasks() -> None:
     logger.info("📅 Running monthly tasks...")
 
     logger.info("⚠️  Monthly reminder: Consider rotating secrets")
-    logger.info("   Run: ansible-vault rekey ansible/vars/vault.yml")
+    logger.info("   Run: sops rotate config/secrets.enc.yml")
 
     logger.info("✓ Monthly tasks complete")

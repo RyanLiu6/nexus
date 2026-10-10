@@ -14,7 +14,7 @@ Docker Image is from Traefik, found [here](https://hub.docker.com/r/traefik/trae
   - **Docker Provider:** Automatically discovers containers attached to the `nexus` network with `traefik.enable=true` labels
   - **File Provider:** Loads dynamic router/service definitions from `/rules` (`services/traefik/rules/`), including middlewares, TLS configuration, and external VMs like Home Assistant (`services/traefik/rules/homeassistant.yml`)
 - **Certificates:** Automated wildcard/subdomain DNS-01 challenges via Cloudflare (`certchallenge` resolver)
-- **Authentication & Security:** Standard requests route through `tailscale-chain@file` (combines IP allowlists, `tailscale-access` ForwardAuth middleware, and security headers)
+- **Authentication & Security:** Standard requests route through `tailscale-chain@file` (combines IP allowlists, `authentik` ForwardAuth middleware, and security headers)
 
 ## Setup
 
@@ -113,9 +113,9 @@ N/A — Traefik configuration is version controlled. Let's Encrypt certificates 
 
 #### Solutions
 
-1. **Check tailscale-access logs:**
+1. **Check authentik logs:**
    ```bash
-   docker logs tailscale-access
+   docker logs authentik
    ```
 
 2. **Verify middleware configuration:**

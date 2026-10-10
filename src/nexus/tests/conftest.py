@@ -45,24 +45,6 @@ def mock_subprocess() -> Generator[MagicMock, None, None]:
 
 
 @pytest.fixture
-def temp_ansible_path(tmp_path: Path) -> Path:
-    ansible_dir = tmp_path / "ansible"
-    ansible_dir.mkdir()
-
-    playbook = ansible_dir / "playbook.yml"
-    playbook.write_text("""---
-- name: Test playbook
-  hosts: localhost
-  tasks: []
-""")
-
-    vars_dir = ansible_dir / "vars"
-    vars_dir.mkdir()
-
-    return ansible_dir
-
-
-@pytest.fixture
 def temp_terraform_path(tmp_path: Path) -> Path:
     tf_dir = tmp_path / "terraform"
     tf_dir.mkdir()

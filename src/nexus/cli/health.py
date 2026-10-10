@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-CRITICAL_SERVICES = ["traefik", "headscale", "tailscale-access"]
+CRITICAL_SERVICES = ["traefik", "headscale", "authentik"]
 
 
 @click.command()

@@ -11,11 +11,11 @@ ALL_SERVICES = [
     if (discover_services()[name].path / "docker-compose.yml").exists()
 ]
 
-# Services where the standard HTTPS + tailscale-chain Traefik pattern doesn't apply
+# Services where the standard HTTPS + authentik-chain Traefik pattern doesn't apply
 _TRAEFIK_HTTPS_SKIP = {
     "cloudflared",
     "backups",
-    "tailscale-access",
+    "authentik",
     "foundryvtt",
     "traefik",
     "gluetun",

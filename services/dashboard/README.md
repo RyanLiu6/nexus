@@ -26,7 +26,7 @@ A modern, fully static, fast, secure, fully proxied, highly customizable applica
 ## Access
 
 - **URL:** `https://dashboard.${NEXUS_DOMAIN}` (or just `https://${NEXUS_DOMAIN}`)
-- **Auth:** Tailscale + tailscale-access
+- **Auth:** Tailscale + authentik
 
 ## Data Storage
 
