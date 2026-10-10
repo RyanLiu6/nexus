@@ -27,8 +27,23 @@ resource "cloudflare_dns_record" "headplane" {
 # Variables
 # =============================================================================
 
+variable "tailscale_server_ip" {
+  description = "Tailscale IP of the Nexus server"
+  type        = string
+  default     = ""
+}
+
 variable "subdomains" {
   description = "List of subdomains to create DNS records for"
   type        = set(string)
   default     = []
+}
+
+resource "cloudflare_dns_record" "headscale_direct" {
+  zone_id = var.cloudflare_zone_id
+  name    = "headscale"
+  content = "75.156.35.107"
+  type    = "A"
+  ttl     = 1
+  proxied = false
 }
