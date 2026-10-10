@@ -77,7 +77,7 @@ Since OIDC is configured, simply run:
 ```bash
 tailscale up --login-server https://headscale.<your-domain>
 ```
-Follow the web link provided to authenticate via Google.
+Follow the web link provided to authenticate via Authentik.
 
 **Option B: Pre-authenticated Key (For unattended servers)**
 
@@ -99,9 +99,9 @@ docker exec headscale headscale nodes list
 
 ## OIDC Authentication & User Access Control
 
-We had to explicitly set up OpenID Connect (OIDC) using Google to handle authentication for our Tailscale clients. Since Headscale replaces the commercial Tailscale backend, we needed a way to securely authenticate users before they are allowed to join the private network.
+We had to explicitly set up OpenID Connect (OIDC) using Authentik to handle authentication for our Tailscale clients. Since Headscale replaces the commercial Tailscale backend, we needed a way to securely authenticate users before they are allowed to join the private network.
 
-By setting up OIDC, users authenticate directly via their Google account in the browser. Furthermore, Headscale is configured with an explicit `allowed_users` list derived directly from our `vault.yml` (`tailscale_users`). This acts as an automated bouncer: if someone successfully authenticates via Google but is not explicitly listed as an admin or member in our PyInfra configuration, Headscale immediately denies them network access.
+By setting up OIDC, users authenticate directly via Authentik in the browser (OIDC providers for both Headscale and Headplane are configured within Authentik). Furthermore, Headscale is configured with an explicit `allowed_users` list derived directly from our `vault.yml` (`tailscale_users`). This acts as an automated bouncer: if someone successfully authenticates via Authentik but is not explicitly listed as an admin or member in our PyInfra configuration, Headscale immediately denies them network access.
 
 For detailed setup instructions, please see the [OIDC Authentication Guide](OIDC.md).
 
