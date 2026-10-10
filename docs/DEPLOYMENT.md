@@ -214,6 +214,17 @@ sure_openai_model: "ena"
 
 ---
 
+## Disaster Recovery & Wiping the Server
+
+If you ever need to wipe this Mac Mini or migrate to a new machine, your entire infrastructure is codified. As long as you have your `config/secrets.enc.yml` (and the age key to decrypt it) and your `~/Data/Backups` (Restic or ProtonDrive), you can fully restore:
+
+1. **Restore Data**: Copy your `~/Data` directory (specifically `Config`, `Media`, and `Backups`) to the new machine exactly as they were.
+2. **Setup Secrets**: Clone this repo and ensure your `config/secrets.enc.yml` is present.
+3. **Run Deploy**: Run `./scripts/bootstrap` then `inv deploy`. Terraform will synchronize Cloudflare DNS to your new public IP, and Pyinfra will recreate all `.env` files and containers.
+4. **Re-authenticate**: Run the `sudo tailscale up --login-server ...` command on the new host to rejoin the Tailnet. Because your `~/Data/Config/headscale` database was restored, it will recognize the node.
+
+---
+
 ## More Documentation
 
 - [Architecture](ARCHITECTURE.md) - System design

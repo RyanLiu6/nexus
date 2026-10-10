@@ -39,10 +39,19 @@ variable "subdomains" {
   default     = []
 }
 
+# =============================================================================
+# Headscale Direct Record (UDP Support)
+# =============================================================================
+# Why is this manually defined instead of using `public_subdomains`?
+# The `public_subdomains` block automatically applies `proxied = true` (Cloudflare's orange cloud).
+# Cloudflare proxy only supports HTTP/HTTPS (TCP 80/443). However, Headscale/Tailscale
+# requires UDP traffic for peer-to-peer Wireguard tunnels and STUN negotiation.
+# By manually creating this record with `proxied = false`, we expose the raw IP,
+# allowing UDP traffic to flow natively and preventing forced TCP relays.
 resource "cloudflare_dns_record" "headscale_direct" {
   zone_id = var.cloudflare_zone_id
   name    = "headscale"
-  content = "75.156.35.107"
+  content = trimspace(data.http.myip.response_body)
   type    = "A"
   ttl     = 1
   proxied = false
