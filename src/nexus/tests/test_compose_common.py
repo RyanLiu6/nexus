@@ -89,10 +89,13 @@ def test_web_containers_have_traefik_https_labels(service_name: str) -> None:
             continue
 
         containers_with_https += 1
-        has_authentik = any("authentik-chain@file" in label for label in labels)
-        assert has_authentik, (
+        has_auth = any(
+            "authentik-chain@file" in label or "internal-chain@file" in label
+            for label in labels
+        )
+        assert has_auth, (
             f"{container_name}: has entrypoints=https but missing "
-            "authentik-chain@file middleware"
+            "authentik-chain@file or internal-chain@file middleware"
         )
 
     assert containers_with_https > 0, (

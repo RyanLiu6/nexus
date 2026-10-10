@@ -28,7 +28,7 @@ class TestHeadscaleManifest:
 
     def test_subdomains(self) -> None:
         manifest = discover_services()["headscale"]
-        assert manifest.subdomains == ["headscale", "headplane"]
+        assert manifest.subdomains == ["headplane"]
 
 
 class TestHeadscaleDockerCompose:
