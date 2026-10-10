@@ -6,7 +6,7 @@ Running Home Assistant OS alongside Nexus on Apple Silicon using [HAVM (Home Ass
 
 ## Overview
 
-Nexus orchestrates containerized services with Docker Compose and Ansible. While core services run cleanly inside Docker, running a full smart home appliance—specifically **Home Assistant OS (HAOS)** with **Supervisor**, **Add-ons**, and **Matter-over-Thread**—faces networking limitations in containerized macOS Docker (due to Docker Desktop's VM network boundary blocking L2 multicast/mDNS and IPv6 Thread routing).
+Nexus orchestrates containerized services with Docker Compose and PyInfra. While core services run cleanly inside Docker, running a full smart home appliance—specifically **Home Assistant OS (HAOS)** with **Supervisor**, **Add-ons**, and **Matter-over-Thread**—faces networking limitations in containerized macOS Docker (due to Docker Desktop's VM network boundary blocking L2 multicast/mDNS and IPv6 Thread routing).
 
 **HAVM** solves this by running HAOS directly on macOS using Apple's native **Virtualization framework** (`VZVirtualMachine`):
 - **Zero-config headless CLI:** Auto-downloads, extracts, and provisions the official HAOS ARM64 image.
@@ -29,7 +29,7 @@ Nexus orchestrates containerized services with Docker Compose and Ansible. While
 │   │  • Traefik (:80/:443)      │      │  • Home Assistant OS       │   │
 │   │  • Prometheus (:9090) ───────Scrapes──> • havm Metrics (:9210)  │   │
 │   │  • Grafana (:3000)         │      │  • Supervisor & Add-ons    │   │
-│   │  • Homepage (:3000)        │      │                            │   │
+│   │  • Authentik (:9000)        │      │                            │   │
 │   │  • Backrest (:9898)        │      │                            │   │
 │   └─────────────┼──────────────┘      └─────────────┼──────────────┘   │
 │                 │                                   │                  │
@@ -205,17 +205,16 @@ In modern Home Assistant (2026+), reverse proxy settings are managed under **Set
    - USB accessories attached
    - Scrape health (`up`)
 
-### 3. Nexus Homepage
+### 3. Nexus Authentik Dashboard
 
-Home Assistant is displayed under the **Core** services category on Homepage:
+Home Assistant is displayed under the **Core** services category on the Authentik Dashboard:
 - Accessible directly via `https://homeassistant.<domain>` over Tailscale.
-- Configured in `${NEXUS_DATA_DIRECTORY}/Config/homepage/services.yaml`:
+- Handled natively by Authentik Applications view:
   ```yaml
   - Core:
     - homeassistant:
         href: https://homeassistant.<domain>
         description: Home automation platform
-        icon: si-homeassistant
   ```
 
 ---

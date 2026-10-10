@@ -28,10 +28,10 @@ openssl rand -base64 16
 
 ### 2. Configure Vault Variables
 
-Edit the Ansible vault file:
+Edit the secrets file:
 
 ```bash
-ansible-vault edit ansible/vars/vault.yml
+PyInfra-vault edit config/secrets.yml
 ```
 
 Add the secrets:

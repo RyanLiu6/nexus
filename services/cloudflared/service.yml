@@ -1,18 +1,5 @@
-# Cloudflared - Cloudflare Tunnel Connector
-# Provides secure public access without port forwarding
-
 name: cloudflared
 description: Cloudflare Tunnel for public access
-category: core
-icon: si-cloudflare
-subdomain: null # Internal tunnel service
-
-access:
-  groups: [] # Internal service
-  public: false
-
-dashboard:
-  exclude: true # Internal service
-
+subdomain: null
 dependencies:
-  - traefik
+- traefik

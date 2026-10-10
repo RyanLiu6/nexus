@@ -53,19 +53,24 @@ resource "cloudflare_zero_trust_dns_location" "tailscale" {
   name           = "Tailscale Network"
   client_default = true
   ecs_support    = false
+  networks = []
 
   endpoints = {
     doh = {
       enabled = true
+      networks = []
     }
     dot = {
       enabled = true
+      networks = []
     }
     ipv4 = {
       enabled = false
+      networks = []
     }
     ipv6 = {
       enabled = true
+      networks = []
     }
   }
 

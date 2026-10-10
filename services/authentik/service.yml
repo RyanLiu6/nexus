@@ -1,0 +1,6 @@
+name: authentik
+description: Authentik identity provider
+subdomain: auth
+dependencies:
+- traefik
+public: true

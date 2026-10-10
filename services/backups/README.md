@@ -43,7 +43,7 @@ R2 is optional — only active when `backups_r2_access_key` is configured. Both 
 
 ### Encryption
 
-All repositories use `restic_password` from Ansible vault. **Store this securely** — backups are unrecoverable without it.
+All repositories use `restic_password` from sops secrets. **Store this securely** — backups are unrecoverable without it.
 
 ## CLI Operations
 
@@ -112,8 +112,8 @@ The raw data syncs (paperless, bookorbit) mean documents and books are recoverab
 
 **Migrate to rclone:**
 1. Add a ProtonDrive rclone remote (`rclone config`)
-2. For restic repos: add a third repo in `config.json.j2`
-3. For raw data: replace crontabs with `rclone sync` tasks in Ansible
+2. For restic repos: add a third repo in `config.json`
+3. For raw data: replace crontabs with `rclone sync` tasks in PyInfra
 4. Clear `protondrive_sync_directory` in vault — deploy removes all sync jobs
 5. Delete `scripts/sync-to-protondrive.sh`
 

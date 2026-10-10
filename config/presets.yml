@@ -6,7 +6,6 @@
 core:
   - traefik
   - headscale
-  - dashboard
   - monitoring
   - homeassistant
   - scrypted

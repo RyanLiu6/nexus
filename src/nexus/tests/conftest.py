@@ -10,7 +10,7 @@ def temp_services_path(tmp_path: Path) -> Path:
     services_dir = tmp_path / "services"
     services_dir.mkdir()
 
-    for service in ["traefik", "auth", "dashboard", "plex", "jellyfin"]:
+    for service in ["traefik", "auth", "plex", "jellyfin"]:
         service_dir = services_dir / service
         service_dir.mkdir()
         compose_file = service_dir / "docker-compose.yml"

@@ -4,6 +4,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.18"
     }
+    http = {
+      source = "hashicorp/http"
+      version = "~> 3.4"
+    }
   }
 
   required_version = ">= 1.0"

@@ -1,0 +1,30 @@
+{
+  "tagOwners": {
+    "tag:nexus-server": ["ryanliu6"]
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["ryanliu6", "autogroup:member"],
+      "dst": ["autogroup:internet:*"]
+    },
+    {
+      "action": "accept",
+      "src": ["ryanliu6"],
+      "dst": ["tag:nexus-server:*"]
+    },
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["tag:nexus-server:80", "tag:nexus-server:443"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["ryanliu6"],
+      "dst": ["tag:nexus-server"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ]
+}

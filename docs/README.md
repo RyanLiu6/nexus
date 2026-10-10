@@ -18,8 +18,6 @@ Each service has its own README in `services/<name>/README.md`:
 | Service | Purpose |
 |---------|---------|
 | traefik | Reverse proxy |
-| tailscale-access | Auth middleware |
-| dashboard | Homepage |
 | monitoring | Prometheus + Grafana |
 | homeassistant | Home automation platform (HAVM) |
 | backups | Automated backups (Backrest) |

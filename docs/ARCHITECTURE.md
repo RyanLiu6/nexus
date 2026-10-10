@@ -7,13 +7,13 @@ Nexus is a self-hosted homelab solution that provides:
 - **Centralized access** to all services via a single dashboard
 - **Secure authentication** with Tailscale (Network & Service level)
 - **Automated DNS** via OpenTofu + Cloudflare
-- **Containerized services** managed by Ansible + Docker Compose
+- **Containerized services** managed by PyInfra + Docker Compose
 
 ## Features Checklist
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Dashboard | ✅ | Homepage with links to all services |
+| Dashboard | ✅ | Authentik Dashboard with SSO to all services |
 | Tailscale Auth | ✅ | Network and service-level access control |
 | User Groups | ✅ | Access control via Tailscale ACLs |
 | Auto SSL | ✅ | Let's Encrypt via Traefik |
@@ -35,9 +35,9 @@ Nexus is a self-hosted homelab solution that provides:
 |-------|------------|---------|
 | Runtime | Docker Compose + macOS Virtualization (HAVM) | Container & VM orchestration |
 | Proxy | Traefik | HTTP→HTTPS redirect, reverse proxy, SSL, routing |
-| Auth | Tailscale + Header Auth | Network security & Identity |
+| Auth | Authentik (OIDC) + Headscale | Network security & Identity |
 | DNS | OpenTofu + Cloudflare | DNS record management |
-| Config | Ansible | Docker Compose generation |
+| Config | PyInfra | Docker Compose generation |
 | VPN | Headscale + Tailscale | Self-hosted control server & secure remote access |
 | CLI | Python + Invoke | User interface |
 
@@ -53,7 +53,7 @@ User runs: invoke deploy --preset home
     ├── 2. OpenTofu updates Cloudflare DNS
     │       └── Creates A/CNAME records for each service
     │
-    ├── 3. Ansible runs playbook
+    ├── 3. PyInfra runs playbook
     │       ├── Reads services from preset
     │       ├── Combines individual docker-compose.yml files
     │       ├── Generates root docker-compose.yml from template
@@ -64,11 +64,11 @@ User runs: invoke deploy --preset home
 
 ### docker-compose.yml Generation
 
-Ansible generates the root `docker-compose.yml` by combining individual service files:
+PyInfra generates the root `docker-compose.yml` by combining individual service files:
 
 1. Each service has its own `services/<name>/docker-compose.yml`
-2. Ansible reads the preset to determine which services to include
-3. The `ansible/roles/nexus/templates/docker-compose.yml.j2` template combines them
+2. PyInfra reads the preset to determine which services to include
+3. The `pyinfra/roles/nexus/templates/docker-compose.yml.j2 (PyInfra Jinja)` template combines them
 4. Variables from `vault.yml` are injected (domains, passwords, etc.)
 5. Final `docker-compose.yml` is written to the project root
 
@@ -84,7 +84,7 @@ This allows:
 ```
 Internet → Router Port Forwarding (443) → Traefik → FoundryVTT / Headscale (Public)
 
-Tailscale → Device (100.x.x.x) → Traefik → tailscale-access → Docker Services
+Tailscale → Device (100.x.x.x) → Traefik → authentik → Docker Services
                                    │              ↓
                                    │      Check Group Access
                                    │
@@ -125,7 +125,7 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 
 ```python
 PRESETS = {
-    "core": ["traefik", "tailscale-access", "dashboard", "monitoring"],
+    "core": ["traefik", "authentik", "monitoring"],
     "home": ["core", "backups", "foundryvtt", "jellyfin", "virtue", "transmission", "paperless", "bookorbit"],
 }
 ```
@@ -135,8 +135,7 @@ PRESETS = {
 | Service | Purpose | Access |
 |---------|---------|--------|
 | **traefik** | Reverse proxy, SSL | Admin (Tailscale) |
-| **tailscale-access**| Auth Middleware | Internal |
-| **dashboard** | Homepage | Admin/Member (Tailscale) |
+| **authentik** | Identity Provider | Admin/Members |
 | **monitoring** | Prometheus + Grafana | Admin (Tailscale) |
 | **jellyfin** | Media server | Admin |
 | **virtue** | Media server (secondary Jellyfin) | Admin |
@@ -155,8 +154,8 @@ PRESETS = {
 
 ```
 nexus/
-├── ansible/                  # Configuration management
-│   ├── playbook.yml          # Main Ansible playbook
+├── pyinfra/                  # Configuration management
+│   ├── playbook.yml          # Main PyInfra playbook
 │   ├── roles/nexus/          # Service deployment role
 │   │   ├── tasks/main.yml
 │   │   └── templates/        # docker-compose.yml.j2
@@ -175,8 +174,8 @@ nexus/
 │
 ├── services/                 # Service definitions
 │   ├── traefik/              # Reverse proxy & dynamic rules
-│   ├── tailscale-access/     # Auth middleware
-│   ├── dashboard/
+│   ├── authentik/            # SSO and OIDC Identity Provider
+│
 │   ├── monitoring/
 │   ├── homeassistant/        # HAVM config & LaunchAgents
 │   ├── paperless/
@@ -186,7 +185,7 @@ nexus/
 ├── src/nexus/                # Python library
 │   ├── cli/                  # CLI entry points
 │   ├── config.py             # Presets and configuration
-│   ├── deploy/               # Ansible, OpenTofu, Docker
+│   ├── deploy/               # PyInfra, OpenTofu, Docker
 │   ├── generate/             # Config generation
 │   ├── health/               # Health checks
 │   ├── operations/           # Maintenance tasks
@@ -206,7 +205,7 @@ nexus/
 
 ## Secrets Management
 
-All secrets stored in `ansible/vars/vault.yml` (encrypted with ansible-vault).
+All secrets stored in `config/secrets.yml` (encrypted with sops).
 
 ### Required Secrets
 
@@ -238,13 +237,13 @@ htpasswd -nb admin password | sed 's/\$/\$\$/g'
 
 ```bash
 # Create encrypted vault
-ansible-vault create ansible/vars/vault.yml
+sops create config/secrets.yml
 
 # Edit secrets
-ansible-vault edit ansible/vars/vault.yml
+sops edit config/secrets.yml
 
 # View secrets
-ansible-vault view ansible/vars/vault.yml
+sops view config/secrets.yml
 ```
 
 **Store your vault password securely** (password manager). If lost, you must recreate all secrets.

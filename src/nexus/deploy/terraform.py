@@ -129,21 +129,25 @@ def run_terraform(
     effective_services = set(services) | set(core_services)
 
     subdomains = []
+    public_subdomains = []
     for svc in effective_services:
         if svc in all_manifests:
             manifest = all_manifests[svc]
             if manifest.is_public:
-                continue
-            subdomains.extend(manifest.subdomains)
+                public_subdomains.extend(manifest.subdomains)
+            else:
+                subdomains.extend(manifest.subdomains)
         else:
             subdomains.append(svc)
 
     subdomains = sorted(list(set(subdomains)))
+    public_subdomains = sorted(list(set(public_subdomains)))
 
     tf_vars: dict[str, Any] = {
         "domain": domain,
         "tailscale_server_ip": tailscale_ip,
         "subdomains": subdomains,
+        "public_subdomains": public_subdomains,
     }
 
     tf_vars_path = TERRAFORM_PATH / "terraform.tfvars.json"

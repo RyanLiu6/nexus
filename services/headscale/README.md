@@ -10,7 +10,7 @@ It replaces the commercial Tailnet and coordinates encrypted WireGuard connectio
 - **Port 8080**: Serves Headscale HTTP/WebSocket control plane API via Traefik (`https://headscale.<domain>`).
 - **Port 3478/UDP**: STUN endpoint for NAT traversal and DERP relaying.
 - **Web UI (Headplane)**: Serves a Tailscale admin console clone via Traefik (`https://headplane.<domain>`).
-- **ACL Policy**: Loaded from `tailscale/acl.hujson`, generated from user groups configured in `ansible/vars/vault.yml`.
+- **ACL Policy**: Loaded from `tailscale/acl.hujson`, generated from user groups configured in `config/secrets.yml`.
 - **Identity & Authentication**: The host's `tailscaled` daemon connects to Headscale as the coordination server. Downstream, `authentik` queries `tailscaled`'s LocalAPI socket (`/var/run/tailscale/tailscaled.sock`) to authenticate requests.
 
 ## Deployment
@@ -101,7 +101,7 @@ docker exec headscale headscale nodes list
 
 We had to explicitly set up OpenID Connect (OIDC) using Google to handle authentication for our Tailscale clients. Since Headscale replaces the commercial Tailscale backend, we needed a way to securely authenticate users before they are allowed to join the private network.
 
-By setting up OIDC, users authenticate directly via their Google account in the browser. Furthermore, Headscale is configured with an explicit `allowed_users` list derived directly from our `vault.yml` (`tailscale_users`). This acts as an automated bouncer: if someone successfully authenticates via Google but is not explicitly listed as an admin or member in our Ansible configuration, Headscale immediately denies them network access.
+By setting up OIDC, users authenticate directly via their Google account in the browser. Furthermore, Headscale is configured with an explicit `allowed_users` list derived directly from our `vault.yml` (`tailscale_users`). This acts as an automated bouncer: if someone successfully authenticates via Google but is not explicitly listed as an admin or member in our PyInfra configuration, Headscale immediately denies them network access.
 
 For detailed setup instructions, please see the [OIDC Authentication Guide](OIDC.md).
 

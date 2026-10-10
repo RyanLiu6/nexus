@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import platform
 from pathlib import Path
@@ -139,9 +140,70 @@ if "headscale" in services:
         dest=f"{NEXUS_DATA}/Config/headscale/config.yaml",
     )
 
-    # Render acl.hujson
-    acl_template = env.get_template("acl.hujson.j2")
-    acl_config = acl_template.render(tailscale_users=secrets.get("tailscale_users", {}))
+    # Generate acl.hujson using native Python dictionaries
+    tailscale_users = secrets.get("tailscale_users", {})
+
+    # 1. Build groups
+    groups = {}
+    for group_name, emails in tailscale_users.items():
+        if emails:  # Ensure we don't add empty groups
+            groups[f"group:{group_name}"] = emails
+
+    # 2. Build tag owners
+    tag_owners = {"tag:nexus-server": ["group:admins"]}
+
+    # 3. Build ACLs
+    acls = []
+
+    # Admins get full access to the server
+    if "group:admins" in groups:
+        acls.append(
+            {"action": "accept", "src": ["group:admins"], "dst": ["tag:nexus-server:*"]}
+        )
+
+    # Other groups get restricted access (HTTP/HTTPS)
+    for group_name in groups.keys():
+        if group_name != "group:admins":
+            acls.append(
+                {
+                    "action": "accept",
+                    "src": [group_name],
+                    "dst": ["tag:nexus-server:80", "tag:nexus-server:443"],
+                }
+            )
+
+    # Internet access for allowed groups
+    internet_srcs = []
+    if "group:admins" in groups:
+        internet_srcs.append("group:admins")
+    if "group:members" in groups:
+        internet_srcs.append("group:members")
+
+    if internet_srcs:
+        acls.append(
+            {"action": "accept", "src": internet_srcs, "dst": ["autogroup:internet:*"]}
+        )
+
+    # 4. Build SSH rules
+    ssh_rules = []
+    if "group:admins" in groups:
+        ssh_rules.append(
+            {
+                "action": "accept",
+                "src": ["group:admins"],
+                "dst": ["tag:nexus-server"],
+                "users": ["autogroup:nonroot", "root"],
+            }
+        )
+
+    acl_dict = {
+        "groups": groups,
+        "tagOwners": tag_owners,
+        "acls": acls,
+        "ssh": ssh_rules,
+    }
+
+    acl_config = json.dumps(acl_dict, indent=2)
     # create tailscale folder first
     files.directory(
         name="Ensure tailscale directory exists",
@@ -174,9 +236,18 @@ for tf_env, secret_key in tf_vars_mapping.items():
 
 env_lines = []
 for key, value in secrets.items():
-    if isinstance(value, str):
+    if isinstance(value, (str, int, float, bool)):
         env_key = key.upper()
         env_lines.append(f"{env_key}={value}")
+
+# Add explicitly derived paths for compatibility with compose files
+userdata_dir = secrets.get("nexus_userdata_directory", f"{NEXUS_DATA}/Config")
+env_lines.append(f"FOUNDRYVTT_DATA_DIRECTORY={userdata_dir}/foundryvtt")
+env_lines.append(f"PAPERLESS_DOCUMENTS_DIRECTORY={userdata_dir}/paperless")
+env_lines.append(f"BOOKORBIT_BOOKS_DIRECTORY={userdata_dir}/bookorbit")
+
+# Map Cloudflare API token for Traefik
+env_lines.append(f"CLOUDFLARE_DNS_API_TOKEN={secrets.get('cloudflare_api_token', '')}")
 
 env_lines.append(f"NEXUS_ROOT_DIRECTORY={NEXUS_ROOT}")
 env_lines.append(f"NEXUS_DATA_DIRECTORY={NEXUS_DATA}")

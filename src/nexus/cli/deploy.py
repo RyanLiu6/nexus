@@ -3,11 +3,9 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import Optional
 
 import click
-import yaml
 
 from nexus.config import (
     PRESETS,
@@ -20,14 +18,6 @@ from nexus.deploy.terraform import (
     get_r2_credentials,
     get_tofu_cmd,
     run_terraform,
-)
-from nexus.generate.access_rules import sync_access_rules
-from nexus.generate.dashboard import (
-    generate_bookmarks_config,
-    generate_custom_css,
-    generate_dashboard_config,
-    generate_settings_config,
-    generate_widgets_config,
 )
 from nexus.services import discover_services, resolve_dependencies
 from nexus.types import R2Credentials
@@ -129,13 +119,6 @@ def _generate_configs(
 ) -> None:
     logging.info("Generating configurations...")
 
-    # Generate access rules from service manifests
-    if dry_run:
-        logging.info("[DRY RUN] Would generate access rules from service manifests")
-    else:
-        rules_path = sync_access_rules(services)
-        logging.info(f"Generated access rules: {rules_path}")
-
     # Resolve data_dir: arg -> env -> vault -> default
     if not data_dir:
         data_dir = os.environ.get("NEXUS_DATA_DIRECTORY")
@@ -150,57 +133,11 @@ def _generate_configs(
     if not data_dir:
         data_dir = "~/nexus-data"
 
-    homepage_dir = Path(data_dir).expanduser() / "Config" / "homepage"
-    dashboard_config_path = homepage_dir / "services.yaml"
-    settings_path = homepage_dir / "settings.yaml"
-    bookmarks_path = homepage_dir / "bookmarks.yaml"
-    widgets_path = homepage_dir / "widgets.yaml"
-    custom_css_path = homepage_dir / "custom.css"
-
     vault = {}
     try:
         vault = read_vault()
     except Exception:
-        logging.warning("Could not read vault secrets for dashboard generation.")
-
-    dashboard_config = generate_dashboard_config(
-        services, domain or "example.com", dry_run, secrets=vault
-    )
-    settings_config = generate_settings_config()
-    bookmarks_config = generate_bookmarks_config(domain=domain)
-    widgets_config = generate_widgets_config()
-    custom_css = generate_custom_css()
-
-    if dry_run:
-        logging.info(
-            f"[DRY RUN] Would write dashboard config to {dashboard_config_path}"
-        )
-        logging.info(f"[DRY RUN] Would write settings to {settings_path}")
-        logging.info(f"[DRY RUN] Would write bookmarks to {bookmarks_path}")
-        logging.info(f"[DRY RUN] Would write widgets to {widgets_path}")
-        logging.info(f"[DRY RUN] Would write custom css to {custom_css_path}")
-    else:
-        homepage_dir.mkdir(parents=True, exist_ok=True)
-
-        logging.info(f"Writing dashboard config to {dashboard_config_path}")
-        with dashboard_config_path.open("w") as f:
-            yaml.dump(dashboard_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing settings to {settings_path}")
-        with settings_path.open("w") as f:
-            yaml.dump(settings_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing bookmarks to {bookmarks_path}")
-        with bookmarks_path.open("w") as f:
-            yaml.dump(bookmarks_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing widgets to {widgets_path}")
-        with widgets_path.open("w") as f:
-            yaml.dump(widgets_config, f, default_flow_style=False, sort_keys=False)
-
-        logging.info(f"Writing custom css to {custom_css_path}")
-        with custom_css_path.open("w") as f:
-            f.write(custom_css)
+        logging.warning("Could not read vault secrets.")
 
 
 @click.command()
@@ -484,12 +421,12 @@ def main(
         print("  ✅ Deployment Complete!")
         print("=" * 60)
         print("\nAccess your services (via Tailscale):")
-        print(f"  Dashboard: https://nexus.{domain}")
-        print(f"  FoundryVTT: https://foundry.{domain} (also public via Cloudflare)")
-        print(f"  Headscale: https://headscale.{domain}")
+        print(f"  Traefik: https://traefik.{domain}")
+        print(f"  FoundryVTT: https://foundry.{domain}")
+        print(f"  Headplane (VPN UI): https://headplane.{domain}")
 
         print("\n✅ Tailscale control server (Headscale) running locally")
-        print(f"   Server URL: https://headscale.{domain}")
+        print(f"   API URL: https://headscale.{domain}")
         print("\n⚠️  Connect this server to Headscale (one-time setup):")
         print(
             f"   sudo tailscale up --login-server https://headscale.{domain} "

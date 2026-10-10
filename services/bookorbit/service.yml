@@ -1,20 +1,6 @@
 name: bookorbit
 description: Book and ebook library manager
-category: apps
-icon: mdi-bookshelf
 subdomain: bookorbit
-
-access:
-  groups: [admins]
-  public: false
-
-services:
-  bookorbit:
-    icon: mdi-bookshelf
-    description: Book and ebook library manager
-  bookorbit-db:
-    exclude: true
-
 dependencies:
-  - traefik
-  - authentik
+- traefik
+- authentik

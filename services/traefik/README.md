@@ -18,7 +18,7 @@ Docker Image is from Traefik, found [here](https://hub.docker.com/r/traefik/trae
 
 ## Setup
 
-1. **Environment variables** (provided by Ansible from `vault.yml`):
+1. **Environment variables** (provided by PyInfra from `vault.yml`):
    - `NEXUS_DOMAIN` — Your base domain (e.g., `example.com`)
    - `ACME_EMAIL` — Email for Let's Encrypt certificates
    - `CLOUDFLARE_DNS_API_TOKEN` — Cloudflare API token for DNS challenges

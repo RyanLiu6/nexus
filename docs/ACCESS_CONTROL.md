@@ -7,7 +7,6 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 | Layer | Purpose | Configuration |
 |-------|---------|---------------|
 | **Headscale ACLs** | Network access (who can reach server) | `tailscale/acl.hujson` |
-| **tailscale-access** | Service access (who can use which service) | `tailscale/access-rules.yml` |
 | **Header Auth** | Identity propagation (auto-login) | Traefik + Middleware |
 
 ## Access Levels
@@ -46,7 +45,6 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 │                       Traefik                                    │
 │                    Middlewares:                                  │
 │     1. tailscale-only (IP whitelist)                            │
-│     2. tailscale-access (group-based access)                    │
 │     3. security-headers                                          │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -68,7 +66,7 @@ Nexus uses a **Tailscale-first security model** with role-based access control.
 
 ### 1. Configure Users in vault.yml
 
-Edit `ansible/vars/vault.yml` (the **single source of truth**):
+Edit `config/secrets.yml` (the **single source of truth**):
 
 ```yaml
 tailscale_users:
@@ -119,14 +117,14 @@ sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tag
 | BookOrbit | ✅ | ❌ | ❌ |
 | Home Assistant | ✅ | ✅ | ❌ |
 | Backrest | ✅ | ❌ | ❌ |
-| Homepage | ✅ | ❌ | ❌ |
+| Authentik Dashboard | ✅ | ❌ | ❌ |
 | FoundryVTT | ✅ | ✅ | ✅ |
 
 ---
 
 ## Configuration
 
-All access control is configured in `ansible/vars/vault.yml` and applied automatically.
+All access control is configured in `config/secrets.yml` and applied automatically.
 
 ### Headscale ACL (via `tailscale/acl.hujson`)
 
@@ -136,20 +134,6 @@ Network-level access control applied directly by Headscale:
 - **SSH**: Who can SSH into the server (admins only)
 - **DNS**: Cloudflare Gateway nameservers
 
-### `tailscale/access-rules.yml` (via Ansible)
-
-Per-service access control. To modify which groups can access which services, edit `ansible/roles/nexus/templates/access-rules.yml.j2`:
-
-```yaml
-services:
-  grafana:
-    groups: [admins]
-  sure:
-    groups: [admins]
-  homepage:
-    groups: [admins, members]
-```
-
 ---
 
 ## Authentication Strategies
@@ -157,22 +141,20 @@ services:
 Since we removed OAuth (tsidp), authentication falls into two categories:
 
 ### 1. Header Authentication (Proxy Auth)
-For services that support it, `tailscale-access` passes the user's identity via HTTP headers (`Remote-User`, `Remote-Groups`). The service trusts these headers and logs the user in automatically.
 
 *   **Grafana**: Fully configured. Admins get Admin role; others get Viewer role.
 
-### 2. Manual Login (Gatekeeper Only)
-For services that do **not** support header-based auth easily, `tailscale-access` acts as a "Gatekeeper".
-*   **Step 1**: Tailscale checks if you are allowed to access the service. (e.g., only `admins` can see Jellyfin).
+### 2. Manual Login (No SSO)
+*   **Step 1**: Authentik checks if you are allowed to access the service.
 *   **Step 2**: If allowed, you reach the service's login page.
 *   **Step 3**: You log in manually with an account created in that service.
 
 | Service | Strategy | Notes |
 |---------|----------|-------|
 | Grafana | ✅ Header Auth | Auto-login & Role mapping |
-| Jellyfin | 🔒 Gatekeeper | Manual login required |
-| FoundryVTT | 🔒 Gatekeeper | Manual login required |
-| Transmission | 🔒 Gatekeeper | No auth (protected by Gatekeeper) |
+| Jellyfin | 🔒 Authentik | Manual login required |
+| FoundryVTT | 🔒 Authentik | Manual login required |
+| Transmission | 🔒 Authentik | No auth (protected by Authentik) |
 
 ---
 
@@ -234,7 +216,7 @@ works immediately — no re-auth prompt.
 
 ### Add to Existing Group
 
-1. Edit `ansible/vars/vault.yml`:
+1. Edit `config/secrets.yml`:
    ```yaml
    tailscale_users:
      members:
@@ -253,7 +235,7 @@ works immediately — no re-auth prompt.
 | Can't access any service | Check `tailscale status`, verify you're connected |
 | DNS not resolving | Check split DNS in Tailscale admin |
 | Legitimate site blocked | Check Cloudflare Gateway allowlist (see [DNS Filtering](DNS_FILTERING.md)) |
-| 403 Forbidden | Check your group has access in `access-rules.yml` |
+| 403 Forbidden | Check your group has access in `Authentik group bindings` |
 | SSH denied | Verify you're in `admins` group |
 | SSH `Permission denied (publickey)` over Tailscale | Tailscale SSH is off — `tailscale debug prefs \| grep RunSSH`, fix with `sudo tailscale set --ssh` (see [SSH Access](#ssh-access)) |
 
@@ -270,5 +252,4 @@ tailscale ip
 tailscale ping <server-hostname>
 
 # View service logs
-docker logs tailscale-access
 ```
