@@ -66,3 +66,10 @@ http:
           - tailscale-only@file
           - authentik@file
           - security-headers@file
+
+    # Chain for internal applications that handle their own auth (e.g. OIDC)
+    internal-chain:
+      chain:
+        middlewares:
+          - tailscale-only@file
+          - security-headers@file

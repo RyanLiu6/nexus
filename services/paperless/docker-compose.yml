@@ -27,6 +27,8 @@ services:
       PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
       PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
       PAPERLESS_URL: https://paperless.${NEXUS_DOMAIN}
+      PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
+      PAPERLESS_SOCIALACCOUNT_PROVIDERS: '{"openid_connect": {"APPS": [{"provider_id": "authentik", "name": "Authentik", "client_id": "${PAPERLESS_OIDC_CLIENT_ID}", "secret": "${PAPERLESS_OIDC_CLIENT_SECRET}", "settings": {"server_url": "https://auth.${NEXUS_DOMAIN}/application/o/paperless/.well-known/openid-configuration"}}]}}'
     depends_on:
       paperless-db:
         condition: service_healthy
@@ -38,7 +40,7 @@ services:
       - "traefik.http.services.paperless-web.loadbalancer.server.port=8000"
       - "traefik.http.routers.paperless-web.rule=Host(`paperless.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.paperless-web.entrypoints=https"
-      - "traefik.http.routers.paperless-web.middlewares=authentik-chain@file"
+      - "traefik.http.routers.paperless-web.middlewares=internal-chain@file"
       - "traefik.http.routers.paperless-web.tls=true"
       - "traefik.http.routers.paperless-web.tls.certresolver=certchallenge"
 

@@ -1,7 +1,6 @@
 name: headscale
 description: Self-hosted Tailscale control server
 subdomains:
-- headscale
 - headplane
 dependencies:
 - traefik

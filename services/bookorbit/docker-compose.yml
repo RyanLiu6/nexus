@@ -28,6 +28,7 @@ services:
       SETUP_BOOTSTRAP_TOKEN: ${BOOKORBIT_SETUP_BOOTSTRAP_TOKEN}
       APP_URL: https://bookorbit.${NEXUS_DOMAIN}
       CLIENT_URL: https://bookorbit.${NEXUS_DOMAIN}
+      OIDC_ALLOW_LOCAL_ISSUERS: "true"
       TZ: ${TZ}
       PUID: ${PUID}
       PGID: ${PGID}
@@ -40,7 +41,7 @@ services:
       - "traefik.http.services.bookorbit.loadbalancer.server.port=3000"
       - "traefik.http.routers.bookorbit.rule=Host(`bookorbit.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.bookorbit.entrypoints=https"
-      - "traefik.http.routers.bookorbit.middlewares=authentik-chain@file"
+      - "traefik.http.routers.bookorbit.middlewares=internal-chain@file"
       - "traefik.http.routers.bookorbit.tls=true"
       - "traefik.http.routers.bookorbit.tls.certresolver=certchallenge"
 
