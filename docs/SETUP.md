@@ -11,6 +11,7 @@ This document summarizes the specific configurations applied to both Pyinfra and
 ### 2. Enrollment Flow & Whitelist
 - Created/updated custom **Flows and Stages** to handle the Google OIDC enrollment.
 - Implemented a **Whitelist Policy** attached to the enrollment flow. This Python policy ensures that only authorized Google accounts (e.g., specific email addresses) are allowed to create an Authentik account, instantly rejecting unauthorized users.
+  - **Critical Configuration Note:** To ensure the whitelist is actually enforced, the enrollment flow's **Policy Engine Mode** must be set to `ALL`. If set to `ANY`, the default `default-source-enrollment-if-sso` policy (which always returns `True` for Google logins) will completely bypass the whitelist policy. Ensure the flow's denied action is also set to explicitly reject the user.
 
 ### 3. Profile Picture Mapping
 - Created a **Custom Property Mapping** to extract the Google profile picture (`picture` claim) and settings from the Google OIDC source and map them to the local Authentik user profile.
