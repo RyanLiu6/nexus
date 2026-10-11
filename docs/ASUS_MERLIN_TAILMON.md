@@ -45,22 +45,27 @@ TAILMON is an Asuswrt-Merlin script that automates and monitors Tailscale.
 
 ## 5. Critical Pre-Configuration
 
-### Step 5a: Fix Router NAT Loopback (Split DNS)
+### Step 5a: Configure Split DNS (NAT Loopback & Local LAN Access)
 > [!IMPORTANT]
-> If your Headscale server runs on a host **inside your local home network**, you **must** configure Split DNS on the router.
-> Without this, the router tries to connect to its own external WAN IP on port 443. Linux NAT loopback (hairpinning) does not apply to processes originating from the router itself, causing the Tailscale handshake to hang indefinitely.
+> If your server runs on a host **inside your local home network**, you **must** configure Split DNS on the router for two critical reasons:
+> 1. **Router NAT Loopback:** The router tries to connect to its own external WAN IP on port 443 when contacting Headscale. Linux NAT loopback (hairpinning) does not apply to processes originating from the router itself, causing the Tailscale handshake to hang indefinitely.
+> 2. **LAN Access Without Tailscale:** Public DNS records for internal services point to the server's Tailscale IP (e.g., `100.64.0.1`). Devices at home that do *not* run Tailscale (smart TVs, personal laptops, phones) cannot reach `100.64.x.x`. By adding a wildcard rule, all local devices resolve `*.yourdomain.com` directly to your local server over Gigabit LAN/Wi-Fi.
 
 Run these commands on your router:
 ```bash
-# Point the headscale domain directly to your internal server's LAN IP
-echo "<YOUR_SERVER_LAN_IP> headscale.yourdomain.com" >> /jffs/configs/hosts.add
+# Add a wildcard entry so all subdomains (*.yourdomain.com) resolve to your local server
+echo "address=/<YOUR_DOMAIN>/<YOUR_SERVER_LAN_IP>" >> /jffs/configs/dnsmasq.conf.add
 
 # Restart dnsmasq to apply
 service restart_dnsmasq
 
-# Verify it resolves to your LAN IP immediately
-ping -c 2 headscale.yourdomain.com
+# Verify it resolves to your local LAN IP immediately
+ping -c 2 headscale.<YOUR_DOMAIN>
 ```
+
+With this in place:
+* The router connects to Headscale directly over LAN without NAT loopback issues.
+* Any home device connected to your Wi-Fi can navigate to `https://service.<YOUR_DOMAIN>`, bypass Tailscale, hit Traefik directly (which permits `192.168.0.0/16`), and authenticate via Authentik at full local network speeds.
 
 ### Step 5b: Generate a Headscale Auth Key
 On your host server running Headscale, find the User ID for your infrastructure user:
