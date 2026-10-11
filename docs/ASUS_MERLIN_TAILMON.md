@@ -1,11 +1,15 @@
 # Asuswrt-Merlin and TAILMON Setup for Headscale
 
-This guide explains how to install Asuswrt-Merlin on an Asus router, install the TAILMON script, and configure it to connect to your self-hosted Headscale instance (instead of the default Tailscale control servers).
+This guide explains how to install Asuswrt-Merlin on an Asus router, install and configure the TAILMON script to connect to a self-hosted Headscale instance in high-performance **Kernel Mode**, configure Subnet Routing with network isolation, and set up passwordless SSH access.
+
+---
 
 ## 1. Prerequisites
 *   A compatible Asus Router (check the [Asuswrt-Merlin website](https://asuswrt-merlin.net/) for supported models).
 *   A USB Flash Drive (USB 2.0 or 3.0) to hold Entware packages and the Tailscale binary.
-*   Your Headscale server URL and an admin user (e.g., `infrastructure`) created on Headscale.
+*   Your Headscale server URL and a user created on Headscale (e.g., `Infrastructure`).
+
+---
 
 ## 2. Installing Asuswrt-Merlin
 1.  Download the latest Asuswrt-Merlin firmware for your specific router model from the [official site](https://asuswrt-merlin.net/).
@@ -13,6 +17,8 @@ This guide explains how to install Asuswrt-Merlin on an Asus router, install the
 3.  Go to **Administration** -> **Firmware Upgrade**.
 4.  Upload the downloaded `.w**` firmware file.
 5.  Wait for the router to flash and reboot.
+
+---
 
 ## 3. Preparing the USB Drive (AMTM and Entware)
 Tailscale is too large to fit in the router's internal NVRAM/JFFS storage, so it must be installed on a USB drive.
@@ -27,95 +33,180 @@ Tailscale is too large to fit in the router's internal NVRAM/JFFS storage, so it
 5.  Format the USB drive: Press `fd` in AMTM and follow the prompts to format it as `ext4` (this will erase the drive).
 6.  Install Entware: Once formatted, press `ep` in AMTM to install Entware to the USB drive.
 
+---
+
 ## 4. Installing TAILMON
-TAILMON is a script that manages Tailscale on Merlin routers.
+TAILMON is an Asuswrt-Merlin script that automates and monitors Tailscale.
 1.  Still in `amtm`, press `i` to see installable scripts.
 2.  Look for **Tailmon** (or run its direct install command if instructed by its GitHub page).
 3.  Follow the prompts to download and install TAILMON.
 
-## 5. Configuring TAILMON for Headscale
-By default, TAILMON tries to connect to Tailscale's official servers. We need to override this.
+---
 
-### Step 5a: Generate a Headscale Auth Key
-On your server hosting Headscale, generate a new authentication key for the `infrastructure` user:
+## 5. Critical Pre-Configuration
+
+### Step 5a: Fix Router NAT Loopback (Split DNS)
+> [!IMPORTANT]
+> If your Headscale server runs on a host **inside your local home network**, you **must** configure Split DNS on the router.
+> Without this, the router tries to connect to its own external WAN IP on port 443. Linux NAT loopback (hairpinning) does not apply to processes originating from the router itself, causing the Tailscale handshake to hang indefinitely.
+
+Run these commands on your router:
 ```bash
-docker exec -it headscale headscale preauthkeys create --user infrastructure --expiration 24h
+# Point the headscale domain directly to your internal server's LAN IP
+echo "<YOUR_SERVER_LAN_IP> headscale.yourdomain.com" >> /jffs/configs/hosts.add
+
+# Restart dnsmasq to apply
+service restart_dnsmasq
+
+# Verify it resolves to your LAN IP immediately
+ping -c 2 headscale.yourdomain.com
 ```
-*(Copy the generated key, it usually starts with `hskey-...`)*
 
-### Step 5b: Configure TAILMON Custom Mode
-1.  SSH into your router and type `tailmon` to open the interface.
-2.  Press **`K`** to enter the **Configuration Menu**.
-3.  Press **`3`** (Set Tailscale Operating Mode), and then select **`3`** again for **Custom** mode.
-4.  Back in the Configuration Menu, press **`O`** (Edit Custom Operation Mode Settings).
-5.  Press **`4`** to edit the **Commandline Options**.
-6.  Enter the following string (replace with your domain and key):
-    ```text
-    --login-server=https://headscale.yourdomain.com --authkey=YOUR_NEW_KEY
-    ```
-    *If you want to advertise your home network (Subnet Routing), append `--advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)` to that line.*
-7.  Save and exit. TAILMON will restart the Tailscale connection using your Headscale server.
+### Step 5b: Generate a Headscale Auth Key
+On your host server running Headscale, find the User ID for your infrastructure user:
+```bash
+docker exec headscale headscale users list
+```
+Then generate a long-lived reusable key (e.g., 10 years / 87,600 hours):
+```bash
+docker exec headscale headscale preauthkeys create -u <USER_ID> --reusable --expiration 87600h
+```
+*(Copy the generated key, which starts with `hskey-auth-...`)*.
 
-## 6. Subnet Router vs. Exit Node on the Router
+---
 
-If you are using Headscale to manage your infrastructure, you can configure your Asus router to act as a **Subnet Router** or an **Exit Node**.
+## 6. Configuring TAILMON (Kernel Mode + Custom Headscale Login)
 
-*   **Subnet Router (`--advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)`)**: This is highly recommended. It bridges your Tailscale network with your physical home network. When you are away from home, you can connect to your NAS, Home Assistant, or other local devices using their normal `<YOUR_LAN_IP>` IP addresses. It does *not* route your normal internet traffic through your home.
-*   **Exit Node (`--advertise-exit-node`)**: This routes *all* your internet traffic (web browsing, Netflix, etc.) from your remote device through your home router. It masks your IP to look like you are at home. If you already have a dedicated exit node (like a `tailscale-proton` container), you generally do not need to make your router an exit node as well, but you still want it to be a subnet router.
+TAILMON has presets for "Userspace" and "Kernel", but both presets default to commercial Tailscale servers. To get both **high-performance Kernel Mode** (using `modprobe tun`) and your **custom Headscale login**, use TAILMON's **Custom Mode**.
 
-## 7. Configuring Network Isolation (Main/IoT vs. Guest)
+### Method 1: Direct CLI Login & Config (Fastest)
 
-If your home network is configured with:
+1. Ensure the background daemon is running:
+   ```bash
+   /opt/etc/init.d/S06tailscaled start
+   ```
+
+2. Perform the initial authentication:
+   ```bash
+   tailscale up --login-server=https://headscale.yourdomain.com --authkey=YOUR_NEW_KEY --advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24) --reset
+   ```
+
+3. Persist Kernel Mode and Custom parameters in `/jffs/addons/tailmon.d/tailmon.cfg`:
+   ```bash
+   nano /jffs/addons/tailmon.d/tailmon.cfg
+   ```
+   Ensure these settings are present:
+   ```sh
+   tsoperatingmode="Custom"
+   precmd="modprobe tun"
+   args="--state=/opt/var/tailscaled.state --statedir=/opt/var/lib/tailscale"
+   preargs="nohup"
+   customcmdline="--login-server=https://headscale.yourdomain.com --advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)"
+   ```
+   *(Save with `Ctrl+O`, exit with `Ctrl+X`)*.
+
+### Method 2: Via the TAILMON Menu
+
+1. Run `tailmon` in your router terminal.
+2. Press **`K`** (Configuration Menu) -> Press **`3`** (Set Operating Mode) -> Select **`3`** (Custom).
+3. Press **`O`** (Edit Custom Settings):
+   * Option 1 (**ARGS**): Set to `--state=/opt/var/tailscaled.state --statedir=/opt/var/lib/tailscale`
+   * Option 3 (**PRECMD**): Set to `modprobe tun`
+   * Option 4 (**Commandline Options**): Set to `--login-server=https://headscale.yourdomain.com --advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)`
+4. Save and return to the main menu.
+
+---
+
+## 7. Headscale Approvals & ACL Permissions
+
+### Step 7a: Approve the Subnet Route
+In Headscale, advertised subnet routes are not active until an administrator approves them.
+
+On your Headscale server:
+```bash
+# 1. Check the node ID and available routes
+docker exec headscale headscale nodes list-routes
+
+# 2. Approve the advertised route (replace <NODE_ID> and subnet)
+docker exec headscale headscale nodes approve-routes -i <NODE_ID> -r <YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)
+```
+
+### Step 7b: Ensure ACLs Permit Admin Access
+In `tailscale/acl.hujson` (and `infra.py`), ensure your admin group has access to everything (`*:*`) so your laptops and devices can communicate with the router and subnet routes:
+```json
+{
+  "acls": [
+    {
+      "action": "accept",
+      "src": [
+        "group:admins"
+      ],
+      "dst": [
+        "*:*"
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 8. Network Isolation (Main/IoT vs. Guest)
+
+If your router serves:
 *   **Main Network (2.4/5/6 GHz):** General usage.
 *   **IoT Network (2.4 GHz only):** Shares the same subnet as the Main Network.
 *   **Guest Network (2.4/5/6 GHz):** Isolated from the rest of the network.
 
-You can configure TAILMON so that Tailscale bridges with your Main and IoT networks, while completely blocking the Guest network from accessing your Tailnet services.
+### Exposing Main & IoT
+Because Main and IoT share `<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)`, advertising that single subnet allows remote Tailscale users to reach devices on both networks.
 
-### A. Exposing the Main & IoT Networks
-Because your Main and IoT networks share the same underlying IP subnet (for example, `<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)`), enabling access for both is simple.
+### Blocking the Guest Network
+To ensure Guest devices cannot access your Tailscale network (e.g., internal services at `100.x.y.z`), add `iptables` drop rules for the Guest Wi-Fi interfaces in `/jffs/scripts/firewall-start`:
 
-When configuring TAILMON's custom commandline options (Step 5b), just advertise your main LAN subnet:
-```text
---advertise-routes=<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)
+1. Edit the firewall script:
+   ```bash
+   nano /jffs/scripts/firewall-start
+   ```
+2. Add drop rules:
+   ```bash
+   #!/bin/sh
+
+   # Block Guest Network interfaces from reaching Tailscale
+   iptables -I FORWARD -i wl0.1 -o tailscale0 -j DROP  # 2.4 GHz Guest
+   iptables -I FORWARD -i wl1.1 -o tailscale0 -j DROP  # 5 GHz Guest
+   iptables -I FORWARD -i wl2.1 -o tailscale0 -j DROP  # 6 GHz Guest
+   ```
+3. Make the script executable:
+   ```bash
+   chmod a+rx /jffs/scripts/firewall-start
+   service restart_firewall
+   ```
+
+---
+
+## 9. Passwordless SSH Access
+
+To SSH into your router from your laptop without entering a password:
+
+### Option A: `ssh-copy-id`
+From your MacBook/laptop terminal:
+```bash
+ssh-copy-id <ROUTER_USER>@<ROUTER_TAILSCALE_IP>
 ```
-*(Replace `<YOUR_LAN_SUBNET> (e.g., 192.168.x.0/24)` with your router's actual LAN subnet if it is different).*
 
-Because both Main and IoT devices receive IP addresses from this pool, remote Tailnet users will be able to reach devices on both networks seamlessly.
+### Option B: Asus Web GUI
+1. On your laptop, copy your public key:
+   ```bash
+   cat ~/.ssh/id_ed25519.pub | pbcopy
+   ```
+2. In the Asus web GUI, go to **Administration** -> **System** -> **SSH Daemon**.
+3. Paste the key into the **Authorized Keys** text box and click **Apply**.
 
-### B. Blocking the Guest Network from the Tailnet
-Even though the Guest network is "isolated" (usually via Asus's "Access Intranet: Disable" setting), the router itself handles the Tailscale traffic. To guarantee that devices connected to the Guest Wi-Fi cannot route traffic to your Tailscale network (e.g., trying to access Authentik or your servers at `100.x.y.z`), you must explicitly block their wireless interfaces using `iptables`.
-
-On Asus routers, the first Guest Network on each band is typically assigned the following interfaces:
-*   2.4 GHz Guest: `wl0.1`
-*   5 GHz Guest: `wl1.1`
-*   6 GHz Guest: `wl2.1`
-
-*(Note: If you use Guest Network slot #2, it would be `wl0.2`, `wl1.2`, etc.)*
-
-**To apply the block:**
-1.  SSH into your router.
-2.  Create or open the firewall start script:
-    ```bash
-    nano /jffs/scripts/firewall-start
-    ```
-3.  Add `iptables` drop rules to prevent the guest interfaces from talking to the `tailscale0` interface:
-    ```bash
-    #!/bin/sh
-
-    # Block 2.4GHz Guest Network from Tailscale
-    iptables -I FORWARD -i wl0.1 -o tailscale0 -j DROP
-
-    # Block 5GHz Guest Network from Tailscale
-    iptables -I FORWARD -i wl1.1 -o tailscale0 -j DROP
-
-    # Block 6GHz Guest Network from Tailscale
-    iptables -I FORWARD -i wl2.1 -o tailscale0 -j DROP
-    ```
-4.  Make sure the script is executable:
-    ```bash
-    chmod a+rx /jffs/scripts/firewall-start
-    ```
-5.  Reboot your router or restart the firewall to apply the changes (`service restart_firewall`).
-
-With this configuration, your Main and IoT networks are fully bridged to your Tailnet, while your Guest network remains securely locked out!
+### Connecting
+You can now connect securely from anywhere via your router's Tailscale IP or MagicDNS:
+```bash
+ssh <ROUTER_USER>@<ROUTER_TAILSCALE_IP>
+# or
+ssh <ROUTER_USER>@<ROUTER_NAME>.nexus.internal
+```

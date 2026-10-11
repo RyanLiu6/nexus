@@ -156,11 +156,9 @@ if "headscale" in services:
     # 3. Build ACLs
     acls = []
 
-    # Admins get full access to the server
+    # Admins get full access to everything (nodes, subnets, internet)
     if "group:admins" in groups:
-        acls.append(
-            {"action": "accept", "src": ["group:admins"], "dst": ["tag:nexus-server:*"]}
-        )
+        acls.append({"action": "accept", "src": ["group:admins"], "dst": ["*:*"]})
 
     # Other groups get restricted access (HTTP/HTTPS)
     for group_name in groups.keys():
@@ -175,8 +173,6 @@ if "headscale" in services:
 
     # Internet access for allowed groups
     internet_srcs = []
-    if "group:admins" in groups:
-        internet_srcs.append("group:admins")
     if "group:members" in groups:
         internet_srcs.append("group:members")
 
