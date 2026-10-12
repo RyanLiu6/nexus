@@ -33,10 +33,10 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:9210']
 
-  # Docker containers (via cAdvisor - optional)
-  # - job_name: 'docker'
-  #   static_configs:
-  #     - targets: ['cadvisor:8080']
+  # Docker containers (via cAdvisor)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['cadvisor:8080']
 
 # Alert rules
 rule_files:

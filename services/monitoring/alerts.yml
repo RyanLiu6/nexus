@@ -265,3 +265,31 @@ groups:
         annotations:
           summary: "Alertmanager failing to send notifications"
           description: "{{ $value }} notifications failed in last 5 minutes"
+
+  - name: container_alerts
+    interval: 30s
+    rules:
+      # =========================================================================
+      # Container Memory Alerts
+      # =========================================================================
+      - alert: ContainerMemoryUsageWarning
+        expr: |
+          (container_memory_working_set_bytes{name!=""}
+          / (container_spec_memory_limit_bytes{name!=""} > 0)) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ printf \"%.1f\" $value }}% of its memory limit"
+
+      - alert: ContainerMemoryUsageCritical
+        expr: |
+          (container_memory_working_set_bytes{name!=""}
+          / (container_spec_memory_limit_bytes{name!=""} > 0)) * 100 > 90
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage on container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ printf \"%.1f\" $value }}% of its memory limit (risk of OOM kill)"
