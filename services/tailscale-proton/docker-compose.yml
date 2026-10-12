@@ -10,8 +10,10 @@ services:
       - TS_HOSTNAME=ProtonVPN
       - TS_AUTHKEY=${PROTON_TAILSCALE_AUTHKEY:-}
       - TS_EXTRA_ARGS=--login-server=https://headscale.${NEXUS_DOMAIN} --advertise-exit-node
+    entrypoint: ["/entrypoint.sh"]
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/tailscale-proton:/var/lib/tailscale
+      - ./entrypoint.sh:/entrypoint.sh:ro
     restart: unless-stopped
     depends_on:
       gluetun:
