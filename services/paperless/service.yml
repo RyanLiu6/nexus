@@ -1,6 +1,6 @@
 name: paperless
 description: Document management system
-subdomain: paperless
+subdomain: docs
 dependencies:
 - traefik
 - authentik

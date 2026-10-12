@@ -55,9 +55,9 @@ nexus deploy home
 
 ### Access
 
-- **URL:** `https://bookorbit.${NEXUS_DOMAIN}`
+- **URL:** `https://books.${NEXUS_DOMAIN}`
 - **Auth:** OIDC via Authentik (OIDC providers are configured within the Authentik UI) + Tailscale
-- **Initial Setup:** Navigate to `https://bookorbit.${NEXUS_DOMAIN}` to complete the initial admin setup using your `bookorbit_setup_bootstrap_token`.
+- **Initial Setup:** Navigate to `https://books.${NEXUS_DOMAIN}` to complete the initial admin setup using your `bookorbit_setup_bootstrap_token`.
 
 ## Data Storage
 

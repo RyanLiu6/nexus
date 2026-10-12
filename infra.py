@@ -10,6 +10,8 @@ from jinja2 import Environment, FileSystemLoader
 from pyinfra import logger
 from pyinfra.operations import files, server
 
+from nexus.config import PRIVATE_SERVICES_PATH
+
 # =============================================================================
 # Load Secrets
 # =============================================================================
@@ -84,6 +86,10 @@ all_volumes_config = {}
 
 for svc in services:
     compose_path = Path(f"{NEXUS_ROOT}/services/{svc}/docker-compose.yml")
+    if not compose_path.exists() and PRIVATE_SERVICES_PATH:
+        private_compose = PRIVATE_SERVICES_PATH / svc / "docker-compose.yml"
+        if private_compose.exists():
+            compose_path = private_compose
     if compose_path.exists():
         with open(compose_path) as f:
             content = yaml.safe_load(f)

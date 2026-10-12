@@ -1,6 +1,6 @@
 name: homeassistant
 description: Home automation platform
-subdomain: homeassistant
+subdomain: ha
 dependencies:
 - traefik
 - authentik

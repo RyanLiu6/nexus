@@ -34,7 +34,7 @@ Nexus orchestrates containerized services with Docker Compose and PyInfra. While
 │   └─────────────┼──────────────┘      └─────────────┼──────────────┘   │
 │                 │                                   │                  │
 │       Traefik reverse-proxies                 VirtIO Bridge            │
-│       https://homeassistant.<domain>                │                  │
+│       https://ha.<domain>                           │                  │
 │                 │                                   │                  │
 │   ┌─────────────▼───────────────────────────────────▼──────────────┐   │
 │   │                 Physical Network Interface (en0)               │   │
@@ -154,7 +154,7 @@ Home Assistant is routed through Traefik using dynamic file configuration in `se
 http:
   routers:
     homeassistant:
-      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      rule: "Host(`ha.{{ env `NEXUS_DOMAIN` }}`)"
       entryPoints:
         - "https"
       middlewares:
@@ -164,7 +164,7 @@ http:
         certResolver: "certchallenge"
 
     homeassistant-http:
-      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      rule: "Host(`ha.{{ env `NEXUS_DOMAIN` }}`)"
       entryPoints:
         - "http"
       middlewares:
@@ -208,12 +208,12 @@ In modern Home Assistant (2026+), reverse proxy settings are managed under **Set
 ### 3. Nexus Authentik Dashboard
 
 Home Assistant is displayed under the **Core** services category on the Authentik Dashboard:
-- Accessible directly via `https://homeassistant.<domain>` over Tailscale.
+- Accessible directly via `https://ha.<domain>` over Tailscale.
 - Handled natively by Authentik Applications view:
   ```yaml
   - Core:
     - homeassistant:
-        href: https://homeassistant.<domain>
+        href: https://ha.<domain>
         description: Home automation platform
   ```
 
