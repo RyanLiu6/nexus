@@ -14,6 +14,7 @@ _EXPECTED_CONTAINERS = {
     "grafana",
     "alertmanager",
     "alert-bot",
+    "cadvisor",
 }
 
 _NAMED_VOLUMES = ["prometheus-data", "grafana-data", "alertmanager-data"]
@@ -26,7 +27,7 @@ def compose_config() -> dict[str, Any]:
 
 
 class TestMonitoringDockerCompose:
-    def test_all_five_containers_present(self, compose_config: dict[str, Any]) -> None:
+    def test_all_containers_present(self, compose_config: dict[str, Any]) -> None:
         assert set(compose_config["services"].keys()) == _EXPECTED_CONTAINERS
 
     @pytest.mark.parametrize("volume_name", _NAMED_VOLUMES)

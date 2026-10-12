@@ -14,6 +14,12 @@ services:
     volumes:
       - ${NEXUS_DATA_DIRECTORY}/Config/tailscale-proton:/var/lib/tailscale
       - ${NEXUS_ROOT_DIRECTORY}/services/tailscale-proton/entrypoint.sh:/entrypoint.sh:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
     restart: unless-stopped
     depends_on:
       gluetun:
