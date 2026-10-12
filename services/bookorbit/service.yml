@@ -1,6 +1,6 @@
 name: bookorbit
 description: Book and ebook library manager
-subdomain: bookorbit
+subdomain: books
 dependencies:
 - traefik
 - authentik

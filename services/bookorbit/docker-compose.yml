@@ -26,8 +26,8 @@ services:
       POSTGRES_DB: ${BOOKORBIT_POSTGRES_DB}
       JWT_SECRET: ${BOOKORBIT_JWT_SECRET}
       SETUP_BOOTSTRAP_TOKEN: ${BOOKORBIT_SETUP_BOOTSTRAP_TOKEN}
-      APP_URL: https://bookorbit.${NEXUS_DOMAIN}
-      CLIENT_URL: https://bookorbit.${NEXUS_DOMAIN}
+      APP_URL: https://books.${NEXUS_DOMAIN}
+      CLIENT_URL: https://books.${NEXUS_DOMAIN}
       OIDC_ALLOW_LOCAL_ISSUERS: "true"
       TZ: ${TZ}
       PUID: ${PUID}
@@ -39,7 +39,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=nexus"
       - "traefik.http.services.bookorbit.loadbalancer.server.port=3000"
-      - "traefik.http.routers.bookorbit.rule=Host(`bookorbit.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.bookorbit.rule=Host(`books.${NEXUS_DOMAIN}`)"
       - "traefik.http.routers.bookorbit.entrypoints=https"
       - "traefik.http.routers.bookorbit.middlewares=internal-chain@file"
       - "traefik.http.routers.bookorbit.tls=true"

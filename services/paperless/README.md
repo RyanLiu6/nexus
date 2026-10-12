@@ -56,7 +56,7 @@ nexus deploy home
 
 ### Access
 
-- **URL:** `https://paperless.${NEXUS_DOMAIN}`
+- **URL:** `https://docs.${NEXUS_DOMAIN}`
 - **Auth:** OIDC via Authentik (OIDC providers are configured within the Authentik UI) + Tailscale
 
 ## Data Storage

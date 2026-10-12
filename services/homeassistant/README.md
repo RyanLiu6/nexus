@@ -8,7 +8,7 @@ Home Assistant OS running on Apple Silicon via [HAVM](https://github.com/IngmarS
 - **Service Management:** LaunchAgent `com.nexus.havm` (`services/homeassistant/com.nexus.havm.plist` symlinked to `~/Library/LaunchAgents/com.nexus.havm.plist`).
 - **VM Storage:** Stored in `${NEXUS_DATA_DIRECTORY}/Config/homeassistant/vm/haos.img` (excluded from Backrest).
 - **Config:** `${NEXUS_DATA_DIRECTORY}/Config/homeassistant/config.yml`.
-- **Reverse Proxy:** Traefik dynamic file rules in `services/traefik/rules/homeassistant.yml` (`Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)`).
+- **Reverse Proxy:** Traefik dynamic file rules in `services/traefik/rules/homeassistant.yml` (`Host(`ha.{{ env `NEXUS_DOMAIN` }}`)`).
 - **Monitoring:** Prometheus scrapes `host.docker.internal:9210`, visualized in Grafana (`services/monitoring/grafana/dashboards/havm.json`).
 - **Backup Sync:** Periodic SCP sync (`services/homeassistant/sync-backups.sh`) via LaunchAgent `com.nexus.havm-backup-sync` pulls `.tar` backups to `${NEXUS_DATA_DIRECTORY}/Config/homeassistant/backups/`, which Backrest includes in daily snapshots.
 

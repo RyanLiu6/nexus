@@ -1,7 +1,7 @@
 http:
   routers:
     homeassistant:
-      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      rule: "Host(`ha.{{ env `NEXUS_DOMAIN` }}`)"
       entryPoints:
         - "https"
       middlewares:
@@ -11,7 +11,7 @@ http:
         certResolver: "certchallenge"
 
     homeassistant-http:
-      rule: "Host(`homeassistant.{{ env `NEXUS_DOMAIN` }}`)"
+      rule: "Host(`ha.{{ env `NEXUS_DOMAIN` }}`)"
       entryPoints:
         - "http"
       middlewares:

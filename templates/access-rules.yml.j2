@@ -78,9 +78,17 @@ services:
 
   paperless:
     groups: [admins]
+    description: "Document management (alias)"
+
+  docs:
+    groups: [admins]
     description: "Document management"
 
   bookorbit:
+    groups: [admins]
+    description: "Book library (alias)"
+
+  books:
     groups: [admins]
     description: "Book library"
 
@@ -89,6 +97,10 @@ services:
     description: "Personal finance"
 
   homeassistant:
+    groups: [admins, members]
+    description: "Home automation (alias)"
+
+  ha:
     groups: [admins, members]
     description: "Home automation"
 
