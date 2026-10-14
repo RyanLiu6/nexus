@@ -15,6 +15,9 @@ network:
 ssh:
   authorized_keys: "~/.ssh/ha_key.pub"  # Imported into HA OS for root debug SSH on port 22222
 
+usb:
+  enabled: false  # Disable USB accessory passthrough to prevent host/guest USB stalls and crashes
+
 metrics:
   enabled: true
   type: prometheus
