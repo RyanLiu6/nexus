@@ -75,9 +75,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
         reservations:
-          memory: 256M
+          memory: 512M
   authentik-worker:
     image: ghcr.io/goauthentik/server:2026.8.3
     restart: unless-stopped
