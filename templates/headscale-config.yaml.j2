@@ -67,7 +67,7 @@ unix_socket_permission: "0770"
 # Uncomment and configure to enable browser-based login with Google, Authentik, etc.
 # Redirect URI to configure in your IdP: https://headscale.<domain>/oidc/callback
 oidc:
-  only_start_if_oidc_is_available: false
+  only_start_if_oidc_is_available: true
   issuer: "https://auth.{{ nexus_domain }}/application/o/headscale/"
   # client_id and client_secret are provided securely via vault/env vars
   scope: ["openid", "profile", "email", "headscale-username"]
