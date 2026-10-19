@@ -87,7 +87,7 @@ services:
 
   # Grafana - uses Header Auth via authentik
   grafana:
-    image: grafana/grafana:13.2.3
+    image: grafana/grafana:13.2.4
     container_name: grafana
     restart: unless-stopped
     deploy:
