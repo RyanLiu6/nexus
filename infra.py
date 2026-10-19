@@ -159,10 +159,13 @@ if "headscale" in services:
     # 2. Build tag owners
     tag_owners = {"tag:nexus-server": ["group:admins"]}
 
-    # 3. Build ACLs
+    # 3. Build auto approvers
+    auto_approvers = {"exitNode": ["group:admins", "tag:nexus-server"]}
+
+    # 4. Build ACLs
     acls = []
 
-    # Admins get full access to everything (nodes, subnets, internet)
+    # Admins get full access to internal tailnet (nodes, subnets)
     if "group:admins" in groups:
         acls.append({"action": "accept", "src": ["group:admins"], "dst": ["*:*"]})
 
@@ -177,8 +180,10 @@ if "headscale" in services:
                 }
             )
 
-    # Internet access for allowed groups
+    # Internet access for allowed groups (both admins and members)
     internet_srcs = []
+    if "group:admins" in groups:
+        internet_srcs.append("group:admins")
     if "group:members" in groups:
         internet_srcs.append("group:members")
 
@@ -187,7 +192,7 @@ if "headscale" in services:
             {"action": "accept", "src": internet_srcs, "dst": ["autogroup:internet:*"]}
         )
 
-    # 4. Build SSH rules
+    # 5. Build SSH rules
     ssh_rules = []
     if "group:admins" in groups:
         ssh_rules.append(
@@ -202,6 +207,7 @@ if "headscale" in services:
     acl_dict = {
         "groups": groups,
         "tagOwners": tag_owners,
+        "autoApprovers": auto_approvers,
         "acls": acls,
         "ssh": ssh_rules,
     }
