@@ -44,7 +44,7 @@ services:
         reservations:
           memory: 128M
   authentik-server:
-    image: ghcr.io/goauthentik/server:2026.8.3
+    image: ghcr.io/goauthentik/server:2026.8.5
     restart: unless-stopped
     command: server
     environment:
@@ -79,7 +79,7 @@ services:
         reservations:
           memory: 512M
   authentik-worker:
-    image: ghcr.io/goauthentik/server:2026.8.3
+    image: ghcr.io/goauthentik/server:2026.8.5
     restart: unless-stopped
     command: worker
     environment:
