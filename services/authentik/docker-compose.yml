@@ -1,6 +1,6 @@
 services:
   authentik-postgresql:
-    image: docker.io/library/postgres:16-alpine
+    image: docker.io/library/postgres:18-alpine
     restart: unless-stopped
     healthcheck:
       test:
