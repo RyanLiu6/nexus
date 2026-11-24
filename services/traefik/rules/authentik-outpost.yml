@@ -1,0 +1,19 @@
+http:
+  routers:
+    authentik-outpost:
+      rule: "!Host(`auth.{{ env `NEXUS_DOMAIN` }}`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      priority: 100
+      entryPoints:
+        - "https"
+      middlewares:
+        - "internal-chain@file"
+      service: "authentik-outpost"
+      tls:
+        certResolver: "certchallenge"
+
+  services:
+    authentik-outpost:
+      loadBalancer:
+        servers:
+          - url: "http://authentik-server:9000"
+        passHostHeader: true

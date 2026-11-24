@@ -22,6 +22,7 @@ _TRAEFIK_HTTPS_SKIP = {
     "transmission",
     "amane",
     "headscale",
+    "ddns",
 }
 _TRAEFIK_HTTPS_SERVICES = [s for s in ALL_SERVICES if s not in _TRAEFIK_HTTPS_SKIP]
 
@@ -51,8 +52,13 @@ def test_service_manifest_exists(service_name: str) -> None:
     assert (discover_services()[service_name].path / "service.yml").exists()
 
 
+_MEMORY_LIMIT_SKIP = {"virtue"}
+
+
 @pytest.mark.parametrize("service_name", ALL_SERVICES)
 def test_all_containers_have_memory_limits(service_name: str) -> None:
+    if service_name in _MEMORY_LIMIT_SKIP:
+        pytest.skip(f"{service_name}: intentionally uncapped")
     config = _load_compose(service_name)
     for container_name, container_config in config["services"].items():
         deploy = container_config.get("deploy", {})

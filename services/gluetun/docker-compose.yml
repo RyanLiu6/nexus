@@ -23,6 +23,7 @@ services:
       - SERVER_COUNTRIES=${PROTONVPN_SERVER_COUNTRIES:-Netherlands}
       - VPN_PORT_FORWARDING=${PROTONVPN_PORT_FORWARDING:-on}
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'i=0; SID=""; while [ -z "$$SID" ] && [ $$i -lt 30 ]; do SID=$$(wget -q -S -O /dev/null http://127.0.0.1:9091/transmission/rpc 2>&1 | sed -n "s/.*X-Transmission-Session-Id:[[:space:]]*//ip" | tr -d "\r\n"); [ -n "$$SID" ] || { i=$$((i+1)); sleep 2; }; done; [ -n "$$SID" ] && wget -q -O - --header="X-Transmission-Session-Id:$$SID" --header="Content-Type:application/json" --post-data="{\"method\":\"session-set\",\"arguments\":{\"peer-port\":{{PORTS}}}}" http://127.0.0.1:9091/transmission/rpc'
       - FIREWALL_OUTBOUND_SUBNETS=172.16.0.0/12,192.168.0.0/16,0.250.250.254/32
       - TZ=${TZ}
     extra_hosts:
