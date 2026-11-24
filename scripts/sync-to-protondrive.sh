@@ -15,7 +15,7 @@
 #
 # Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]
 #   Containers (optional): stopped before sync, restarted after (even on failure).
-# Schedule: 0 4 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
+# Schedule: 30 3 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
 #
 # Failures fire a critical alert to Alertmanager with the failure reason.
 # Override the Alertmanager URL via ALERTMANAGER_URL (default: http://localhost:9093).
@@ -104,9 +104,21 @@ fi
 log "Starting rsync: $SOURCE_DIR -> $DEST_DIR"
 
 rsync_out=""
-if ! rsync_out=$(rsync --archive --no-owner --no-group --delete "$SOURCE_DIR/" "$DEST_DIR/" 2>&1); then
-    FAILURE_REASON="rsync failed: ${rsync_out:-no output}"
-    exit 1
+set +e
+rsync_out=$(rsync --archive --no-owner --no-group --delete \
+    --exclude='locks/**' \
+    --exclude='.DS_Store' \
+    "$SOURCE_DIR/" "$DEST_DIR/" 2>&1)
+rsync_code=$?
+set -e
+
+if [ $rsync_code -ne 0 ] && [ $rsync_code -ne 24 ]; then
+    FAILURE_REASON="rsync failed (exit $rsync_code): ${rsync_out:-no output}"
+    exit "$rsync_code"
+fi
+
+if [ $rsync_code -eq 24 ]; then
+    log "WARNING: Some source files vanished during sync (code 24), transfer completed successfully"
 fi
 
 log "Sync complete"

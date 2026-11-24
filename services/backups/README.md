@@ -24,13 +24,14 @@ R2 is optional — only active when `backups_r2_access_key` is configured. Both 
 
 | Plan | Schedule | Repo | Paths | Excludes | Purpose |
 |------|----------|------|-------|----------|---------|
-| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | `/base_data/homeassistant/vm`, `/base_data/backrest`, caches, `*.log` | Full backup of everything |
+| **daily-local** | 2:00 AM | local | `/base_data`, `/user_data` | `/base_data/homeassistant/vm`, `/base_data/backrest`, `/user_data/bookorbit`, caches, `*.log` | Full backup of everything |
 | **daily-r2** | 3:00 AM | r2 | `/base_data` only | `/base_data/homeassistant/vm`, `/base_data/backrest`, caches, `*.log` | Off-site configs only |
 
 > [!NOTE]
 > **Exclusions:**
 > - **Home Assistant VM:** The 32GB raw virtual disk at `/base_data/homeassistant/vm/` is excluded. Native `.tar` backups are synced by `sync-backups.sh` to `/base_data/homeassistant/backups/`.
 > - **Backrest Data & Caches:** `/base_data/backrest`, `/base_data/jellyfin/cache`, `/base_data/virtue/cache`, and Foundry container caches are excluded to prevent snapshot bloat.
+> - **Raw Synced User Data:** `/user_data/bookorbit` is excluded because it is already synced directly to ProtonDrive as raw files via `nexus-protondrive-bookorbit-sync` without restic.
 > - **Logs:** Ephemeral log files (`**/*.log`, `**/logs/**`, `**/log/**`) are excluded.
 
 ### Volume Mounts
@@ -102,7 +103,7 @@ Three daily rsyncs to a ProtonDrive-mounted directory. All use `--delete` so Pro
 
 | Job | Schedule | Source | Destination | Purpose |
 |---------|----------|--------|-------------|---------|
-| `nexus-protondrive-sync` | 4 AM | `Backups/` (restic repos) | `protondrive_sync_directory/Containers` | Restic repos mirrored to ProtonDrive |
+| `nexus-protondrive-sync` | 3:30 AM | `Backups/` (restic repos) | `protondrive_sync_directory/Containers` | Restic repos mirrored to ProtonDrive |
 | `nexus-protondrive-paperless-sync` | 4:30 AM | `$NEXUS_USERDATA_DIRECTORY/paperless` | `protondrive_sync_directory/paperless` | Raw documents, no restic dependency |
 | `nexus-protondrive-bookorbit-sync` | 5:00 AM | `$NEXUS_USERDATA_DIRECTORY/bookorbit` | `protondrive_sync_directory/bookorbit` | Raw books, no restic dependency |
 
@@ -119,5 +120,5 @@ The raw data syncs (paperless, bookorbit) mean documents and books are recoverab
 
 ## Maintenance
 
-- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 4 AM–5 AM (ProtonDrive rsync if enabled: restic repos at 4:00, paperless at 4:30, bookorbit at 5:00)
-- **Weekly**: Automated pruning at 4 AM Sunday on both repos; `nexus maintenance weekly` verifies backups exist
+- **Daily**: Automated backups at 2 AM (local), 3 AM (R2), 3:30 AM–5 AM (ProtonDrive rsync if enabled: restic repos at 3:30, paperless at 4:30, bookorbit at 5:00)
+- **Weekly**: Automated pruning at 6 AM Sunday on both repos; `nexus maintenance weekly` verifies backups exist

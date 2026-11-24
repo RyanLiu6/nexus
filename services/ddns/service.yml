@@ -1,0 +1,3 @@
+name: ddns
+description: Dynamic DNS updater for Cloudflare
+dependencies: []

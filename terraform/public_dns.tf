@@ -16,4 +16,8 @@ resource "cloudflare_dns_record" "public_subdomains" {
   type     = "A"
   ttl      = 1
   proxied  = true
+
+  lifecycle {
+    ignore_changes = [content]
+  }
 }

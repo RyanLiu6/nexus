@@ -1,0 +1,24 @@
+services:
+  ddns:
+    image: favonia/cloudflare-ddns:latest
+    container_name: ddns
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 16M
+    networks:
+      - nexus
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+      - DOMAINS=${DDNS_DOMAINS:-headscale.${NEXUS_DOMAIN},auth.${NEXUS_DOMAIN},foundry.${NEXUS_DOMAIN},headplane.${NEXUS_DOMAIN}}
+      - PROXIED=!is(headscale.${NEXUS_DOMAIN})
+      - IP6_PROVIDER=none
+      - UPDATE_CRON=@every 5m
+      - TZ=${TZ}
+
+networks:
+  nexus:
+    external: true

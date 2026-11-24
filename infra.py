@@ -11,6 +11,7 @@ from pyinfra import logger
 from pyinfra.operations import files, server
 
 from nexus.config import PRIVATE_SERVICES_PATH
+from nexus.services import discover_services
 
 # =============================================================================
 # Load Secrets
@@ -258,6 +259,23 @@ env_lines.append(f"BOOKORBIT_BOOKS_DIRECTORY={userdata_dir}/bookorbit")
 # Map Cloudflare API token for Traefik
 env_lines.append(f"CLOUDFLARE_DNS_API_TOKEN={secrets.get('cloudflare_api_token', '')}")
 
+# Compute DDNS domains dynamically from public service manifests + headscale
+domain = secrets.get("nexus_domain", "")
+if domain and "ddns" in services:
+    all_manifests = discover_services()
+    ddns_subdomains: list[str] = []
+    if "headscale" in services:
+        ddns_subdomains.append("headscale")
+    for svc in services:
+        manifest = all_manifests.get(svc)
+        if manifest and manifest.is_public:
+            ddns_subdomains.extend(manifest.subdomains)
+    if ddns_subdomains:
+        ddns_domains = ",".join(
+            f"{sub}.{domain}" for sub in sorted(set(ddns_subdomains))
+        )
+        env_lines.append(f"DDNS_DOMAINS={ddns_domains}")
+
 env_lines.append(f"NEXUS_ROOT_DIRECTORY={NEXUS_ROOT}")
 env_lines.append(f"NEXUS_DATA_DIRECTORY={NEXUS_DATA}")
 
@@ -278,8 +296,8 @@ server.shell(
 # =============================================================================
 # ProtonDrive Background Sync
 # =============================================================================
-protondrive_sync_directory = secrets.get("protondrive_sync_directory", "")
-NEXUS_USERDATA = secrets.get("nexus_userdata_directory", "")
+protondrive_sync_directory = secrets.get("protondrive_sync_directory", "").rstrip("/")
+NEXUS_USERDATA = secrets.get("nexus_userdata_directory", "").rstrip("/")
 
 if "backups" in services and protondrive_sync_directory:
     is_darwin = platform.system() == "Darwin"
@@ -288,8 +306,8 @@ if "backups" in services and protondrive_sync_directory:
     sync_jobs: list[dict[str, Any]] = [
         {
             "id": "com.nexus.protondrive-sync",
-            "hour": 4,
-            "minute": 0,
+            "hour": 3,
+            "minute": 30,
             "args": [
                 "/bin/bash",
                 f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh",
