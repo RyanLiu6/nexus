@@ -70,8 +70,10 @@ pre-commit install
 
 echo "📂 Setting up data directories..."
 DATA_DIR="${NEXUS_DATA_DIRECTORY:-$HOME/Data}"
-echo "   Target: $DATA_DIR"
-mkdir -p "$DATA_DIR"/{Config,Media,Backups}
+NAS_DIR="${NEXUS_NAS_DIRECTORY:-$DATA_DIR}"
+echo "   Target (SSD): $DATA_DIR"
+echo "   Target (NAS): $NAS_DIR"
+mkdir -p "$DATA_DIR/Config" "$NAS_DIR"/{Media,Backups}
 echo "   ✅ Created Config, Media, Backups"
 
 echo ""

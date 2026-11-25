@@ -93,13 +93,27 @@ def _get_all_backup_services() -> list[str]:
     return sorted(service_names)
 
 
+def _get_nas_dir(data_dir: str) -> str:
+    """Resolve NEXUS_NAS_DIRECTORY from env or vault, falling back to data_dir."""
+    nas_dir = os.environ.get("NEXUS_NAS_DIRECTORY", "")
+    if not nas_dir:
+        try:
+            vault = read_vault()
+            nas_dir = vault.get("nexus_nas_directory", "")
+        except Exception as e:
+            logger.warning(f"Could not read vault for nas_dir: {e}")
+    return nas_dir or data_dir
+
+
 def _build_ephemeral_cmd(
     data_dir: str,
     password: str,
     uri: str,
     target: str,
     extra_mounts: Optional[list[str]] = None,
+    nas_dir: Optional[str] = None,
 ) -> list[str]:
+    repos_root = nas_dir or _get_nas_dir(data_dir)
     cmd = [
         "docker",
         "run",
@@ -107,7 +121,7 @@ def _build_ephemeral_cmd(
         "--entrypoint",
         "restic",
         "-v",
-        f"{data_dir}/Backups:/repos:ro",
+        f"{repos_root}/Backups:/repos:ro",
         "-e",
         f"RESTIC_PASSWORD={password}",
     ]

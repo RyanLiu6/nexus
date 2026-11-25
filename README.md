@@ -7,7 +7,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Dashboard** - Authentik Application Dashboard to access all services
 - **Smart Home** - Home Assistant OS with Matter/Thread via HAVM (Apple Silicon Virtualization)
 - **Authentication** - Authentik (OIDC) + Traefik ForwardAuth + Headscale
-- **Media** - Jellyfin/Plex streaming, Transmission downloads
+- **Media** - Jellyfin streaming, Transmission downloads
 - **Apps** - FoundryVTT (D&D), Sure (finance), Paperless-ngx (documents), BookOrbit (books)
 - **Monitoring** - Prometheus + Grafana + Discord alerts
 - **Backups** - Automated with Backrest
@@ -69,7 +69,7 @@ invoke ops --daily               # Daily maintenance
 ## Services
 
 **Core:** traefik, authentik,  monitoring, homeassistant
-**Media:** jellyfin, plex, transmission
+**Media:** jellyfin, transmission
 **Apps:** foundryvtt, sure, paperless, bookorbit
 **Utils:** backups
 

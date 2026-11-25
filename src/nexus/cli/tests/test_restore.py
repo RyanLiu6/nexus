@@ -62,7 +62,7 @@ class TestMain:
                 "--service",
                 "foundryvtt",
                 "--service",
-                "plex",
+                "jellyfin",
                 "--yes",
             ],
         )
@@ -70,7 +70,7 @@ class TestMain:
         assert result.exit_code == 0
         mock_restore.assert_called_once_with(
             snapshot_id="abc123",
-            services=["foundryvtt", "plex"],
+            services=["foundryvtt", "jellyfin"],
             target="local",
             dry_run=False,
         )

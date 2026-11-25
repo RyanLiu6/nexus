@@ -45,6 +45,7 @@ def load_secrets():
 secrets = load_secrets()
 NEXUS_ROOT = secrets.get("nexus_root_directory", str(Path.cwd()))
 NEXUS_DATA = secrets.get("nexus_data_directory", "/Volumes/Data")
+NEXUS_NAS = secrets.get("nexus_nas_directory", NEXUS_DATA)
 
 logger.info(f"Loaded configuration for {secrets.get('nexus_domain')}")
 
@@ -69,6 +70,9 @@ directories = [
     NEXUS_DATA,
     f"{NEXUS_DATA}/Config",
     f"{NEXUS_DATA}/Config/traefik",
+    NEXUS_NAS,
+    f"{NEXUS_NAS}/Media",
+    f"{NEXUS_NAS}/Backups",
 ]
 
 for d in directories:
@@ -278,6 +282,7 @@ if domain and "ddns" in services:
 
 env_lines.append(f"NEXUS_ROOT_DIRECTORY={NEXUS_ROOT}")
 env_lines.append(f"NEXUS_DATA_DIRECTORY={NEXUS_DATA}")
+env_lines.append(f"NEXUS_NAS_DIRECTORY={NEXUS_NAS}")
 
 files.put(
     name="Generate .env file",
@@ -311,13 +316,13 @@ if "backups" in services and protondrive_sync_directory:
             "args": [
                 "/bin/bash",
                 f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh",
-                f"{NEXUS_DATA}/Backups",
+                f"{NEXUS_NAS}/Backups",
                 f"{protondrive_sync_directory}/Containers",
             ],
             "cron_name": "nexus-protondrive-sync",
             "cron_command": (
                 f"{NEXUS_ROOT}/scripts/sync-to-protondrive.sh "
-                f"{NEXUS_DATA}/Backups {protondrive_sync_directory}/Containers"
+                f"{NEXUS_NAS}/Backups {protondrive_sync_directory}/Containers"
             ),
         }
     ]

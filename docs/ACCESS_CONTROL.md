@@ -111,7 +111,6 @@ sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tag
 | Transmission | ✅ | ❌ | ❌ |
 | Jellyfin | ✅ | ✅ | ❌ |
 | Virtue | ✅ | ❌ | ❌ |
-| Plex | ✅ | ❌ | ❌ |
 | Sure | ✅ | ❌ | ❌ |
 | Paperless | ✅ | ❌ | ❌ |
 | BookOrbit | ✅ | ❌ | ❌ |

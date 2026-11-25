@@ -111,7 +111,7 @@ class TestRunTerraform:
             "TF_VAR_tunnel_secret": "secret",
         }
 
-        run_terraform(["plex"], "example.com", dry_run=False)
+        run_terraform(["jellyfin"], "example.com", dry_run=False)
 
         assert tf_vars_path.exists()
         with open(tf_vars_path) as f:
@@ -119,7 +119,7 @@ class TestRunTerraform:
 
         assert config["domain"] == "example.com"
         assert "subdomains" in config
-        assert "plex" in config["subdomains"]
+        assert "jellyfin" in config["subdomains"]
         assert "ha" in config["subdomains"]
         assert mock_run_cmd.call_count == 2
 
@@ -127,7 +127,7 @@ class TestRunTerraform:
     def test_run_terraform_no_config(self, mock_tf_path: MagicMock) -> None:
         mock_tf_path.__truediv__.return_value.exists.return_value = False
 
-        run_terraform(["plex"], "example.com")
+        run_terraform(["jellyfin"], "example.com")
 
     @patch("nexus.deploy.terraform._run_terraform_cmd")
     @patch("nexus.deploy.terraform._get_terraform_vars_from_vault")
@@ -166,7 +166,7 @@ class TestRunTerraform:
             "tailscale_server_ip": "100.64.0.1",
         }
 
-        run_terraform(["plex"], "example.com", dry_run=False)
+        run_terraform(["jellyfin"], "example.com", dry_run=False)
 
         assert tf_vars_path.exists()
         with open(tf_vars_path) as f:
@@ -204,7 +204,7 @@ class TestRunTerraform:
         }
         mock_read_vault.side_effect = FileNotFoundError("vault not found")
 
-        run_terraform(["plex"], "example.com", dry_run=False)
+        run_terraform(["jellyfin"], "example.com", dry_run=False)
 
         assert tf_vars_path.exists()
         with open(tf_vars_path) as f:
@@ -231,7 +231,7 @@ class TestRunTerraform:
         mock_get_vault_vars.side_effect = ValueError("Missing vault values")
 
         with pytest.raises(ValueError) as exc_info:
-            run_terraform(["plex"], "example.com")
+            run_terraform(["jellyfin"], "example.com")
 
         assert "Missing vault values" in str(exc_info.value)
 
@@ -263,7 +263,7 @@ class TestRunTerraform:
         mock_run_cmd.side_effect = subprocess.CalledProcessError(1, "terraform")
 
         with pytest.raises(subprocess.CalledProcessError):
-            run_terraform(["plex"], "example.com")
+            run_terraform(["jellyfin"], "example.com")
 
 
 class TestGetR2Credentials:
