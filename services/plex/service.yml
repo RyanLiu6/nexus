@@ -1,6 +1,0 @@
-name: plex
-description: Plex media server
-subdomain: plex
-dependencies:
-- traefik
-- authentik

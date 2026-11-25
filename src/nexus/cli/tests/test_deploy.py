@@ -207,13 +207,13 @@ class TestMain:
         ):
             mock_vault.exists.return_value = True
             runner = CliRunner()
-            result = runner.invoke(main, ["plex", "--domain", "example.com", "-y"])
+            result = runner.invoke(main, ["jellyfin", "--domain", "example.com", "-y"])
 
             assert result.exit_code == 0, result.output
             assert mock_tf.call_count == 1
             env = mock_run.call_args.kwargs.get("env", {})
             deployed_services = env.get("NEXUS_SERVICES", "").split(",")
-            assert "plex" in deployed_services
+            assert "jellyfin" in deployed_services
             assert "traefik" in deployed_services
 
     def test_main_missing_vault_exits(self) -> None:

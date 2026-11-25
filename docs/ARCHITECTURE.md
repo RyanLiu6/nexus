@@ -22,7 +22,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Monitoring | ✅ | Prometheus + Grafana |
 | Alerting | ✅ | Discord webhook alerts |
 | Backups | ✅ | Backrest automated backups |
-| Media Server | ✅ | Jellyfin (primary), Plex (optional) |
+| Media Server | ✅ | Jellyfin (primary), Virtue (secondary) |
 | Gaming | ✅ | FoundryVTT for D&D |
 | Finance | ✅ | Sure for budgeting |
 | Documents | ✅ | Paperless-ngx for document management |
@@ -139,7 +139,6 @@ PRESETS = {
 | **monitoring** | Prometheus + Grafana | Admin (Tailscale) |
 | **jellyfin** | Media server | Admin |
 | **virtue** | Media server (secondary Jellyfin) | Admin |
-| **plex** | Media streaming | Admin + Wife |
 | **transmission** | Torrent client | Admin |
 | **foundryvtt** | Virtual tabletop | Admin + Gaming |
 | **sure** | Finance tracking | Admin + Wife |

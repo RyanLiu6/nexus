@@ -77,7 +77,7 @@ class TestDiscoverServices:
     def test_discover_services_includes_known_services(self) -> None:
         services = discover_services()
         assert "traefik" in services
-        assert "plex" in services
+        assert "jellyfin" in services
         assert "monitoring" in services
 
     def test_discover_services_includes_new_services(self) -> None:
@@ -95,9 +95,9 @@ class TestDiscoverServices:
 class TestResolveDependencies:
     def test_resolve_dependencies(self) -> None:
         all_services = discover_services()
-        resolved = resolve_dependencies(["plex"], all_services)
+        resolved = resolve_dependencies(["jellyfin"], all_services)
 
-        assert "plex" in resolved
+        assert "jellyfin" in resolved
         assert "traefik" in resolved
         assert "authentik" in resolved
 
@@ -110,6 +110,6 @@ class TestResolveDependencies:
 
     def test_resolve_dependencies_deduplicates(self) -> None:
         all_services = discover_services()
-        resolved = resolve_dependencies(["plex", "sure", "traefik"], all_services)
+        resolved = resolve_dependencies(["jellyfin", "sure", "traefik"], all_services)
 
         assert len(resolved) == len(set(resolved))
