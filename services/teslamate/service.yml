@@ -1,0 +1,5 @@
+name: teslamate
+description: Self-hosted Tesla data logger and MQTT streamer
+subdomain: teslamate
+dependencies:
+- traefik
