@@ -41,7 +41,7 @@ services:
       - "traefik.http.routers.teslamate.tls.certresolver=certchallenge"
 
   teslamate-db:
-    image: postgres:17
+    image: postgres:19
     container_name: teslamate-db
     restart: unless-stopped
     deploy:
