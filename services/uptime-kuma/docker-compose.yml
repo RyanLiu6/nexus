@@ -1,0 +1,33 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - nexus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      TZ: ${TZ:-America/Vancouver}
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`uptime.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.uptime-kuma.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma.middlewares=internal-chain@file"
+      - "traefik.http.routers.uptime-kuma.tls=true"
+      - "traefik.http.routers.uptime-kuma.tls.certresolver=certchallenge"
+
+networks:
+  nexus:
+    external: true

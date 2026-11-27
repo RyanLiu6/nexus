@@ -105,9 +105,8 @@ sudo tailscale up --login-server https://headscale.<your-domain> --advertise-tag
 |---------|--------|---------|--------|
 | Traefik | ✅ | ❌ | ❌ |
 | Headscale | ✅ | ❌ | ✅ |
-| Grafana | ✅ | ❌ | ❌ |
-| Prometheus | ✅ | ❌ | ❌ |
-| Alertmanager | ✅ | ❌ | ❌ |
+| Beszel | ✅ | ❌ | ❌ |
+| Uptime Kuma | ✅ | ❌ | ❌ |
 | Transmission | ✅ | ❌ | ❌ |
 | Jellyfin | ✅ | ✅ | ❌ |
 | Virtue | ✅ | ❌ | ❌ |

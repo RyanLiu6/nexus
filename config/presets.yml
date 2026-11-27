@@ -7,7 +7,8 @@ core:
   - traefik
   - headscale
   - ddns
-  - monitoring
+  - beszel
+  - uptime-kuma
   - homeassistant
   - scrypted
   - fregata

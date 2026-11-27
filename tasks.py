@@ -73,7 +73,7 @@ def mypy(c: Context) -> None:
         c: Invoke context.
     """
     print("Type checking with mypy...")
-    c.run("uv run mypy src/ services/ tasks.py")
+    c.run("uv run mypy src/ tasks.py")
 
 
 @task
@@ -341,22 +341,6 @@ def restore(
     if yes:
         args.append("--yes")
     c.run(f"uv run python -m nexus.cli.restore {' '.join(args)}")
-
-
-# =============================================================================
-# Alert Bot
-# =============================================================================
-
-
-@task
-def alert_bot(c: Context, port: int = 8080) -> None:
-    """Run the Discord alert bot.
-
-    Args:
-        c: Invoke context.
-        port: Port to run the webhook server on.
-    """
-    c.run(f"uv run python -m nexus.cli.alert_bot --port {port}")
 
 
 # =============================================================================

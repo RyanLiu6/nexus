@@ -1,0 +1,63 @@
+services:
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    networks:
+      - nexus
+    environment:
+      APP_URL: https://beszel.${NEXUS_DOMAIN}
+      TZ: ${TZ:-America/Vancouver}
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/beszel/data:/beszel_data
+      - beszel-socket:/beszel_socket
+    healthcheck:
+      test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nexus"
+      - "traefik.http.services.beszel.loadbalancer.server.port=8090"
+      - "traefik.http.routers.beszel.rule=Host(`beszel.${NEXUS_DOMAIN}`)"
+      - "traefik.http.routers.beszel.entrypoints=https"
+      - "traefik.http.routers.beszel.middlewares=internal-chain@file"
+      - "traefik.http.routers.beszel.tls=true"
+      - "traefik.http.routers.beszel.tls.certresolver=certchallenge"
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    restart: unless-stopped
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    environment:
+      LISTEN: /beszel_socket/beszel.sock
+      KEY: ${BESZEL_AGENT_KEY:-}
+      TZ: ${TZ:-America/Vancouver}
+    volumes:
+      - ${NEXUS_DATA_DIRECTORY}/Config/beszel/agent:/var/lib/beszel-agent
+      - beszel-socket:/beszel_socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=false"
+
+volumes:
+  beszel-socket:
+
+networks:
+  nexus:
+    external: true

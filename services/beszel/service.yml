@@ -1,0 +1,5 @@
+name: beszel
+description: Lightweight server and Docker container monitoring (Hub + Agent)
+subdomain: beszel
+dependencies:
+- traefik

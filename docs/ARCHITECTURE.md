@@ -19,7 +19,7 @@ Nexus is a self-hosted homelab solution that provides:
 | Auto SSL | ✅ | Let's Encrypt via Traefik |
 | DNS Management | ✅ | OpenTofu + Cloudflare |
 | Health Checks | ✅ | Docker healthchecks on all services |
-| Monitoring | ✅ | Prometheus + Grafana |
+| Monitoring | ✅ | Beszel + Uptime Kuma |
 | Alerting | ✅ | Discord webhook alerts |
 | Backups | ✅ | Backrest automated backups |
 | Media Server | ✅ | Jellyfin (primary), Virtue (secondary) |
@@ -99,25 +99,22 @@ Tailscale → Device (100.x.x.x) → Traefik → authentik → Docker Services
 
 | Component | Purpose |
 |-----------|---------|
-| **Prometheus** | Metrics collection and storage (Docker services + HAVM at `:9210`) |
-| **Grafana** | Dashboards and visualization (includes dedicated HAVM dashboard) |
-| **Alertmanager** | Alert routing and deduplication |
-| **Discord Bot** | Receives alerts, posts to Discord |
+| **Beszel (Hub + Agent)** | Host CPU, RAM, disk, network, and per-container Docker metrics & alerts |
+| **Uptime Kuma** | HTTP/HTTPS service uptime, TLS certificate expiry, HAVM `/health` check, and Docker container health |
 
 ### Alert Flow
 
 ```
-Service (down/high CPU) → Prometheus → Alert Rule → Alertmanager → Webhook → Discord
+Beszel / Uptime Kuma → Native Discord Webhook (auto-synced from SOPS on deploy)
 ```
 
 ### Setting Up Alerts
 
-See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) for setup instructions.
+See [DEPLOYMENT.md - Discord Alerts](DEPLOYMENT.md#optional-discord-alerts) for setup instructions.
 
 **Alert types:**
-- Service down > 5 minutes
-- High CPU/memory/disk usage
-- Container restart loops
+- Host/system down, high CPU/memory/disk usage (Beszel)
+- HTTPS endpoint down, TLS cert expiring, HAVM health check failed, container down (Uptime Kuma)
 
 ---
 
@@ -125,8 +122,8 @@ See [DEPLOYMENT.md - Discord Alerting](DEPLOYMENT.md#advanced-discord-alerting) 
 
 ```python
 PRESETS = {
-    "core": ["traefik", "authentik", "monitoring"],
-    "home": ["core", "backups", "foundryvtt", "jellyfin", "virtue", "transmission", "paperless", "bookorbit"],
+    "core": ["traefik", "headscale", "ddns", "beszel", "uptime-kuma", "homeassistant", "scrypted", "fregata"],
+    "home": ["core", "backups", "paperless", "bookorbit", "foundryvtt", "jellyfin", "gluetun", "transmission", "authentik", "tailscale-proton", "teslamate"],
 }
 ```
 
@@ -136,7 +133,8 @@ PRESETS = {
 |---------|---------|--------|
 | **traefik** | Reverse proxy, SSL | Admin (Tailscale) |
 | **authentik** | Identity Provider | Admin/Members |
-| **monitoring** | Prometheus + Grafana | Admin (Tailscale) |
+| **beszel** | Host & Docker container monitoring | Admin (Tailscale) |
+| **uptime-kuma** | HTTP/TLS/container uptime monitoring | Admin (Tailscale) |
 | **jellyfin** | Media server | Admin |
 | **virtue** | Media server (secondary Jellyfin) | Admin |
 | **transmission** | Torrent client | Admin |

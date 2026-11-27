@@ -9,7 +9,7 @@ Self-hosted homelab for personal services, media streaming, and productivity too
 - **Authentication** - Authentik (OIDC) + Traefik ForwardAuth + Headscale
 - **Media** - Jellyfin streaming, Transmission downloads
 - **Apps** - FoundryVTT (D&D), Sure (finance), Paperless-ngx (documents), BookOrbit (books)
-- **Monitoring** - Prometheus + Grafana + Discord alerts
+- **Monitoring** - Beszel + Uptime Kuma + Discord alerts
 - **Backups** - Automated with Backrest
 
 ## Tech Stack
@@ -68,7 +68,7 @@ invoke ops --daily               # Daily maintenance
 
 ## Services
 
-**Core:** traefik, authentik,  monitoring, homeassistant
+**Core:** traefik, authentik, beszel, uptime-kuma, homeassistant
 **Media:** jellyfin, transmission
 **Apps:** foundryvtt, sure, paperless, bookorbit
 **Utils:** backups

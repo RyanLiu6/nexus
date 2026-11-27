@@ -188,11 +188,11 @@ docker logs authentik
 ## Optional: Discord Alerts
 
 1. Create webhook: Discord Server Settings → Integrations → Webhooks
-2. Add to vault.yml:
+2. Add to `config/secrets.enc.yml`:
    ```yaml
    discord_webhook_url: "https://discord.com/api/webhooks/..."
    ```
-3. Run: `invoke alert-bot`
+3. Run `invoke deploy` (or `uv run python scripts/sync-monitoring-webhooks.py`) to sync the webhook to Beszel and Uptime Kuma automatically.
 
 ---
 

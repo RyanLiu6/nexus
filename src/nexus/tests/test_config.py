@@ -14,7 +14,8 @@ class TestPresets:
         assert "traefik" in services
         assert "headscale" in services
         assert "ddns" in services
-        assert "monitoring" in services
+        assert "beszel" in services
+        assert "uptime-kuma" in services
         assert "homeassistant" in services
         assert "scrypted" in services
 
@@ -24,7 +25,8 @@ class TestPresets:
         assert "headscale" in services
         assert "ddns" in services
         assert "authentik" in services
-        assert "monitoring" in services
+        assert "beszel" in services
+        assert "uptime-kuma" in services
         assert "homeassistant" in services
         assert "scrypted" in services
 
