@@ -1,0 +1,31 @@
+http:
+  serversTransports:
+    fregata-insecure:
+      insecureSkipVerify: true
+
+  routers:
+    fregata:
+      rule: "Host(`nvr.{{ env `NEXUS_DOMAIN` }}`)"
+      entryPoints:
+        - "https"
+      middlewares:
+        - "internal-chain@file"
+      service: "fregata"
+      tls:
+        certResolver: "certchallenge"
+
+    fregata-http:
+      rule: "Host(`nvr.{{ env `NEXUS_DOMAIN` }}`)"
+      entryPoints:
+        - "http"
+      middlewares:
+        - "redirect-to-https@file"
+      service: "fregata"
+
+  services:
+    fregata:
+      loadBalancer:
+        serversTransport: "fregata-insecure"
+        servers:
+          - url: "https://host.docker.internal:8971"
+        passHostHeader: true
