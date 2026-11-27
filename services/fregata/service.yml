@@ -1,0 +1,5 @@
+name: fregata
+description: Native macOS NVR (Frigate engine on Apple Silicon)
+subdomain: nvr
+dependencies:
+- traefik

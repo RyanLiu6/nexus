@@ -29,17 +29,17 @@ if ! ssh $SSH_OPTS -p "$HAOS_PORT" "$HAOS_USER@$HAOS_HOST" "true" 2>/dev/null; t
     exit 1
 fi
 
-# List remote backups
+# List newest MAX_LOCAL_BACKUPS remote backups (sorted newest-first by remote mtime)
 remote_files=$(ssh $SSH_OPTS -p "$HAOS_PORT" "$HAOS_USER@$HAOS_HOST" \
-    "ls -1 $HAOS_BACKUP_DIR/*.tar 2>/dev/null" || true)
+    "ls -1t $HAOS_BACKUP_DIR/*.tar 2>/dev/null | head -n $MAX_LOCAL_BACKUPS" || true)
 
 if [[ -z "$remote_files" ]]; then
     log "No backups found on HAOS VM — nothing to sync"
     exit 0
 fi
 
-# Sync each backup that doesn't already exist locally
-# Uses scp -O (legacy SCP protocol) because HAOS lacks sftp-server
+# Sync each of the newest backups that doesn't already exist locally.
+# Uses scp -O (legacy SCP protocol) because HAOS lacks sftp-server, and -p to preserve remote mtime.
 synced=0
 while IFS= read -r remote_path; do
     filename=$(basename "$remote_path")
@@ -50,22 +50,32 @@ while IFS= read -r remote_path; do
     fi
 
     log "Syncing: $filename"
-    scp -O $SSH_OPTS -P "$HAOS_PORT" \
+    scp -O -p $SSH_OPTS -P "$HAOS_PORT" \
         "$HAOS_USER@$HAOS_HOST:$remote_path" "$local_path"
     ((synced++)) || true
 done <<< "$remote_files"
 
 log "Synced $synced new backup(s)"
 
-# Prune old local backups, keeping only the newest MAX_LOCAL_BACKUPS
-local_count=$(find "$LOCAL_BACKUP_DIR" -name "*.tar" -type f | wc -l | tr -d ' ')
-if (( local_count > MAX_LOCAL_BACKUPS )); then
-    pruned=0
-    while IFS= read -r old_file; do
-        log "Pruning old backup: $(basename "$old_file")"
-        rm -f "$old_file"
+# Prune local backups that are no longer in the newest MAX_LOCAL_BACKUPS remote set
+pruned=0
+while IFS= read -r local_file; do
+    [[ -z "$local_file" ]] && continue
+    local_name=$(basename "$local_file")
+    keep=false
+    while IFS= read -r remote_path; do
+        if [[ "$(basename "$remote_path")" == "$local_name" ]]; then
+            keep=true
+            break
+        fi
+    done <<< "$remote_files"
+    if [[ "$keep" == false ]]; then
+        log "Pruning old backup: $local_name"
+        rm -f "$local_file"
         ((pruned++)) || true
-    done < <(ls -1t "$LOCAL_BACKUP_DIR"/*.tar | tail -n +"$((MAX_LOCAL_BACKUPS + 1))")
+    fi
+done < <(find "$LOCAL_BACKUP_DIR" -maxdepth 1 -name "*.tar" -type f)
+if (( pruned > 0 )); then
     log "Pruned $pruned old backup(s)"
 fi
 
