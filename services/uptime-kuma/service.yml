@@ -1,0 +1,5 @@
+name: uptime-kuma
+description: Self-hosted uptime monitoring and status dashboard
+subdomain: uptime
+dependencies:
+- traefik

@@ -19,7 +19,8 @@ Each service has its own README in `services/<name>/README.md`:
 | Service | Purpose |
 |---------|---------|
 | traefik | Reverse proxy |
-| monitoring | Prometheus + Grafana |
+| beszel | Host & Docker container monitoring |
+| uptime-kuma | Uptime & TLS certificate monitoring |
 | homeassistant | Home automation platform (HAVM) |
 | backups | Automated backups (Backrest) |
 | sure | Finance tracking |

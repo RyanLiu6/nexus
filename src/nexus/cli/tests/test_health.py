@@ -16,7 +16,7 @@ class TestMain:
         mock_ssl: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {"traefik": True, "auth": True}
         mock_disk.return_value = {
             "total": "100G",
@@ -24,7 +24,7 @@ class TestMain:
             "available": "50G",
             "usage_percent": "50%",
         }
-        mock_ssl.return_value = {"traefik": True, "grafana": True}
+        mock_ssl.return_value = {"traefik": True, "beszel": True, "uptime": True}
 
         async def mock_check(services):
             for svc in services:
@@ -48,7 +48,7 @@ class TestMain:
         mock_ssl: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {"traefik": False}
         mock_disk.return_value = {}
         mock_ssl.return_value = {}
@@ -73,7 +73,7 @@ class TestMain:
         mock_check_all: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {}
         mock_disk.return_value = {}
 
@@ -96,7 +96,7 @@ class TestMain:
         mock_check_all: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {}
         mock_disk.return_value = {}
 
@@ -119,7 +119,7 @@ class TestMain:
         mock_check_all: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {}
         mock_disk.return_value = {}
 
@@ -142,7 +142,7 @@ class TestMain:
         mock_check_all: MagicMock,
         mock_disk: MagicMock,
         mock_docker: MagicMock,
-    ):
+    ) -> None:
         mock_docker.return_value = {}
         mock_disk.return_value = {}
 

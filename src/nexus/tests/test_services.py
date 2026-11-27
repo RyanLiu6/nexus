@@ -78,7 +78,8 @@ class TestDiscoverServices:
         services = discover_services()
         assert "traefik" in services
         assert "jellyfin" in services
-        assert "monitoring" in services
+        assert "beszel" in services
+        assert "uptime-kuma" in services
 
     def test_discover_services_includes_new_services(self) -> None:
         services = discover_services()

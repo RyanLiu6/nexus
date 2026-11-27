@@ -94,6 +94,7 @@ class TestCheckServiceHealth:
         await check_service_health(service, mock_session)
 
         assert service.healthy is False
+        assert service.error is not None
         assert "Connection refused" in service.error
 
 
@@ -188,8 +189,8 @@ class TestCheckSslCertificates:
             result = check_ssl_certificates("example.com")
 
         assert "traefik" in result
-        assert "grafana" in result
-        assert "prometheus" in result
+        assert "beszel" in result
+        assert "uptime" in result
 
     def test_check_ssl_certificates_failure(self):
         with patch(

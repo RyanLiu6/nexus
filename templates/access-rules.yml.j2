@@ -44,21 +44,13 @@ services:
     groups: [admins]
     description: "Reverse proxy dashboard"
 
-  grafana:
+  beszel:
     groups: [admins]
-    description: "Metrics visualization"
+    description: "Host and Docker container monitoring"
 
-  prometheus:
+  uptime:
     groups: [admins]
-    description: "Metrics collection"
-
-  node-exporter:
-    groups: [admins]
-    description: "Node metrics"
-
-  alertmanager:
-    groups: [admins]
-    description: "Alert management"
+    description: "Uptime Kuma service monitoring"
 
   transmission:
     groups: [admins]

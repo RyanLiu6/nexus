@@ -298,6 +298,16 @@ server.shell(
     commands=[f"cd {NEXUS_ROOT} && docker compose up -d --remove-orphans"],
 )
 
+if ("beszel" in services or "uptime-kuma" in services) and secrets.get(
+    "discord_webhook_url"
+):
+    server.shell(
+        name="Sync Discord webhook to Beszel and Uptime Kuma",
+        commands=[
+            f"cd {NEXUS_ROOT} && uv run python scripts/sync-monitoring-webhooks.py"
+        ],
+    )
+
 # =============================================================================
 # ProtonDrive Background Sync
 # =============================================================================

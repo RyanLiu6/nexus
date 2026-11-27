@@ -17,8 +17,8 @@
 #   Containers (optional): stopped before sync, restarted after (even on failure).
 # Schedule: 30 3 * * * /path/to/nexus/scripts/sync-to-protondrive.sh <src> <dest>
 #
-# Failures fire a critical alert to Alertmanager with the failure reason.
-# Override the Alertmanager URL via ALERTMANAGER_URL (default: http://localhost:9093).
+# Failures fire a critical alert to Discord via DISCORD_WEBHOOK_URL
+# (loaded from environment or repo root .env).
 # =============================================================================
 
 set -euo pipefail
@@ -29,12 +29,17 @@ if [[ "$(uname)" == "Darwin" ]]; then
     export PATH="/usr/local/bin:/opt/homebrew/bin:$HOME/.orbstack/bin:$HOME/.local/bin:$PATH"
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${SCRIPT_DIR}/../.env"
+
 SOURCE_DIR="${1:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 DEST_DIR="${2:?Usage: sync-to-protondrive.sh <source_dir> <dest_dir> [container...]}"
 shift 2
 CONTAINERS=("$@")
 TAG="$(basename "$SOURCE_DIR")"
-ALERTMANAGER_URL="${ALERTMANAGER_URL:-http://localhost:9093}"
+if [[ -z "${DISCORD_WEBHOOK_URL:-}" && -f "$ENV_FILE" ]]; then
+    DISCORD_WEBHOOK_URL="$(grep -E '^DISCORD_WEBHOOK_URL=' "$ENV_FILE" | head -n1 | cut -d= -f2- || true)"
+fi
 FAILURE_REASON=""
 
 log() {
@@ -43,10 +48,10 @@ log() {
 
 fire_failed_alert() {
     local reason="$1"
-    local ends_at
-    # Resolve expires 25h from now so the alert auto-clears if the next run succeeds
-    ends_at=$(date -u -d '+25 hours' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
-        || date -u -v+25H '+%Y-%m-%dT%H:%M:%SZ')
+    if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+        log "WARNING: DISCORD_WEBHOOK_URL not set; skipping Discord alert"
+        return 0
+    fi
 
     # Basic JSON escaping: backslashes first, then quotes, then collapse newlines
     local escaped="${reason//\\/\\\\}"
@@ -54,20 +59,16 @@ fire_failed_alert() {
     escaped="${escaped//$'\n'/ }"
 
     curl --silent --max-time 10 \
-        --request POST "${ALERTMANAGER_URL}/api/v2/alerts" \
+        --request POST "${DISCORD_WEBHOOK_URL}" \
         --header "Content-Type: application/json" \
-        --data "[{
-            \"labels\": {
-                \"alertname\": \"ProtonDriveSyncFailed\",
-                \"severity\": \"critical\",
-                \"job\": \"${TAG}\"
-            },
-            \"annotations\": {
-                \"summary\": \"ProtonDrive sync failed (${TAG})\",
-                \"description\": \"${escaped}\"
-            },
-            \"endsAt\": \"${ends_at}\"
-        }]" || log "WARNING: Failed to reach Alertmanager at ${ALERTMANAGER_URL}"
+        --data "{
+            \"username\": \"Nexus Backup Sync\",
+            \"embeds\": [{
+                \"title\": \"🚨 ProtonDrive sync failed (${TAG})\",
+                \"description\": \"${escaped}\",
+                \"color\": 15158332
+            }]
+        }" || log "WARNING: Failed to send Discord webhook alert"
 }
 
 on_exit() {

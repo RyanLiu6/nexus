@@ -1,9 +1,0 @@
-name: monitoring
-description: Prometheus + Grafana monitoring stack
-subdomains:
-- grafana
-- prometheus
-- alertmanager
-dependencies:
-- traefik
-- authentik

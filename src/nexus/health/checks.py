@@ -142,7 +142,7 @@ def check_disk_space() -> dict[str, str]:
 def check_ssl_certificates(domain: str) -> dict[str, bool]:
     """Verify SSL certificate validity for core services.
 
-    Attempts to establish SSL connections to traefik, grafana, and prometheus
+    Attempts to establish SSL connections to traefik, beszel, and uptime
     subdomains to validate their certificates are properly configured.
 
     Args:
@@ -158,8 +158,8 @@ def check_ssl_certificates(domain: str) -> dict[str, bool]:
 
         services_to_check = {
             "traefik": f"traefik.{domain}",
-            "grafana": f"grafana.{domain}",
-            "prometheus": f"prometheus.{domain}",
+            "beszel": f"beszel.{domain}",
+            "uptime": f"uptime.{domain}",
         }
 
         ssl_status = {}
