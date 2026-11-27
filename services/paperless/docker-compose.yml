@@ -45,7 +45,7 @@ services:
       - "traefik.http.routers.paperless-web.tls.certresolver=certchallenge"
 
   paperless-db:
-    image: postgres:18
+    image: postgres:19
     container_name: paperless-db
     restart: unless-stopped
     deploy:

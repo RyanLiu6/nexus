@@ -82,7 +82,7 @@ services:
         condition: service_healthy
 
   sure-db:
-    image: postgres:18
+    image: postgres:19
     container_name: sure-db
     restart: unless-stopped
     shm_size: 128m
