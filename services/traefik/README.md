@@ -9,7 +9,7 @@ Docker Image is from Traefik, found [here](https://hub.docker.com/r/traefik/trae
 - **Entrypoints:**
   - `http` (:80) — Permanently redirects (301) all traffic to `https` (:443)
   - `https` (:443) — TLS termination with Let's Encrypt certificates
-  - `traefik` (:8080) — Internal dashboard and Prometheus metrics endpoint
+  - `traefik` (:8080) — Internal dashboard and ping endpoint
 - **Providers:**
   - **Docker Provider:** Automatically discovers containers attached to the `nexus` network with `traefik.enable=true` labels
   - **File Provider:** Loads dynamic router/service definitions from `/rules` (`services/traefik/rules/`), including middlewares, TLS configuration, and external VMs like Home Assistant (`services/traefik/rules/homeassistant.yml`)
