@@ -4,10 +4,6 @@
 log:
   level: INFO
 
-metrics:
-  prometheus:
-    entryPoint: traefik
-
 api:
   dashboard: true
   insecure: true  # Set to false in production, enables dashboard on :8080

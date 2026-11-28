@@ -190,20 +190,9 @@ In modern Home Assistant (2026+), reverse proxy settings are managed under **Set
 - `100.64.0.0/10` (Tailscale VPN)
 - `127.0.0.1`
 
-### 2. Prometheus & Grafana Monitoring
+### 2. Uptime Kuma Health Monitoring
 
-1. **Prometheus Scrape Config:** Added to `services/monitoring/prometheus.yml`:
-   ```yaml
-   # HAVM (Home Assistant VM runner)
-   - job_name: 'havm'
-     static_configs:
-       - targets: ['host.docker.internal:9210']
-   ```
-2. **Grafana Dashboard:** Automated provisioning via `services/monitoring/grafana/dashboards/havm.json` displaying:
-   - VM State (running, stopped, starting)
-   - Disk usage (logical vs APFS allocated)
-   - USB accessories attached
-   - Scrape health (`up`)
+HAVM exposes a `/health` endpoint on port `9210` (configured via `metrics` in `services/homeassistant/config.yml`). Uptime Kuma monitors `http://host.docker.internal:9210/health` (keyword `OK`) and alerts Discord if the VM becomes unreachable.
 
 ### 3. Nexus Authentik Dashboard
 
